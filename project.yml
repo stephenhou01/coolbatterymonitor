@@ -5,6 +5,8 @@ options:
     macOS: "14.0"
   xcodeVersion: "16.6"
   createIntermediateGroups: true
+  # Base language; per-locale bundle names live in BatteryMonitor/<lang>.lproj/InfoPlist.strings
+  developmentLanguage: en
 
 settings:
   base:
@@ -31,7 +33,8 @@ targets:
         ENABLE_HARDENED_RUNTIME: YES
         COMBINE_HIDPI_IMAGES: YES
         INFOPLIST_KEY_LSApplicationCategoryType: "public.app-category.utilities"
-        INFOPLIST_KEY_CFBundleDisplayName: "电池监控中心"
+        # Fallback for locales outside the 10 shipped .lproj bundles — must stay English
+        INFOPLIST_KEY_CFBundleDisplayName: "Battery Monitor"
         INFOPLIST_KEY_NSHumanReadableCopyright: "Copyright © 2026 Stephen. All rights reserved."
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_LSUIElement: NO

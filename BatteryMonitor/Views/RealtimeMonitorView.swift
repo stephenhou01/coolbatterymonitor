@@ -65,9 +65,17 @@ struct RealtimeMonitorView: View {
                 Image(systemName: "waveform.path.ecg")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(AppTheme.chargingCyan)
-                Text(L("rt.title"))
-                    .font(AppTheme.Typography.sectionTitle)
-                    .foregroundStyle(AppTheme.textPrimary)
+                HStack(spacing: 4) {
+                    Text(L("rt.title"))
+                        .font(AppTheme.Typography.sectionTitle)
+                        .foregroundStyle(AppTheme.textPrimary)
+                    // Tooltip follows the selected metric — the only surface for tip.percent,
+                    // since "percent" has no mini card in currentStatsRow.
+                    Image(systemName: "exclamationmark.circle")
+                        .font(.system(size: 9, weight: .medium))
+                        .foregroundStyle(AppTheme.textTertiary.opacity(0.5))
+                        .help(L(selectedMetric.tooltipKey))
+                }
                 Spacer()
 
                 // Metric selector
