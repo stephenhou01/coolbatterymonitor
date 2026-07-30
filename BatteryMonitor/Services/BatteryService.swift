@@ -99,9 +99,7 @@ class BatteryService: ObservableObject {
                 if timeRemaining == -1 {
                     data.timeRemaining = L("calculating")
                 } else if timeRemaining > 0 {
-                    let hours = timeRemaining / 60
-                    let minutes = timeRemaining % 60
-                    data.timeRemaining = data.isCharging ? "\(hours):\(String(format: "%02d", minutes))" : "\(hours):\(String(format: "%02d", minutes))"
+                    data.timeRemaining = String(format: "%d:%02d", timeRemaining / 60, timeRemaining % 60)
                 }
             }
 
