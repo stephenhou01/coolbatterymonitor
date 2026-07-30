@@ -17,7 +17,7 @@
     "gauge.full": "piena",
     "gauge.ac": "Alimentazione",
     "gauge.battery": "Su batteria",
-    "gauge.cycles_unit": "cicli",
+    "gauge.cycles_value": "%d cicli",
     "gauge.a11y_label": "Livello batteria",
     "gauge.a11y_charging": "In carica",
     "gauge.a11y_battery": "Su batteria",

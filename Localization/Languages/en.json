@@ -17,7 +17,7 @@
     "gauge.full": "until full",
     "gauge.ac": "AC Power",
     "gauge.battery": "On Battery",
-    "gauge.cycles_unit": "cycles",
+    "gauge.cycles_value": "%d cycles",
     "gauge.a11y_label": "Battery Level",
     "gauge.a11y_charging": "Charging",
     "gauge.a11y_battery": "On Battery",

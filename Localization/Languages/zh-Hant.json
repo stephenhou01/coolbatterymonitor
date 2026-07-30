@@ -17,7 +17,7 @@
     "gauge.full": "充滿",
     "gauge.ac": "已連接電源",
     "gauge.battery": "使用電池",
-    "gauge.cycles_unit": "次",
+    "gauge.cycles_value": "%d次",
     "gauge.a11y_label": "電池電量",
     "gauge.a11y_charging": "充電中",
     "gauge.a11y_battery": "使用電池",

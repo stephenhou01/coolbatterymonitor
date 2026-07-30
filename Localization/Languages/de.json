@@ -17,7 +17,7 @@
     "gauge.full": "voll",
     "gauge.ac": "Netzbetrieb",
     "gauge.battery": "Akkubetrieb",
-    "gauge.cycles_unit": "Zyklen",
+    "gauge.cycles_value": "%d Zyklen",
     "gauge.a11y_label": "Akkustand",
     "gauge.a11y_charging": "Lädt",
     "gauge.a11y_battery": "Akkubetrieb",

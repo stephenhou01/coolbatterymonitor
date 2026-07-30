@@ -100,7 +100,7 @@ struct HistoryChartView: View {
                 HStack(alignment: .bottom, spacing: AppTheme.Spacing.sm) {
                     ForEach(Array(sessions.prefix(8).enumerated()), id: \.element.id) { index, session in
                         VStack(spacing: 4) {
-                            Text(String(format: "%.0f%%", max(session.ratePerHour, 0)))
+                            Text(LNum("%.0f%%", max(session.ratePerHour, 0)))
                                 .font(.system(size: 9, weight: .bold, design: .rounded))
                                 .foregroundStyle(AppTheme.rateColor(session.ratePerHour))
 
@@ -185,7 +185,7 @@ struct SessionRow: View {
             .frame(height: 24)
 
             VStack(alignment: .trailing, spacing: 2) {
-                Text(String(format: "%.0f%@", session.ratePerHour, L("hist.rate_unit")))
+                Text(LNum("%.0f%@", session.ratePerHour, L("hist.rate_unit")))
                     .font(.system(size: 13, weight: .bold, design: .rounded))
                     .foregroundStyle(AppTheme.rateColor(session.ratePerHour))
                 Text(L("hist.duration", session.durationMinutes, session.note.localizedDescription))

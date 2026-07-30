@@ -69,6 +69,10 @@ struct RealtimeMonitorView: View {
                     Text(L("rt.title"))
                         .font(AppTheme.Typography.sectionTitle)
                         .foregroundStyle(AppTheme.textPrimary)
+                        // 不加这两行，德语「Echtzeit-Monitor」会被右侧 segmented Picker
+                        // （metric 名在西文里宽得多）挤成竖排 4 行
+                        .lineLimit(1)
+                        .fixedSize(horizontal: true, vertical: false)
                     // Tooltip follows the selected metric — the only surface for tip.percent,
                     // since "percent" has no mini card in currentStatsRow.
                     Image(systemName: "exclamationmark.circle")
@@ -185,7 +189,7 @@ struct RealtimeMonitorView: View {
                         .foregroundStyle(AppTheme.cardBorder)
                     AxisValueLabel {
                         if let doubleVal = value.as(Double.self) {
-                            Text(String(format: "%.1f", doubleVal))
+                            Text(LNum("%.1f", doubleVal))
                                 .font(.system(size: 9))
                                 .foregroundStyle(AppTheme.textTertiary)
                         }
@@ -205,14 +209,14 @@ struct RealtimeMonitorView: View {
             StatMiniCard(
                 icon: "bolt.fill",
                 label: L("rt.power"),
-                value: String(format: "%.1fW", batteryData.currentPowerWatts),
+                value: LNum("%.1fW", batteryData.currentPowerWatts),
                 color: AppTheme.chargingBlue,
                 tooltipKey: "tip.power"
             )
             StatMiniCard(
                 icon: "gauge.medium",
                 label: L("rt.voltage"),
-                value: String(format: "%.2fV", batteryData.voltage),
+                value: LNum("%.2fV", batteryData.voltage),
                 color: AppTheme.accentPurple,
                 tooltipKey: "tip.voltage"
             )
@@ -226,7 +230,7 @@ struct RealtimeMonitorView: View {
             StatMiniCard(
                 icon: "thermometer.medium",
                 label: L("rt.temperature"),
-                value: String(format: "%.1f°C", batteryData.temperatureCelsius),
+                value: LNum("%.1f°C", batteryData.temperatureCelsius),
                 color: tempColor,
                 tooltipKey: "tip.temperature"
             )
@@ -290,6 +294,8 @@ struct StatMiniCard: View {
                 Text(label)
                     .font(.system(size: 10))
                     .foregroundStyle(AppTheme.textTertiary)
+                    .lineLimit(1)               // 同 StatCard：长语言标签不得换行撑高卡片
+                    .minimumScaleFactor(0.75)
                 if let key = tooltipKey {
                     Image(systemName: "exclamationmark.circle")
                         .font(.system(size: 8, weight: .medium))

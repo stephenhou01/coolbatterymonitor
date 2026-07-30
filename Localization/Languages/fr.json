@@ -17,7 +17,7 @@
     "gauge.full": "pleine",
     "gauge.ac": "Secteur",
     "gauge.battery": "Sur batterie",
-    "gauge.cycles_unit": "cycles",
+    "gauge.cycles_value": "%d cycles",
     "gauge.a11y_label": "Niveau batterie",
     "gauge.a11y_charging": "En charge",
     "gauge.a11y_battery": "Sur batterie",

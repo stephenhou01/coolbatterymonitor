@@ -176,3 +176,13 @@ final class L10n {
 func L(_ key: String) -> String { L10n.shared.string(key) }
 
 func L(_ key: String, _ args: CVarArg...) -> String { L10n.shared.format(key, args) }
+
+/// 纯数字/单位的格式化（格式串写死在代码里，不进语言包）。
+/// 必须走这里而不是裸 String(format:)：不传 locale 等价 POSIX，"%.1f" 永远输出
+/// 21.4，而德语该显示 21,4 —— 否则同一屏会出现「Entladung 21,4W」和「21.4W」
+/// 两种写法。读 effectiveCode 也顺带让这些数字在切换语言时一起重算。
+func LNum(_ format: String, _ args: CVarArg...) -> String {
+    String(format: format,
+           locale: Locale(identifier: L10n.shared.effectiveCode),
+           arguments: args)
+}

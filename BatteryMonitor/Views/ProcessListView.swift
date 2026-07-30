@@ -87,7 +87,7 @@ struct ProcessRow: View {
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(AppTheme.textPrimary)
                     .lineLimit(1)
-                Text("PID \(proc.pid) · \(String(format: "%.0fMB", proc.memoryMB))")
+                Text("PID \(proc.pid) · \(LNum("%.0fMB", proc.memoryMB))")
                     .font(.system(size: 10))
                     .foregroundStyle(AppTheme.textTertiary)
             }
@@ -113,7 +113,7 @@ struct ProcessRow: View {
             .frame(height: 18)
 
             HStack(spacing: 4) {
-                Text(String(format: "%.1f%%", proc.cpuPercent))
+                Text(LNum("%.1f%%", proc.cpuPercent))
                     .font(.system(size: 13, weight: .bold, design: .rounded))
                     .foregroundStyle(AppTheme.energyColor(proc.energyImpact))
                     .contentTransition(.numericText(value: proc.cpuPercent))
@@ -184,8 +184,8 @@ struct CPUSparkline: View {
                         .help(L("tip.cpu"))
                 }
                 Spacer()
-                statLabel(L("proc.peak"), String(format: "%.1f%%", peak))
-                statLabel(L("proc.avg"), String(format: "%.1f%%", avg))
+                statLabel(L("proc.peak"), LNum("%.1f%%", peak))
+                statLabel(L("proc.avg"), LNum("%.1f%%", avg))
                 Text(L("proc.interval", history.count))
                     .font(.system(size: 9))
                     .foregroundStyle(AppTheme.textTertiary)

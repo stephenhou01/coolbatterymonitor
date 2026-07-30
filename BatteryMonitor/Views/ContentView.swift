@@ -89,6 +89,50 @@ struct ContentView: View {
         .minimumScaleFactor(0.7)
     }
 
+    /// 语言切换器。默认跟随系统，「跟随系统」始终留在首位，让默认状态可回退。
+    /// 语言名用各自母语（endonym），由语言包的 _meta.name 提供。
+    private var languagePicker: some View {
+        let l10n = L10n.shared
+        return Menu {
+            Button {
+                l10n.select(nil)
+            } label: {
+                if l10n.isFollowingSystem {
+                    Label(L("lang.system"), systemImage: "checkmark")
+                } else {
+                    Text(L("lang.system"))
+                }
+            }
+            Divider()
+            ForEach(l10n.languages, id: \.code) { meta in
+                Button {
+                    l10n.select(meta.code)
+                } label: {
+                    if !l10n.isFollowingSystem && l10n.effectiveCode == meta.code {
+                        Label(meta.name, systemImage: "checkmark")
+                    } else {
+                        Text(meta.name)
+                    }
+                }
+            }
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: "globe")
+                    .font(.system(size: 11, weight: .semibold))
+                Text(l10n.currentName)
+                    .font(.system(size: 11, weight: .medium))
+            }
+            .foregroundStyle(AppTheme.chargingCyan)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(Capsule().fill(AppTheme.chargingCyan.opacity(0.1)))
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .pointerOnHover()
+    }
+
     private var headerView: some View {
         HStack {
             HStack(spacing: 10) {
@@ -108,6 +152,8 @@ struct ContentView: View {
                         .minimumScaleFactor(0.7)
                 }
             }
+
+            languagePicker
 
             Spacer()
 

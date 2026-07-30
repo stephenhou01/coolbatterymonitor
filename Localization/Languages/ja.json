@@ -17,7 +17,7 @@
     "gauge.full": "満充電まで",
     "gauge.ac": "電源接続",
     "gauge.battery": "バッテリー駆動",
-    "gauge.cycles_unit": "回",
+    "gauge.cycles_value": "%d回",
     "gauge.a11y_label": "バッテリー残量",
     "gauge.a11y_charging": "充電中",
     "gauge.a11y_battery": "バッテリー駆動",

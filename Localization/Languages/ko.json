@@ -17,7 +17,7 @@
     "gauge.full": "완충까지",
     "gauge.ac": "전원 연결",
     "gauge.battery": "배터리 사용",
-    "gauge.cycles_unit": "회",
+    "gauge.cycles_value": "%d회",
     "gauge.a11y_label": "배터리 잔량",
     "gauge.a11y_charging": "충전 중",
     "gauge.a11y_battery": "배터리 사용",

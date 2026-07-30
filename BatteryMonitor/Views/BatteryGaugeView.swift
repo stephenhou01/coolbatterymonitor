@@ -74,9 +74,10 @@ struct BatteryGaugeView: View {
                 }
 
                 HStack(spacing: 12) {
-                    MiniMetric(icon: "bolt.fill", value: String(format: "%.1fW", batteryData.currentPowerWatts), color: AppTheme.chargingBlue)
-                    MiniMetric(icon: "thermometer.medium", value: String(format: "%.0f°", batteryData.temperatureCelsius), color: tempColor)
-                    MiniMetric(icon: "arrow.triangle.2.circlepath", value: "\(batteryData.cycleCount)\(L("gauge.cycles_unit"))", color: AppTheme.textSecondary)
+                    MiniMetric(icon: "bolt.fill", value: LNum("%.1fW", batteryData.currentPowerWatts), color: AppTheme.chargingBlue)
+                    MiniMetric(icon: "thermometer.medium", value: LNum("%.0f°", batteryData.temperatureCelsius), color: tempColor)
+                    // 数字与单位的拼接方式交给语言包决定（「210次」无空格，「210 Zyklen」有）
+                    MiniMetric(icon: "arrow.triangle.2.circlepath", value: L("gauge.cycles_value", batteryData.cycleCount), color: AppTheme.textSecondary)
                 }
                 .padding(.top, 8)
             }
@@ -120,7 +121,7 @@ struct BatteryStatsGrid: View {
     var body: some View {
         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
             StatCard(title: batteryData.isCharging ? L("stat.charge_power") : L("stat.discharge_power"),
-                     value: String(format: "%.1fW", batteryData.currentPowerWatts),
+                     value: LNum("%.1fW", batteryData.currentPowerWatts),
                      icon: "bolt.fill", color: batteryData.isCharging ? AppTheme.chargingBlue : AppTheme.textSecondary,
                      subtitle: batteryData.isCharging ? L("stat.realtime_charging") : (batteryData.isOnAC ? L("stat.not_charging") : L("stat.on_battery")),
                      tooltipKey: "tip.charge_power")
@@ -128,7 +129,7 @@ struct BatteryStatsGrid: View {
                      icon: "powerplug.fill", color: batteryData.isOnAC ? AppTheme.accentPurple : AppTheme.textSecondary,
                      subtitle: batteryData.isOnAC ? L("stat.usbc") : L("stat.unplugged"),
                      tooltipKey: "tip.adapter")
-            StatCard(title: L("stat.temperature"), value: String(format: "%.1f°C", batteryData.temperatureCelsius),
+            StatCard(title: L("stat.temperature"), value: LNum("%.1f°C", batteryData.temperatureCelsius),
                      icon: "thermometer.medium", color: tempColor,
                      subtitle: batteryData.temperatureCelsius > 38 ? L("stat.temp_high") : L("stat.temp_normal"),
                      tooltipKey: "tip.temperature")
@@ -182,6 +183,10 @@ struct StatCard: View {
                 Text(title)
                     .font(.system(size: 11))
                     .foregroundStyle(AppTheme.textTertiary)
+                    // 长语言（如日语「バッテリーコンディション」、德语复合词）会换行撑破卡片，
+                    // 导致同排卡片高度不齐。与下方 value/subtitle 保持同样的收缩策略。
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
                 if let key = tooltipKey {
                     Image(systemName: "exclamationmark.circle")
                         .font(.system(size: 9, weight: .medium))
