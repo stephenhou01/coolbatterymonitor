@@ -56,7 +56,8 @@ struct BatteryGaugeView: View {
 
                 if batteryData.isCharging {
                     HStack(spacing: 4) {
-                        Text(batteryData.timeRemaining)
+                        Text(batteryData.timeRemainingMinutes
+                                .map { LNum("%d:%02d", $0 / 60, $0 % 60) } ?? L("calculating"))
                             .font(.system(size: 14, weight: .semibold, design: .rounded))
                             .foregroundStyle(AppTheme.chargingCyan)
                         Text(L("gauge.full"))

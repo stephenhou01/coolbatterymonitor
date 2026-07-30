@@ -95,12 +95,9 @@ class BatteryService: ObservableObject {
             }
 
             // Time remaining
-            if let timeRemaining = info["TimeRemaining"] as? Int {
-                if timeRemaining == -1 {
-                    data.timeRemaining = L("calculating")
-                } else if timeRemaining > 0 {
-                    data.timeRemaining = String(format: "%d:%02d", timeRemaining / 60, timeRemaining % 60)
-                }
+            // -1 表示系统仍在测算；保持 nil 交给 View 显示「计算中」
+            if let timeRemaining = info["TimeRemaining"] as? Int, timeRemaining > 0 {
+                data.timeRemainingMinutes = timeRemaining
             }
 
             // Charger wattage from AdapterDetails

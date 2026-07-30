@@ -47,7 +47,9 @@ struct BatteryData: Equatable {
     var percent: Int = 0
     var isCharging: Bool = false
     var isOnAC: Bool = false
-    var timeRemaining: String = L("calculating")
+    /// 分钟数；nil = 系统尚在测算。存数字而不是本地化字符串 —— model 层不碰译文，
+    /// 否则切换语言后已有实例不会更新（Observation 追踪不到 body 之外的 L() 调用）。
+    var timeRemainingMinutes: Int? = nil
     var amperage: Int = 0       // mA, signed
     var voltage: Double = 0     // V
     var currentPowerWatts: Double = 0
