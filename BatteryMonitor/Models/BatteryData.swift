@@ -65,6 +65,8 @@ struct BatteryData: Equatable {
     var batteryModel: String = ""
     var firmwareVersion: String = ""
     var lastUpdated: Date = Date()
+    /// IOKit 原始硬件数据。有完整默认值，缺字段时各处按 0/空数组优雅降级。
+    var hardwareDetail = BatteryHardwareDetail()
 }
 
 struct ChargingSession: Identifiable, Equatable, Codable {

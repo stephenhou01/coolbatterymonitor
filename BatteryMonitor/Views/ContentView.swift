@@ -14,6 +14,13 @@ struct ContentView: View {
                 startPoint: .topLeading, endPoint: .bottomTrailing
             ).ignoresSafeArea()
 
+            // 赛博氛围层：动态网格 + 呼吸光晕
+            AppTheme.GridBackground().ignoresSafeArea()
+            AppTheme.AmbientOrb(color: AppTheme.chargingCyan, diameter: 520)
+                .offset(x: -260, y: -200).ignoresSafeArea()
+            AppTheme.AmbientOrb(color: AppTheme.accentPurple, diameter: 460)
+                .offset(x: 300, y: 160).ignoresSafeArea()
+
             ScrollView {
                 VStack(spacing: AppTheme.Spacing.xl) {
                     headerView
@@ -54,9 +61,34 @@ struct ContentView: View {
                             )
                         }
                     }
+
+                    // ── 消费者洞察层（追加在现有布局下方，上面部分不动）
+                    if let insight = batteryService.insight {
+                        HealthDiagnosisCard(diagnosis: insight.health)
+                            .modifier(AppTheme.reveal(0.05))
+
+                        HStack(alignment: .top, spacing: AppTheme.Spacing.xl) {
+                            ChargingHabitCard(habit: insight.habit)
+                            AccessoryCard(accessory: insight.accessory)
+                        }
+                        .modifier(AppTheme.reveal(0.12))
+
+                        PowerAnalysisCard(analysis: insight.power)
+                            .modifier(AppTheme.reveal(0.19))
+
+                        WeeklyReportCard(report: insight.weekly)
+                            .modifier(AppTheme.reveal(0.26))
+
+                        HardwareDetailView(detail: batteryService.batteryData.hardwareDetail)
+                            .modifier(AppTheme.reveal(0.33))
+                    }
                 }
                 .padding(AppTheme.Spacing.xxl)
             }
+        }
+        // 进程列表变化时刷新耗电分析（洞察平时 30s 一次，进程变化快需要单独触发）
+        .onChange(of: processService.topProcesses) { _, procs in
+            batteryService.updateProcesses(procs)
         }
         .opacity(appeared ? 1 : 0)
         .onAppear {

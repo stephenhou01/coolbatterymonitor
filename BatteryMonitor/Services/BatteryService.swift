@@ -9,6 +9,8 @@ class BatteryService: ObservableObject {
     @Published var realtimeData: [RealtimeDataPoint] = []
     @Published var isLoadingHistory = false
     @Published var lastHistoryUpdate: Date? = nil
+    /// 消费者层洞察。nil = 首帧还没算出来。
+    @Published var insight: BatteryInsight? = nil
 
     private var timer: Timer?
     private let refreshInterval: TimeInterval = 3
@@ -29,9 +31,20 @@ class BatteryService: ObservableObject {
         return dir
     }()
     private var historyCacheURL: URL { cacheDir.appendingPathComponent("history_cache.json") }
+    private var socHistoryURL: URL { cacheDir.appendingPathComponent("soc_history.json") }
+
+    /// 自记录的每日 SOC / 温度 / 满充存放快照。习惯评分、周报、循环速率都靠它。
+    private var socHistory = SOCHistory()
+    private var lastInsightRefresh: Date?
+    /// 硬件参数变化慢，洞察不需要每 3 秒重算
+    private let insightRefreshInterval: TimeInterval = 30
+
+    /// 最近一次进程采样，供耗电分析用
+    private var latestProcesses: [ProcessPowerInfo] = []
 
     func startMonitoring() {
         loadCachedHistory()
+        loadSOCHistory()
         fetchData()
         let t = Timer(timeInterval: refreshInterval, repeats: true) { [weak self] _ in
             self?.fetchData()
@@ -82,8 +95,7 @@ class BatteryService: ObservableObject {
                 data.cycleCount = cycleCount
             }
             if let temp = info["Temperature"] as? Int {
-                // Temperature is in centi-degrees Celsius (e.g., 3250 = 32.50°C)
-                data.temperatureCelsius = Double(temp) / 100.0
+                data.temperatureCelsius = Self.decodeTemperature(temp)
             }
             if let designCap = info["DesignCapacity"] as? Int {
                 data.designCapacity = designCap
@@ -125,6 +137,8 @@ class BatteryService: ObservableObject {
             } else {
                 data.condition = .replaceNow
             }
+
+            data.hardwareDetail = Self.parseHardwareDetail(info, fallbackCycleCount: data.cycleCount)
         }
 
         // Fallback: use IOPowerSources for basic info if IOKit failed
@@ -158,11 +172,59 @@ class BatteryService: ObservableObject {
         if self.realtimeData.count > self.maxRealtimePoints {
             self.realtimeData.removeFirst(self.realtimeData.count - self.maxRealtimePoints)
         }
+
+        recordSOCSnapshot(data)
+        refreshInsightIfNeeded(data)
+    }
+
+    // MARK: - Consumer Insight
+
+    private func recordSOCSnapshot(_ data: BatteryData) {
+        let before = socHistory
+        socHistory.record(percent: data.percent,
+                          cycleCount: data.cycleCount,
+                          temperature: data.temperatureCelsius,
+                          isCharging: data.isCharging,
+                          isFullyCharged: data.isFullyCharged,
+                          isOnAC: data.isOnAC)
+        if socHistory != before { saveSOCHistory() }
+    }
+
+    /// 洞察是纯计算，但没必要每 3 秒跑一遍 —— 硬件参数变化慢。
+    /// 进程列表变化快，所以 ProcessMonitorService 刷新时会单独触发一次。
+    private func refreshInsightIfNeeded(_ data: BatteryData, force: Bool = false) {
+        if !force, let last = lastInsightRefresh,
+           Date().timeIntervalSince(last) < insightRefreshInterval { return }
+        lastInsightRefresh = Date()
+        insight = InsightEngine.analyze(data: data,
+                                        history: chargingHistory,
+                                        processes: latestProcesses,
+                                        socLog: socHistory)
+    }
+
+    /// 由 ContentView 在进程列表更新时调用，让耗电分析跟得上进程变化。
+    func updateProcesses(_ processes: [ProcessPowerInfo]) {
+        latestProcesses = processes
+        refreshInsightIfNeeded(batteryData, force: true)
+    }
+
+    private func loadSOCHistory() {
+        guard let d = try? Data(contentsOf: socHistoryURL),
+              let h = try? JSONDecoder().decode(SOCHistory.self, from: d) else { return }
+        socHistory = h
+    }
+
+    private func saveSOCHistory() {
+        guard let d = try? JSONEncoder().encode(socHistory) else { return }
+        try? d.write(to: socHistoryURL)
     }
 
     // MARK: - IOKit Battery Properties
 
-    private func getBatteryProperties() -> [String: Any]? {
+    private func getBatteryProperties() -> [String: Any]? { Self.readRegistry() }
+
+    /// 读 AppleSmartBattery 的全部属性。不依赖实例状态，抽成 static 便于测试与探针复用。
+    static func readRegistry() -> [String: Any]? {
         let service = IOServiceGetMatchingService(kIOMainPortDefault, IOServiceMatching("AppleSmartBattery"))
         guard service != IO_OBJECT_NULL else { return nil }
         defer { IOObjectRelease(service) }
