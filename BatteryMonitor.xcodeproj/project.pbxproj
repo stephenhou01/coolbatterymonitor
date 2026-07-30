@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		0E3E335F00D0BAD150B99D20 /* Localization.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6E46A3F0296A98788F4DF10 /* Localization.swift */; };
+		10557DC884ECFBEDBF45CDDF /* Languages in Resources */ = {isa = PBXBuildFile; fileRef = 4D0E4832C92998CD6E9F5913 /* Languages */; };
 		132C00799288C5840DEE1006 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0FECAA007FFBAB28F3E5CE72 /* Assets.xcassets */; };
 		2FDFD22A2582AF1C59FC4DDA /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EABEB94827ED7A54B1B808B /* ContentView.swift */; };
 		3458C7CEF71BEAD22079D450 /* BatteryMonitorApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77ECF2C63BE84926565C63E8 /* BatteryMonitorApp.swift */; };
@@ -30,6 +31,7 @@
 		2145F7213261647A34650A4D /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		3D166C5BEEFE5FD30D1BB0A1 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		4268CDB18CE66B4FEEFB1C83 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		4D0E4832C92998CD6E9F5913 /* Languages */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Languages; path = Localization/Languages; sourceTree = SOURCE_ROOT; };
 		51EB1608188E2746B536945E /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = ko.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		64D77D4CAFCF034D3CB95241 /* ProcessInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessInfo.swift; sourceTree = "<group>"; };
 		735D2BF0200ADD9E1BA4B82D /* HistoryChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryChartView.swift; sourceTree = "<group>"; };
@@ -58,6 +60,14 @@
 				9045F497E3C694B58514F767 /* BatteryMonitor.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		364EA97754D07D277FBA25E1 /* Localization */ = {
+			isa = PBXGroup;
+			children = (
+				4D0E4832C92998CD6E9F5913 /* Languages */,
+			);
+			path = Localization;
 			sourceTree = "<group>";
 		};
 		4851E47D8C995A282CB6F5A1 /* Views */ = {
@@ -118,6 +128,7 @@
 			isa = PBXGroup;
 			children = (
 				9E3C5656F8ADC380BE5C8D5B /* BatteryMonitor */,
+				364EA97754D07D277FBA25E1 /* Localization */,
 				0D1E857412C879AC8E5B3722 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -193,6 +204,7 @@
 			files = (
 				132C00799288C5840DEE1006 /* Assets.xcassets in Resources */,
 				B98FD1B7030F9FE9FB853AF2 /* InfoPlist.strings in Resources */,
+				10557DC884ECFBEDBF45CDDF /* Languages in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

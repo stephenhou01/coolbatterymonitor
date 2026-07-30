@@ -21,6 +21,12 @@ targets:
       - path: BatteryMonitor
         excludes:
           - "**/.DS_Store"
+      # 语言包与 app 源码隔离。folder reference 才能在 bundle 里保住 Languages/
+      # 目录结构（普通 json 会被拍平到 Resources/ 根）；也让新增语言只需丢一个
+      # JSON 文件，不用改 Swift 也不用重跑 xcodegen。
+      - path: Localization/Languages
+        type: folder
+        buildPhase: resources
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.stephen.BatteryMonitor
