@@ -26,6 +26,7 @@ cyc, dcyc = D['CycleCount'], D['DesignCycleCount9C']
 health_sys = (fcc + reserve) / (design - reserve) * 100
 health_raw = fcc / design * 100
 unusable = min(QMAX) - fcc
+aged = design - min(QMAX)
 deficit = design - fcc
 deficit_pc = deficit / cyc
 calib = cyc - LT['CycleCountLastQmax']
@@ -74,6 +75,34 @@ for lc in LANGS:
 
 # 原型专属文案（app 里没有的叙事性内容）—— 只做 4 种主要语言，其余回落英文
 EXTRA = {
+"p.where_title":  {"zh-Hans":"你买的容量去哪了","en":"Where your capacity went","ja":"買った容量はどこへ","de":"Wo Ihre Kapazität blieb"},
+"p.where_head":   {"zh-Hans":"你买的 {a} mAh，实际能用 {b}","en":"You paid for {a} mAh — you can actually use {b}",
+                   "ja":"購入時 {a} mAh のうち、実際に使えるのは {b}","de":"Bezahlt: {a} mAh — nutzbar: {b}"},
+"p.seg_use":      {"zh-Hans":"你能用的","en":"Actually usable","ja":"実際に使える分","de":"Tatsächlich nutzbar"},
+"p.seg_un":       {"zh-Hans":"取不出来","en":"Unreachable","ja":"取り出せない分","de":"Nicht erreichbar"},
+"p.seg_age":      {"zh-Hans":"已老化损失","en":"Lost to ageing","ja":"劣化で失われた分","de":"Durch Alterung verloren"},
+"p.seg_use_d":    {"zh-Hans":"这就是系统显示的 0–100%。你的 0% 就是关机点，不会真的耗到电芯空。",
+                   "en":"This is what the 0–100% you see maps to. Your 0% is the shutdown point, not an empty cell.",
+                   "ja":"画面の 0〜100% はこの範囲です。0% は停止点であり、セルが空になるわけではありません。",
+                   "de":"Darauf bilden die angezeigten 0–100 % ab. Ihre 0 % sind der Abschaltpunkt, keine leere Zelle."},
+"p.seg_un_d":     {"zh-Hans":"化学上还在电池里，但放到这里电压已经太低，任何软件都取不出来。电量计自己算出的（Qmax − FCC）。",
+                   "en":"Chemically still in the cells, but the voltage there is too low for anything to draw it. Computed by the gauge itself (Qmax − FCC).",
+                   "ja":"化学的にはセル内に残っていますが、その領域では電圧が低すぎて取り出せません。電量計自身の計算値（Qmax − FCC）。",
+                   "de":"Chemisch noch in den Zellen, aber die Spannung ist dort zu niedrig, um sie zu nutzen. Vom Gauge berechnet (Qmax − FCC)."},
+"p.seg_age_d":    {"zh-Hans":"{n} 次循环里被副反应永久扣押的锂。这部分只会增加，不会回来。",
+                   "en":"Lithium permanently locked away by side reactions over {n} cycles. This only grows.",
+                   "ja":"{n} サイクルの副反応で恒久的に失われたリチウム。増える一方で戻りません。",
+                   "de":"Über {n} Zyklen durch Nebenreaktionen dauerhaft gebundenes Lithium. Wird nur mehr."},
+"p.why_deeper":   {"zh-Hans":"为什么会有「取不出来」的部分？（技术细节）","en":"Why is part of it unreachable? (technical)",
+                   "ja":"なぜ取り出せない分があるのか（技術詳細）","de":"Warum ist ein Teil unerreichbar? (technisch)"},
+"p.ra_legend":    {"zh-Hans":"电池内阻随电量变化","en":"Internal resistance vs charge level",
+                   "ja":"残量に対する内部抵抗","de":"Innenwiderstand über Ladezustand"},
+"p.ra_outlier":   {"zh-Hans":"端点数据不足，不参与结论","en":"Endpoint under-sampled — excluded",
+                   "ja":"端点はデータ不足のため除外","de":"Randpunkt zu wenig erfasst – ausgeschlossen"},
+"p.ra_take":      {"zh-Hans":"电量越低内阻越高，接近放空时达到中段的 {x}。电压 = 开路电压 − 电流×内阻，内阻一高电压就撑不住，于是最后那段电荷还没放出来电压就已经跌破截止线。电量计据此把那部分从可用容量里扣掉。",
+                   "en":"Resistance climbs as charge falls, reaching {x} the mid-range level near empty. Since voltage = open-circuit − current×resistance, high resistance collapses the terminal voltage before that last charge can be drawn — so the gauge excludes it from usable capacity.",
+                   "ja":"残量が減るほど内部抵抗は上がり、空に近づくと中間域の {x} に達します。端子電圧 = 開放電圧 − 電流×抵抗 なので、抵抗が高いと最後の電荷を取り出す前に電圧が遮断値を割ります。電量計はその分を使用可能容量から除外します。",
+                   "de":"Der Widerstand steigt mit sinkender Ladung und erreicht nahe leer das {x} des mittleren Bereichs. Da Klemmenspannung = Leerlauf − Strom×Widerstand gilt, bricht sie ein, bevor die letzte Ladung entnommen werden kann — das Gauge zieht sie daher von der nutzbaren Kapazität ab."},
 "p.tagline":      {"zh-Hans":"电池监控中心","en":"Battery Monitor","ja":"バッテリーモニター","de":"Batterie-Monitor"},
 "p.remaining":    {"zh-Hans":"还能用多久","en":"Time remaining","ja":"あと何時間使えるか","de":"Verbleibende Zeit"},
 "p.src_note":     {"zh-Hans":"直接来自电量计芯片，不是我们估的","en":"Straight from the gauge chip — not our estimate",
@@ -185,7 +214,7 @@ TABLE = [
 
 DATA = dict(ra=RA, cells=CELLS, qmax=QMAX, design=design, fcc=fcc, cur=cur, reserve=reserve,
             cyc=cyc, dcyc=dcyc, healthSys=round(health_sys,1), healthRaw=round(health_raw,1),
-            unusable=unusable, deficit=deficit, deficitPC=round(deficit_pc,1), calib=calib,
+            unusable=unusable, aged=aged, deficit=deficit, deficitPC=round(deficit_pc,1), calib=calib,
             ate=ate, onAC=onAC, amp=amp, volt=round(volt,2), watts=round(watts,2),
             socUI=soc_ui, socRaw=soc_raw, temp=round(temp,1), avgW=round(avg_w,1),
             model=subprocess.run(['sysctl','-n','hw.model'],capture_output=True,text=True).stdout.strip(),

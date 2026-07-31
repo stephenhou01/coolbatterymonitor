@@ -92,6 +92,23 @@ svg{display:block;width:100%;height:auto}
 .eqi.hl b{color:var(--amber);text-shadow:0 0 16px rgba(255,176,32,.35)}
 .eqo{font-family:var(--mono);font-size:16px;color:var(--t3)}
 
+/* 容量去向条 */
+.whbar{display:flex;height:54px;border-radius:3px;overflow:hidden;margin-top:14px;border:1px solid var(--line2)}
+.whseg{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;position:relative;
+  transition:flex-grow 1.1s cubic-bezier(.2,.7,.3,1);min-width:0;overflow:hidden}
+.whseg b{font-family:var(--mono);font-size:17px;line-height:1;white-space:nowrap}
+.whseg s{font-family:var(--mono);font-size:9px;opacity:.75;text-decoration:none;white-space:nowrap}
+.whseg.use{background:linear-gradient(180deg,rgba(91,255,199,.28),rgba(91,255,199,.16));color:var(--phos)}
+.whseg.un{background:repeating-linear-gradient(45deg,rgba(255,176,32,.24) 0 7px,rgba(255,176,32,.10) 7px 14px);color:var(--amber)}
+.whseg.age{background:repeating-linear-gradient(45deg,rgba(255,92,92,.26) 0 7px,rgba(255,92,92,.10) 7px 14px);color:var(--red)}
+.whleg{display:flex;gap:20px;margin-top:9px;flex-wrap:wrap;font-size:11px;color:var(--t2)}
+.whleg span{display:flex;align-items:center;gap:6px}
+.whleg i{width:11px;height:11px;border-radius:2px;flex-shrink:0}
+.whc{padding:13px 14px;border:1px solid var(--line);border-radius:2px;background:rgba(255,255,255,.014)}
+.whc .n{font-family:var(--mono);font-size:21px;line-height:1}
+.whc .t2{font-size:11.5px;color:var(--txt);margin-top:6px;font-weight:500}
+.whc .d{font-size:10.5px;color:var(--t3);margin-top:4px;line-height:1.6}
+
 /* 容量链条 */
 .chain{display:flex;align-items:stretch;flex-wrap:wrap}
 .ch{flex:1;min-width:126px;padding:12px;border:1px solid var(--line2);border-radius:2px;background:rgba(255,255,255,.012)}
@@ -169,13 +186,22 @@ details[open] summary .a{transform:rotate(180deg)}
       <div class="scope"><svg id="live" viewBox="0 0 1000 210"></svg></div>
     </section>
 
-    <!-- ③ 为什么最后 20% -->
+    <!-- ③ 你买的容量去哪了 -->
     <section class="card" style="animation-delay:.16s">
-      <div class="tag" data-i="p.why_title"></div>
-      <h2 class="t" data-i="p.why_sub"></h2>
-      <div class="scope"><svg id="scope" viewBox="0 0 1000 320"></svg></div>
-      <div class="legend" id="scopeLegend"></div>
-      <div class="tk" id="scopeTake"></div>
+      <div class="tag" data-i="p.where_title"></div>
+      <h2 class="t" id="whereHead"></h2>
+      <div class="whbar" id="whBar"></div>
+      <div class="whleg" id="whLeg"></div>
+      <div class="g3" id="whCards" style="margin-top:15px"></div>
+      <details style="margin-top:14px;border-color:var(--line)">
+        <summary style="padding:10px 14px;font-size:12px;font-family:var(--han)">
+          <span data-i="p.why_deeper"></span><span class="a">▼</span></summary>
+        <div style="padding:0 14px 14px">
+          <div class="scope"><svg id="scope" viewBox="0 0 1000 300"></svg></div>
+          <div class="legend" id="scopeLegend"></div>
+          <div class="tk" id="scopeTake" style="font-size:12px"></div>
+        </div>
+      </details>
     </section>
 
     <!-- ④ 容量链条 -->
@@ -357,13 +383,28 @@ function render() {
       border-radius:20px;border:1px solid ${i === mi ? 'var(--phosd)' : 'var(--line)'};
       background:${i === mi ? 'rgba(91,255,199,.13)' : 'transparent'};color:${i === mi ? 'var(--phos)' : 'var(--t3)'}">${T(m.k)}</button>`).join('');
 
+  // ③ 你买的容量去哪了 —— 三段加起来正好等于出厂标称
+  const use = D.fcc, un = D.unusable, ag = D.aged, tot = D.design;
+  $('#whereHead').innerHTML = T('p.where_head')
+    .replace('{a}', `<em>${tot.toLocaleString()}</em>`).replace('{b}', `<em>${use.toLocaleString()}</em>`);
+  $('#whBar').innerHTML = [
+    ['use', use, T('p.seg_use')], ['un', un, T('p.seg_un')], ['age', ag, T('p.seg_age')],
+  ].map(([c, v, l]) => `<div class="whseg ${c}" style="flex:${v} 1 0">
+      <b>${v.toLocaleString()}</b><s>${(v / tot * 100).toFixed(1)}%</s></div>`).join('');
+  $('#whLeg').innerHTML = [
+    ['rgba(91,255,199,.5)', T('p.seg_use')], ['rgba(255,176,32,.5)', T('p.seg_un')], ['rgba(255,92,92,.5)', T('p.seg_age')],
+  ].map(([c, l]) => `<span><i style="background:${c}"></i>${l}</span>`).join('');
+  $('#whCards').innerHTML = [
+    ['var(--phos)', use, T('p.seg_use'), T('p.seg_use_d')],
+    ['var(--amber)', un, T('p.seg_un'), T('p.seg_un_d')],
+    ['var(--red)', ag, T('p.seg_age'), T('p.seg_age_d').replace('{n}', D.cyc)],
+  ].map(([c, v, t, d]) => `<div class="whc"><div class="n" style="color:${c}">${v.toLocaleString()}<span style="font-size:11px"> mAh</span></div>
+      <div class="t2">${t}</div><div class="d">${d}</div></div>`).join('');
+
   const mid = Math.round(D.ra.slice(2, 9).reduce((a, b) => a + b) / 7);
-  $('#scopeLegend').innerHTML =
-    `<span><i style="background:var(--phos)"></i>Ra ${T('hw.m.weighted_ra')}</span>
-     <span><i style="background:#5d6f6b;opacity:.6"></i>${T('hw.rel.questionable')}</span>
-     <span><i style="background:rgba(255,92,92,.5)"></i>${T('hw.m.unusable')}</span>`;
-  $('#scopeTake').innerHTML = `<b>${(D.ra[14] / mid).toFixed(1)}×</b> — ${T('p.unusable_ex')}
-     <span class="h">${D.unusable} mAh</span>`;
+  $('#scopeLegend').innerHTML = `<span><i style="background:var(--phos)"></i>${T('p.ra_legend')}</span>
+     <span><i style="background:#5d6f6b;opacity:.6"></i>${T('p.ra_outlier')}</span>`;
+  $('#scopeTake').innerHTML = T('p.ra_take').replace('{x}', `<span class="h">${(D.ra[14] / mid).toFixed(1)}×</span>`);
 
   $('#chain').innerHTML = [
     [D.design, T('hw.m.design_capacity'), 'DesignCapacity', 0],
