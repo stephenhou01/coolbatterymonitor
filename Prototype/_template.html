@@ -103,6 +103,25 @@ svg{display:block;width:100%;height:auto}
 .spn{flex:1;min-width:220px;font-size:11.5px;color:var(--t2);line-height:1.7;padding-left:13px;border-left:1px solid var(--line2)}
 .spn b{color:var(--txt)}
 
+/* 温度刻度表 */
+.tg{margin:12px 0 10px}
+.tgbar{display:flex;height:10px;border-radius:5px;overflow:hidden;position:relative}
+.tghist{position:absolute;top:0;bottom:0;border:1px solid rgba(255,255,255,.5);border-radius:5px;
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.3)}
+.tgmk{position:relative;height:15px}
+.tgmk span{position:absolute;top:-4px;border-radius:1px}
+.tgmk .now{width:3px;height:14px;background:var(--phos);box-shadow:0 0 7px var(--phos);z-index:2}
+.tgmk .avg{width:2px;height:14px;background:rgba(255,255,255,.45)}
+.tgmk s{position:absolute;top:12px;font-family:var(--mono);font-size:8px;color:var(--t3);text-decoration:none;transform:translateX(-50%)}
+.tglab{display:flex;gap:14px;flex-wrap:wrap;margin-top:9px;font-size:9.5px;color:var(--t3);font-family:var(--mono)}
+.bands{margin-top:11px;display:flex;flex-direction:column;gap:3px}
+.bd{display:flex;align-items:center;gap:8px;font-size:10.5px;padding:3px 6px;border-radius:2px;opacity:.55}
+.bd.on{opacity:1;background:rgba(255,255,255,.05)}
+.bd i{width:9px;height:9px;border-radius:2px;flex-shrink:0}
+.bd .r{font-family:var(--mono);color:var(--t2);width:64px;flex-shrink:0}
+.bd .d{color:var(--t3);line-height:1.5}
+.bd.on .d{color:var(--t2)}
+
 /* 指标解读卡 */
 .rd{padding:15px 16px;border:1px solid var(--line);border-radius:3px;background:rgba(255,255,255,.014)}
 .rd .hd{display:flex;align-items:baseline;gap:9px;margin-bottom:11px}
@@ -319,6 +338,41 @@ function ringSvg() {
         calcMode="spline" keySplines=".25 .1 .25 1"/></circle>`;
 }
 
+/* 温度刻度表：五档色带 + 历史区间 + 当前指针 */
+const TB = [
+  {lo:-20,hi:0,  c:'rgba(77,163,255,.55)', k:'p.tb_freeze'},
+  {lo:0,  hi:15, c:'rgba(77,163,255,.30)', k:'p.tb_cold'},
+  {lo:15, hi:35, c:'rgba(91,255,199,.55)', k:'p.tb_ideal'},
+  {lo:35, hi:45, c:'rgba(255,176,32,.55)', k:'p.tb_warm'},
+  {lo:45, hi:60, c:'rgba(255,92,92,.60)',  k:'p.tb_hot'},
+];
+const TLO=-20, THI=60, tpos=v=>Math.max(0,Math.min(100,(v-TLO)/(THI-TLO)*100));
+function tempGauge(now, avg, lo, hi){
+  const seg = TB.map(b=>`<div style="flex:${b.hi-b.lo};background:${b.c}"></div>`).join('');
+  return `<div class="tg">
+    <div class="tgbar">${seg}
+      <div class="tghist" style="left:${tpos(lo)}%;width:${tpos(hi)-tpos(lo)}%"></div>
+    </div>
+    <div class="tgmk">
+      <span class="avg" style="left:${tpos(avg)}%" title="${T('p.t_lifeavg')}"></span>
+      <span class="now" style="left:${tpos(now)}%"></span>
+      <s style="left:${tpos(0)}%">0</s><s style="left:${tpos(15)}%">15</s>
+      <s style="left:${tpos(35)}%">35</s><s style="left:${tpos(45)}%">45</s>
+    </div>
+    <div class="tglab">
+      <span>${T('p.t_histband')} ${lo}–${hi}°C</span>
+      <span style="color:var(--phos)">● ${T('p.scen_now')} ${now.toFixed(1)}°C</span>
+      <span style="color:var(--t3)">○ ${T('p.t_lifeavg')} ${avg.toFixed(1)}°C</span>
+    </div></div>`;
+}
+function bandRows(){
+  return TB.map(b=>{
+    const on = D.temp>=b.lo && D.temp<b.hi;
+    return `<div class="bd ${on?'on':''}"><i style="background:${b.c}"></i>
+      <span class="r">${b.lo}–${b.hi}°C</span><span class="d">${T(b.k)}</span></div>`;
+  }).join('');
+}
+
 /* 双线：功率（左轴）+ 剩余时间（右轴）。
    功率一跳，剩余时间必然跟着动 —— 把因果画在同一张图上。 */
 let PW = Array.from({length:44},(_,i)=> D.watts + Math.sin(i/6)*.5 + (Math.random()-.5)*.7);
@@ -437,18 +491,18 @@ function render() {
   const pv = pRatio < .85 ? ['ok', T('p.p_low')] : pRatio < 1.3 ? ['mid', T('p.p_mid')] : ['warn', T('p.p_high')];
   const COL = { ok: 'var(--phos)', mid: 'var(--blue)', warn: 'var(--amber)', bad: 'var(--red)' };
   const mark = (v, lo, hi) => Math.max(0, Math.min(100, (v - lo) / (hi - lo) * 100));
-  $('#readCards').innerHTML = `
+  const tempGaugeHTML = 1; $('#readCards').innerHTML = `
    <div class="rd">
      <div class="hd"><b style="color:${COL[tv[0]]}">${tNow.toFixed(1)}</b><s>°C · ${T('stat.temperature')}</s>
-       <span class="verdict" style="color:${COL[tv[0]]};background:${COL[tv[0]].replace('var(--','rgba(').replace(')','')};background:rgba(255,255,255,.06)">${tv[1]}</span></div>
-     <div class="scale"><div style="background:rgba(91,255,199,.5)"></div><div style="background:rgba(255,176,32,.5)"></div><div style="background:rgba(255,92,92,.5)"></div></div>
-     <div class="scmark"><i style="left:${mark(tNow, 0, 60)}%"></i>
-       <s style="left:${mark(35,0,60)}%">35</s><s style="left:${mark(45,0,60)}%">45</s></div>
+       <span class="verdict" style="color:${COL[tv[0]]};background:rgba(255,255,255,.06)">${tv[1]}</span></div>
+     ${tempGauge(tNow, tAvg, tMin, tMax)}
      <div class="rdrow"><span class="k">${T('p.t_lifeavg')}</span><span class="v">${tAvg.toFixed(1)} °C</span></div>
      <div class="rdrow"><span class="k">${T('p.t_hist')}</span><span class="v">${tMin} – ${tMax} °C</span></div>
      <div class="rdrow"><span class="k">${T('p.t_today')}</span><span class="v" style="color:var(--t3)">${T('p.collecting')}</span></div>
      <div class="rdrow"><span class="k">${T('p.t_vs')}</span><span class="v" style="color:${tNow > tAvg ? 'var(--amber)' : 'var(--phos)'}">${(tNow - tAvg >= 0 ? '+' : '') + (tNow - tAvg).toFixed(1)} °C</span></div>
-     <div class="rdimp">${T('p.t_impact')}</div>
+     <div class="rdrow"><span class="k">${T('p.t_cadence')}</span><span class="v" style="color:var(--t3)">~56 s · 0.01 °C</span></div>
+     <div class="bands" id="tBands"></div>
+     <div class="rdimp">${T('p.t_arrhenius')}</div>
    </div>
    <div class="rd">
      <div class="hd"><b style="color:${COL[pv[0]]}">${D.watts.toFixed(1)}</b><s>W · ${T('rt.power')}</s>
@@ -460,6 +514,7 @@ function render() {
      <div class="rdrow"><span class="k">${T('p.p_ratio')}</span><span class="v" style="color:${COL[pv[0]]}">${(pRatio * 100).toFixed(0)}%</span></div>
      <div class="rdrow"><span class="k">${T('p.p_energy')}</span><span class="v">${D.wh} Wh</span></div>
      <div class="rdrow"><span class="k">${T('p.p_theory')}</span><span class="v">${(D.wh / D.watts).toFixed(1)} h</span></div>
+     <div class="rdrow"><span class="k">${T('p.p_peak')}</span><span class="v" style="color:var(--red)">${D.peakW} W · ${(D.wh / D.peakW).toFixed(1)} h</span></div>
      <div class="rdimp">${T('p.p_impact').replace('{a}', `<b>${(D.wh / D.avgW).toFixed(1)}h</b>`).replace('{b}', `<b>${(D.wh / 25).toFixed(1)}h</b>`).replace('{c}', `<b>${(D.wh / 45).toFixed(1)}h</b>`)}</div>
    </div>`;
 
@@ -505,6 +560,8 @@ function render() {
     [D.deficit, 'mAh', T('p.total_locked'), 'hl'],
   ].map(([a, b, c, k]) => k === 'o' ? `<div class="eqo">${a}</div>`
     : `<div class="eqi ${k}"><b>${a}</b><s>${b}</s><i>${c}</i></div>`).join('');
+
+  if ($('#tBands')) $('#tBands').innerHTML = bandRows();
 
   let n = 0, html = '';
   D.table.forEach(([gk, rows]) => {
