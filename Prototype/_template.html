@@ -104,6 +104,25 @@ svg{display:block;width:100%;height:auto}
 .spn{flex:1;min-width:220px;font-size:11.5px;color:var(--t2);line-height:1.7;padding-left:13px;border-left:1px solid var(--line2)}
 .spn b{color:var(--txt)}
 
+/* 解锁时间线 */
+.tl{display:flex;gap:0;margin-top:16px;flex-wrap:wrap}
+.tli{flex:1;min-width:132px;position:relative;padding:0 4px}
+.tli .dot{width:11px;height:11px;border-radius:50%;border:2px solid var(--ink);margin:0 auto 9px;position:relative;z-index:2}
+.tli .bar{position:absolute;top:4px;left:50%;right:-50%;height:3px;z-index:1}
+.tli:last-child .bar{display:none}
+.tli.done .dot{background:var(--phos);box-shadow:0 0 9px var(--phosd)}
+.tli.done .bar{background:linear-gradient(90deg,var(--phos),var(--phosd))}
+.tli.now .dot{background:var(--amber);box-shadow:0 0 11px rgba(255,176,32,.6);animation:pulse 2s infinite}
+.tli.now .bar{background:linear-gradient(90deg,rgba(255,176,32,.6),rgba(255,255,255,.08))}
+.tli.todo .dot{background:var(--ink2);border-color:rgba(255,255,255,.16)}
+.tli.todo .bar{background:rgba(255,255,255,.07)}
+@keyframes pulse{50%{transform:scale(1.25)}}
+.tli .d{font-family:var(--mono);font-size:9.5px;text-align:center;margin-bottom:5px}
+.tli.done .d{color:var(--phos)} .tli.now .d{color:var(--amber)} .tli.todo .d{color:var(--t3)}
+.tli .n{font-size:11.5px;font-weight:600;text-align:center;line-height:1.4;margin-bottom:3px}
+.tli.todo .n{color:var(--t3)}
+.tli .w{font-size:9.5px;color:var(--t3);text-align:center;line-height:1.5;padding:0 4px}
+
 /* 温度刻度表 */
 .tg{margin:12px 0 10px}
 .tgbar{display:flex;height:10px;border-radius:5px;overflow:hidden;position:relative}
@@ -296,7 +315,16 @@ details[open] summary .a{transform:rotate(180deg)}
       </section>
     </div>
 
-    <!-- ⑦ 极客全量表 -->
+    <!-- ⑦ 数据收集进度：越用越值钱 -->
+    <section class="card" style="animation-delay:.37s">
+      <div class="tag"><span class="ti" data-ic="clock" data-ic-c="var(--violet)"></span><span data-i="p.unlock_title"></span></div>
+      <h2 class="t" style="font-size:15px" data-i="p.unlock_head"></h2>
+      <div class="lead" data-i="p.unlock_sub"></div>
+      <div class="tl" id="timeline"></div>
+      <div class="rdimp" style="margin-top:14px" data-i="p.unlock_note"></div>
+    </section>
+
+    <!-- ⑧ 极客全量表 -->
     <details open style="animation-delay:.40s">
       <summary><span data-i="p.geek"></span><span class="c" id="fieldCount"></span><span class="a">▼</span></summary>
       <div class="gkw">
@@ -585,6 +613,24 @@ function render() {
     : `<div class="eqi ${k}"><b>${a}</b><s>${b}</s><i>${c}</i></div>`).join('');
 
   if ($('#tBands')) $('#tBands').innerHTML = bandRows();
+
+  // 解锁时间线：门槛不是人为关卡，是数据真的还不够
+  const OBS = D.observedDays || 0;
+  const TL = [
+    [0,  'p.ul_0',  'p.ul_0d'],
+    [3,  'p.ul_3',  'p.ul_3d'],
+    [7,  'p.ul_7',  'p.ul_7d'],
+    [14, 'p.ul_14', 'p.ul_14d'],
+    [30, 'p.ul_30', 'p.ul_30d'],
+    [90, 'p.ul_90', 'p.ul_90d'],
+  ];
+  $('#timeline').innerHTML = TL.map(([d, n, w], i) => {
+    const nx = TL[i+1] ? TL[i+1][0] : 1e9;
+    const cls = OBS >= nx ? 'done' : (OBS >= d ? 'now' : 'todo');
+    const label = d === 0 ? T('p.ul_day0') : T('p.ul_dayn').replace('{n}', d);
+    return `<div class="tli ${cls}"><div class="bar"></div><div class="dot"></div>
+      <div class="d">${label}</div><div class="n">${T(n)}</div><div class="w">${T(w)}</div></div>`;
+  }).join('');
 
   let n = 0, html = '';
   D.table.forEach(([gk, rows]) => {
