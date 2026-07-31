@@ -75,6 +75,16 @@ for lc in LANGS:
 
 # 原型专属文案（app 里没有的叙事性内容）—— 只做 4 种主要语言，其余回落英文
 EXTRA = {
+"p.seg_now":      {"zh-Hans":"现在还有","en":"In there now","ja":"現在の残量","de":"Aktuell drin"},
+"p.seg_used":     {"zh-Hans":"已用掉","en":"Used","ja":"使用済み","de":"Verbraucht"},
+"p.seg_now_d":    {"zh-Hans":"此刻电池里真实剩下的电荷。充电会把它填回「能用的」上限，这部分是可逆的。",
+                   "en":"What is actually in the cells right now. Charging refills it up to the usable ceiling — this part is reversible.",
+                   "ja":"今この瞬間セルに残っている電荷。充電すれば使用可能上限まで戻る、可逆的な部分です。",
+                   "de":"Was gerade tatsächlich in den Zellen steckt. Laden füllt es bis zur nutzbaren Grenze wieder auf — dieser Teil ist reversibel."},
+"p.derive":       {"zh-Hans":"推导链：出厂 {d} → 电芯化学总容量 Qmax {q}（差额 = 已老化）→ 可用满充 FCC {f}（差额 = 取不出来）→ 当前剩余 {c}",
+                   "en":"Chain: design {d} → chemical total Qmax {q} (gap = ageing) → usable full charge FCC {f} (gap = unreachable) → currently {c}",
+                   "ja":"導出：設計 {d} → 化学総容量 Qmax {q}（差 = 劣化）→ 使用可能満充電 FCC {f}（差 = 取り出せない分）→ 現在 {c}",
+                   "de":"Kette: Design {d} → chemische Gesamtkapazität Qmax {q} (Differenz = Alterung) → nutzbare Ladung FCC {f} (Differenz = unerreichbar) → aktuell {c}"},
 "p.where_title":  {"zh-Hans":"你买的容量去哪了","en":"Where your capacity went","ja":"買った容量はどこへ","de":"Wo Ihre Kapazität blieb"},
 "p.where_head":   {"zh-Hans":"你买的 {a} mAh，实际能用 {b}","en":"You paid for {a} mAh — you can actually use {b}",
                    "ja":"購入時 {a} mAh のうち、実際に使えるのは {b}","de":"Bezahlt: {a} mAh — nutzbar: {b}"},
@@ -111,8 +121,6 @@ EXTRA = {
                    "ja":"なぜ残り20%から急に減るのか","de":"Warum die letzten 20 % so schnell weg sind"},
 "p.why_sub":      {"zh-Hans":"你的电池不是被「用完」的 —— 是电压塌了先关机","en":"Your battery is never “used up” — the voltage collapses first",
                    "ja":"バッテリーは「使い切る」のではなく、電圧が落ちて先に停止します","de":"Der Akku wird nie „leer“ – die Spannung bricht vorher ein"},
-"p.chain_title":  {"zh-Hans":"「还剩多少电」是怎么算出来的","en":"How “charge remaining” is derived",
-                   "ja":"「残量」はどう算出されるか","de":"Wie „verbleibende Ladung“ entsteht"},
 "p.decay_title":  {"zh-Hans":"电池是怎么变弱的","en":"How the battery gets weaker",
                    "ja":"バッテリーはどう弱るのか","de":"Wie der Akku schwächer wird"},
 "p.decay_lead":   {"zh-Hans":"不是「变弱」，是每次充放电都有一小撮锂离子被永久扣押",
