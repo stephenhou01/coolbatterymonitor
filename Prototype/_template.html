@@ -336,9 +336,13 @@ function drawDual(){
     g+=`<line x1="${ML}" y1="${yy}" x2="${W-MR}" y2="${yy}" stroke="rgba(91,255,199,.06)"/>
         <text x="${ML-7}" y="${yy+3.5}" fill="#4da3ff" font-size="9" font-family="IBM Plex Mono" text-anchor="end" opacity=".8">${(pHi-(pHi-pLo)*k/3).toFixed(1)}</text>
         <text x="${W-MR+7}" y="${yy+3.5}" fill="#5bffc7" font-size="9" font-family="IBM Plex Mono" opacity=".8">${Math.round(tHi-(tHi-tLo)*k/3)}</text>`;}
-  let lp='',lt='';
-  PW.forEach((v,i)=>lp+=(i?'L':'M')+x(i).toFixed(1)+' '+yP(v).toFixed(1));
-  TM.forEach((v,i)=>lt+=(i?'L':'M')+x(i).toFixed(1)+' '+yT(v).toFixed(1));
+  // 阶梯路径 —— 电量计约 30–60 秒才更新一次，值在两次更新之间是恒定的。
+  // 画成平滑折线会假装它连续变化，那是不诚实的。
+  const step=(arr,yf)=>{let d='';arr.forEach((v,i)=>{const xa=x(i),ya=yf(v);
+    if(!i){d+=`M${xa.toFixed(1)} ${ya.toFixed(1)}`;}
+    else{d+=`L${xa.toFixed(1)} ${yf(arr[i-1]).toFixed(1)}L${xa.toFixed(1)} ${ya.toFixed(1)}`;}});
+    return d;};
+  const lp=step(PW,yP), lt=step(TM,yT);
   g+=`<path d="${lp}L${x(PW.length-1)} ${MT+ih}L${ML} ${MT+ih}Z" fill="url(#pg)"/>
       <path d="${lt}" fill="none" stroke="#5bffc7" stroke-width="1.8" stroke-dasharray="5 3" opacity=".85"/>
       <path d="${lp}" fill="none" stroke="#4da3ff" stroke-width="2.2" stroke-linejoin="round"/>
