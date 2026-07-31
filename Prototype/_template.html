@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
-  --ink:#050708;--ink2:#0a0e11;--surf:#0d1215;--line:rgba(91,255,199,.10);--line2:rgba(91,255,199,.22);
+  --ink:#070a0c;--ink2:#10161a;--surf:#161e23;--line:rgba(91,255,199,.10);--line2:rgba(91,255,199,.22);
   --phos:#5bffc7;--phosd:rgba(91,255,199,.45);--amber:#ffb020;--red:#ff5c5c;--violet:#a98bff;--blue:#4da3ff;
   --txt:#e6f2ee;--t2:#93a5a1;--t3:#5d6f6b;
   --mono:'IBM Plex Mono',ui-monospace,monospace;--disp:'Chakra Petch','PingFang SC',sans-serif;
@@ -41,13 +41,12 @@ select{font-family:var(--mono);font-size:10px;background:var(--surf);color:var(-
   border-radius:2px;padding:4px 8px;cursor:pointer;outline:none}
 
 /* 卡片 */
-.card{background:linear-gradient(170deg,var(--surf),var(--ink2));border:1px solid var(--line2);border-radius:3px;padding:19px 21px;position:relative;
+.card{background:linear-gradient(170deg,var(--surf),var(--ink2));border:1px solid rgba(255,255,255,.055);border-radius:16px;padding:21px 23px;position:relative;box-shadow:0 6px 22px rgba(0,0,0,.28);
   opacity:0;transform:translateY(14px);animation:rise .6s cubic-bezier(.2,.7,.3,1) forwards}
 @keyframes rise{to{opacity:1;transform:none}}
-.card::before{content:'';position:absolute;top:-1px;left:-1px;width:15px;height:15px;border-top:1px solid var(--phos);border-left:1px solid var(--phos);opacity:.45;transition:opacity .2s}
-.card:hover{border-color:rgba(91,255,199,.34)}.card:hover::before{opacity:1}
-.tag{font-family:var(--mono);font-size:9px;letter-spacing:.19em;text-transform:uppercase;color:var(--t3);display:flex;align-items:center;gap:8px;margin-bottom:15px}
-.tag::before{content:'';width:13px;height:1px;background:var(--phos);opacity:.7}
+.card:hover{border-color:rgba(91,255,199,.22);box-shadow:0 8px 30px rgba(0,0,0,.36)}
+.tag{font-size:12.5px;font-weight:600;color:var(--txt);display:flex;align-items:center;gap:8px;margin-bottom:15px;font-family:var(--han)}
+.tag svg{opacity:.95}
 .stack{display:flex;flex-direction:column;gap:15px}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:15px}
 .g3{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}
@@ -68,14 +67,16 @@ h2.t em{color:var(--amber);font-style:normal}
 .bigt s{font-size:15px;color:var(--t2);text-decoration:none;margin-right:9px}
 .srcn{font-family:var(--mono);font-size:9.5px;color:var(--t3);padding-left:9px;border-left:1px solid var(--line2);line-height:1.6;margin-top:9px}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:15px}
-.sc{padding:10px 11px;border:1px solid var(--line);border-radius:2px;background:rgba(255,255,255,.015)}
-.sc .l{font-family:var(--mono);font-size:8.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--t3)}
-.sc .v{font-family:var(--mono);font-size:19px;color:var(--txt);margin-top:4px;line-height:1}
+.sc{padding:12px 13px;border:1px solid rgba(255,255,255,.05);border-radius:12px;background:rgba(255,255,255,.022);transition:.18s}
+.sc:hover{background:rgba(255,255,255,.045);transform:translateY(-1px)}
+.sc .l{display:flex;align-items:center;gap:6px;font-size:10.5px;color:var(--t3);font-family:var(--han)}
+.sc .sub{font-size:9.5px;margin-top:5px;opacity:.9}
+.sc .v{font-family:var(--mono);font-size:22px;color:var(--txt);margin-top:7px;line-height:1}
 .sc .v small{font-size:10px;color:var(--t2)}
 
 /* 图表 */
 svg{display:block;width:100%;height:auto}
-.scope{position:relative;margin-top:11px;border:1px solid var(--line2);border-radius:2px;
+.scope{position:relative;margin-top:11px;border:1px solid rgba(255,255,255,.05);border-radius:13px;overflow:hidden;
   background:radial-gradient(ellipse at 30% 20%,rgba(91,255,199,.04),transparent 62%),var(--ink)}
 .legend{display:flex;gap:17px;margin-top:10px;flex-wrap:wrap;font-family:var(--mono);font-size:9px;color:var(--t3)}
 .legend span{display:flex;align-items:center;gap:5px}
@@ -123,7 +124,7 @@ svg{display:block;width:100%;height:auto}
 .bd.on .d{color:var(--t2)}
 
 /* 指标解读卡 */
-.rd{padding:15px 16px;border:1px solid var(--line);border-radius:3px;background:rgba(255,255,255,.014)}
+.rd{padding:16px 17px;border:1px solid rgba(255,255,255,.05);border-radius:13px;background:rgba(255,255,255,.014)}
 .rd .hd{display:flex;align-items:baseline;gap:9px;margin-bottom:11px}
 .rd .hd b{font-family:var(--mono);font-size:31px;line-height:1}
 .rd .hd s{font-size:12px;color:var(--t2);text-decoration:none}
@@ -141,7 +142,7 @@ svg{display:block;width:100%;height:auto}
 .rdimp b{color:var(--t2)}
 
 /* 容量去向条 */
-.whbar{display:flex;height:54px;border-radius:3px;overflow:hidden;margin-top:14px;border:1px solid var(--line2)}
+.whbar{display:flex;height:58px;border-radius:11px;overflow:hidden;margin-top:14px;border:1px solid var(--line2)}
 .whseg{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;position:relative;
   transition:flex-grow 1.1s cubic-bezier(.2,.7,.3,1);min-width:0;overflow:hidden}
 .whseg b{font-family:var(--mono);font-size:17px;line-height:1;white-space:nowrap}
@@ -161,7 +162,7 @@ svg{display:block;width:100%;height:auto}
 .whleg{display:flex;gap:20px;margin-top:9px;flex-wrap:wrap;font-size:11px;color:var(--t2)}
 .whleg span{display:flex;align-items:center;gap:6px}
 .whleg i{width:11px;height:11px;border-radius:2px;flex-shrink:0}
-.whc{padding:13px 14px;border:1px solid var(--line);border-radius:2px;background:rgba(255,255,255,.014)}
+.whc{padding:14px 15px;border:1px solid rgba(255,255,255,.05);border-radius:12px;background:rgba(255,255,255,.014)}
 .whc .n{font-family:var(--mono);font-size:21px;line-height:1}
 .whc .t2{font-size:11.5px;color:var(--txt);margin-top:6px;font-weight:500}
 .whderiv{margin-top:12px;padding:11px 13px;background:rgba(255,255,255,.02);border-radius:2px;
@@ -195,7 +196,7 @@ svg{display:block;width:100%;height:auto}
 .grp{font-family:var(--mono);font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--phos);opacity:.82;margin:15px 0 5px}
 .b-verified{color:rgba(45,220,120,.8)}.b-conditional{color:rgba(255,176,32,.85)}
 .b-questionable{color:rgba(255,92,92,.75)}.b-derived{color:rgba(169,139,255,.9)}
-details{border:1px solid var(--line2);border-radius:3px;background:var(--ink2)}
+details{border:1px solid rgba(255,255,255,.055);border-radius:14px;background:var(--ink2)}
 summary{padding:14px 19px;cursor:pointer;list-style:none;display:flex;align-items:center;gap:10px;font-family:var(--disp);font-size:14px;letter-spacing:.04em}
 summary::-webkit-details-marker{display:none}
 summary .c{font-family:var(--mono);font-size:9px;color:var(--t3);border:1px solid var(--line);padding:2px 7px;border-radius:2px}
@@ -226,7 +227,7 @@ details[open] summary .a{transform:rotate(180deg)}
   <div class="stack">
     <!-- ① 当前状态 -->
     <section class="card" style="animation-delay:.04s">
-      <div class="tag" data-i="p.remaining"></div>
+      <div class="tag"><span class="ti" data-ic="clock" data-ic-c="var(--phos)"></span><span data-i="p.remaining"></span></div>
       <div class="now">
         <div class="ring"><svg viewBox="0 0 200 200" id="ringSvg"></svg>
           <div class="mid"><div class="pc" id="socPc">—</div><div class="st" id="acSt"></div>
@@ -241,7 +242,7 @@ details[open] summary .a{transform:rotate(180deg)}
 
     <!-- ② 实时：功率 × 剩余时间 双线 -->
     <section class="card" style="animation-delay:.10s">
-      <div class="tag" data-i="rt.title"></div>
+      <div class="tag"><span class="ti" data-ic="wave" data-ic-c="var(--phos)"></span><span data-i="rt.title"></span></div>
       <h2 class="t" style="font-size:15px" data-i="p.dual_head"></h2>
       <div class="scope"><svg id="dual" viewBox="0 0 1000 230"></svg></div>
       <div class="legend" id="dualLeg"></div>
@@ -250,13 +251,13 @@ details[open] summary .a{transform:rotate(180deg)}
 
     <!-- ②b 指标解读：温度 / 功率 各自的参照系 -->
     <section class="card" style="animation-delay:.13s">
-      <div class="tag" data-i="p.read_title"></div>
+      <div class="tag"><span class="ti" data-ic="scale" data-ic-c="var(--violet)"></span><span data-i="p.read_title"></span></div>
       <div class="g2" id="readCards"></div>
     </section>
 
     <!-- ③ 你买的容量去哪了 -->
     <section class="card" style="animation-delay:.16s">
-      <div class="tag" data-i="p.where_title"></div>
+      <div class="tag"><span class="ti" data-ic="batt" data-ic-c="var(--amber)"></span><span data-i="p.where_title"></span></div>
       <h2 class="t" id="whereHead"></h2>
       <div class="whbar" id="whBar"></div>
       <div class="whleg" id="whLeg"></div>
@@ -276,14 +277,14 @@ details[open] summary .a{transform:rotate(180deg)}
     <div class="g2">
       <!-- ⑤ 怎么变弱 -->
       <section class="card" style="animation-delay:.28s">
-        <div class="tag" data-i="p.decay_title"></div>
+        <div class="tag"><span class="ti" data-ic="heart" data-ic-c="var(--red)"></span><span data-i="p.decay_title"></span></div>
         <h2 class="t" style="font-size:15px;margin-bottom:12px" data-i="p.decay_lead"></h2>
         <div class="eq" id="eq"></div>
         <div class="tk" style="font-size:11.5px" data-i="p.nonlinear"></div>
       </section>
       <!-- ⑥ 趋势 -->
       <section class="card" style="animation-delay:.34s">
-        <div class="tag" data-i="p.trend_title"></div>
+        <div class="tag"><span class="ti" data-ic="wave" data-ic-c="var(--amber)"></span><span data-i="p.trend_title"></span></div>
         <div style="display:flex;align-items:baseline;gap:8px;font-family:var(--mono)">
           <span style="font-size:29px;color:var(--t3)">5.3<small style="font-size:13px">h</small></span>
           <span style="color:var(--amber)">→</span>
@@ -313,6 +314,24 @@ details[open] summary .a{transform:rotate(180deg)}
 
 <script>
 /*__DATA__*/
+
+
+/* 线性图标，与 SF Symbols 同调；用 currentColor 便于染色 */
+const IC = {
+  bolt:'<path d="M8.5 1 3 8.2h3.4L5.5 14 11 6.8H7.6L8.5 1z"/>',
+  thermo:'<path d="M6 9.3V3a1.5 1.5 0 1 1 3 0v6.3a3 3 0 1 1-3 0z" fill="none" stroke="currentColor" stroke-width="1.3"/>',
+  cycle:'<path d="M13 7.5A5.5 5.5 0 1 1 11 3.2M11 1v2.4H8.6" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>',
+  heart:'<path d="M7.5 13S2 9.6 2 5.9A2.9 2.9 0 0 1 7.5 4.4 2.9 2.9 0 0 1 13 5.9c0 3.7-5.5 7.1-5.5 7.1z" fill="none" stroke="currentColor" stroke-width="1.3"/>',
+  wave:'<path d="M1 8h2.2l1.6-5 2.4 10 2-7.5L11 8h3" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>',
+  clock:'<circle cx="7.5" cy="7.5" r="5.8" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M7.5 4.2v3.6l2.4 1.4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>',
+  volt:'<circle cx="7.5" cy="7.5" r="5.8" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M8 4 5.6 8h2.2L7.2 11 9.8 7H7.6L8 4z"/>',
+  amp:'<path d="M4.5 2v11M4.5 13 2.4 10.6M4.5 13l2.1-2.4M10.5 13V2M10.5 2 8.4 4.4M10.5 2l2.1 2.4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>',
+  chip:'<rect x="4" y="4" width="7" height="7" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M6 1.4v2.2M9 1.4v2.2M6 11.4v2.2M9 11.4v2.2M1.4 6h2.2M1.4 9h2.2M11.4 6h2.2M11.4 9h2.2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>',
+  batt:'<rect x="1.2" y="4.4" width="10.6" height="6.2" rx="1.6" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M13.4 6.6v1.8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+  scale:'<path d="M7.5 2v11M3 5.5h9M4.2 5.5 2.2 9.6h4zM10.8 5.5 8.8 9.6h4z" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>',
+  shield:'<path d="M7.5 1.6 12.6 3.6v4c0 3.2-2.2 5.2-5.1 6.2-2.9-1-5.1-3-5.1-6.2v-4L7.5 1.6z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>',
+};
+const icon=(k,c='currentColor',sz=15)=>`<svg viewBox="0 0 15 15" width="${sz}" height="${sz}" fill="${c}" style="color:${c};flex-shrink:0;vertical-align:-2px">${IC[k]||''}</svg>`;
 
 let LC = 'zh-Hans';
 const T = k => (D.i18n[LC] && D.i18n[LC][k]) || (D.i18n.en[k]) || k;
@@ -385,7 +404,7 @@ function drawDual(){
   const yP=v=>MT+ih-(v-pLo)/(pHi-pLo)*ih;
   const yT=v=>MT+ih-(v-tLo)/(tHi-tLo)*ih;
   let g=`<defs><linearGradient id="pg" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0" stop-color="#4da3ff" stop-opacity=".26"/><stop offset="1" stop-color="#4da3ff" stop-opacity="0"/></linearGradient></defs>`;
+    <stop offset="0" stop-color="#4da3ff" stop-opacity=".38"/><stop offset="1" stop-color="#4da3ff" stop-opacity="0"/></linearGradient></defs>`;
   for(let k=0;k<=3;k++){const yy=MT+ih*k/3;
     g+=`<line x1="${ML}" y1="${yy}" x2="${W-MR}" y2="${yy}" stroke="rgba(91,255,199,.06)"/>
         <text x="${ML-7}" y="${yy+3.5}" fill="#4da3ff" font-size="9" font-family="IBM Plex Mono" text-anchor="end" opacity=".8">${(pHi-(pHi-pLo)*k/3).toFixed(1)}</text>
@@ -399,7 +418,7 @@ function drawDual(){
   const lp=step(PW,yP), lt=step(TM,yT);
   g+=`<path d="${lp}L${x(PW.length-1)} ${MT+ih}L${ML} ${MT+ih}Z" fill="url(#pg)"/>
       <path d="${lt}" fill="none" stroke="#5bffc7" stroke-width="1.8" stroke-dasharray="5 3" opacity=".85"/>
-      <path d="${lp}" fill="none" stroke="#4da3ff" stroke-width="2.2" stroke-linejoin="round"/>
+      <path d="${lp}" fill="none" stroke="#4da3ff" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
       <circle cx="${x(PW.length-1)}" cy="${yP(PW[PW.length-1])}" r="3.5" fill="#4da3ff"><animate attributeName="r" values="3.5;6;3.5" dur="2s" repeatCount="indefinite"/></circle>
       <circle cx="${x(TM.length-1)}" cy="${yT(TM[TM.length-1])}" r="3" fill="#5bffc7"/>
       <text x="${ML}" y="${MT-3}" fill="#4da3ff" font-size="9" font-family="IBM Plex Mono">W</text>
@@ -458,6 +477,7 @@ function drawTrend() {
 /* ── 随语言重绘的文本 ── */
 function render() {
   document.querySelectorAll('[data-i]').forEach(e => e.textContent = T(e.dataset.i));
+  document.querySelectorAll('[data-ic]').forEach(e => e.innerHTML = icon(e.dataset.ic, e.dataset.icC, 15));
   $('#plateSub').textContent = `${D.model} · ${D.i18n[LC]._name} · bq40z651`;
   $('#socPc').textContent = D.socUI + '%';
   $('#acSt').textContent = T(D.onAC ? 'gauge.ac' : 'gauge.battery');
@@ -467,11 +487,14 @@ function render() {
   $('#srcNote').textContent = `AvgTimeToEmpty = ${D.ate} min · ${T('p.src_note')}`;
 
   $('#statGrid').innerHTML = [
-    [T('stat.health'), D.healthSys.toFixed(0), '%'],
-    [T('stat.cycles'), D.cyc, `/ ${D.dcyc}`],
-    [T('stat.temperature'), D.temp, '°C'],
-    [T('rt.power'), D.watts.toFixed(1), 'W'],
-  ].map(([l, v, u]) => `<div class="sc"><div class="l">${l}</div><div class="v">${v}<small> ${u}</small></div></div>`).join('');
+    ['heart', 'var(--amber)', T('stat.health'), D.healthSys.toFixed(0), '%', T('p.hp_ok').slice(0,10)],
+    ['cycle', 'var(--violet)', T('stat.cycles'), D.cyc, `/ ${D.dcyc}`, `${(D.cyc/D.dcyc*100).toFixed(0)}%`],
+    ['thermo', D.temp < 35 ? 'var(--phos)' : 'var(--amber)', T('stat.temperature'), D.temp.toFixed(1), '°C', D.temp<35?T('p.t_ok'):T('p.t_warn')],
+    ['bolt', 'var(--blue)', T('rt.power'), D.watts.toFixed(1), 'W', `${(D.watts/D.avgW*100).toFixed(0)}% ${T('p.p_ratio')}`],
+  ].map(([ic, c, l, v, u, sub]) => `<div class="sc">
+      <div class="l">${icon(ic, c, 12)}<span>${l}</span></div>
+      <div class="v">${v}<small> ${u}</small></div>
+      <div class="sub" style="color:${c}">${sub}</div></div>`).join('');
 
   $('#dualLeg').innerHTML =
     `<span><i style="background:#4da3ff"></i>${T('rt.power')} (W)</span>

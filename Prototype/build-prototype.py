@@ -190,6 +190,82 @@ EXTRA = {
                    "en":"<b>Target 15–35 °C.</b> Rule of thumb (Arrhenius): every 10 °C rise roughly doubles the fade rate — a battery living at 35 °C ages about twice as fast as one at 25 °C. <b>Note:</b> Apple publishes no cell-temperature thresholds; these bands come from general lithium-ion literature, not vendor specs.",
                    "ja":"<b>推奨は 15〜35°C。</b>経験則（アレニウス）：10°C 上がるごとに劣化速度はおよそ倍 —— 常時 35°C の電池は 25°C の約 2 倍の速さで老化します。<b>注意：</b>Apple はセル温度のしきい値を公開していません。上記の区分は一般的なリチウムイオン文献に基づくもので、メーカー仕様ではありません。",
                    "de":"<b>Ziel 15–35 °C.</b> Faustregel (Arrhenius): je 10 °C mehr verdoppelt sich die Alterungsrate — ein Akku bei 35 °C altert etwa doppelt so schnell wie bei 25 °C. <b>Hinweis:</b> Apple nennt keine Zell-Temperaturgrenzen; diese Bänder stammen aus allgemeiner Lithium-Ionen-Literatur, nicht aus Herstellerangaben."},
+"p.spec_title":   {"zh-Hans":"指标解读 · 像看验血单一样","en":"Metric reference · read it like a blood panel",
+                   "ja":"指標の読み方 · 血液検査のように","de":"Werte lesen · wie ein Blutbild"},
+"p.spec_sub":     {"zh-Hans":"每项都给参考范围、当前落点、偏高偏低的具体后果 —— 并标注这个范围是从哪来的。",
+                   "en":"Each metric gets a reference range, where you sit, and what high or low actually does — plus where that range came from.",
+                   "ja":"各項目に参考範囲・現在地・高すぎ低すぎの具体的な影響を示し、その範囲の出典も明記します。",
+                   "de":"Jeder Wert bekommt einen Referenzbereich, Ihre Position darin und die konkreten Folgen von zu hoch oder zu niedrig — samt Quelle des Bereichs."},
+"p.range":        {"zh-Hans":"参考范围","en":"Reference range","ja":"参考範囲","de":"Referenzbereich"},
+"p.src_apple":    {"zh-Hans":"Apple 官方规格","en":"Apple's own spec","ja":"Apple 公式仕様","de":"Apple-Spezifikation"},
+"p.src_personal": {"zh-Hans":"你自己的历史数据","en":"Your own history","ja":"あなた自身の履歴","de":"Ihre eigene Historie"},
+"p.src_lit":      {"zh-Hans":"锂电通用文献（非厂商规格）","en":"General Li-ion literature (not vendor spec)",
+                   "ja":"リチウムイオン一般文献（メーカー仕様ではない）","de":"Allgemeine Li-Ionen-Literatur (keine Herstellerangabe)"},
+"p.src_none":     {"zh-Hans":"⚠️ 无权威范围，此处为保守取值，真正可靠的是它的变化趋势",
+                   "en":"⚠️ No authoritative range exists; this is a conservative guess. What is reliable is its trend over time.",
+                   "ja":"⚠️ 権威ある基準値は存在しません。ここでは保守的に設定しており、信頼できるのは経時変化の傾向です。",
+                   "de":"⚠️ Es gibt keinen belastbaren Bereich; dies ist konservativ gewählt. Verlässlich ist nur der Trend über die Zeit."},
+"p.cb_ok":        {"zh-Hans":"电芯高度一致，没有哪一节在拖后腿","en":"Cells well matched — no single cell holding the pack back",
+                   "ja":"セルの揃いが良く、足を引っ張るセルはありません","de":"Zellen gut abgeglichen — keine bremst das Pack aus"},
+"p.cb_mid":       {"zh-Hans":"开始出现差异。串联时最弱那节决定整组容量，差距越大浪费越多",
+                   "en":"Drifting apart. In series the weakest cell caps the pack, so a wider spread wastes more",
+                   "ja":"ばらつきが出始めています。直列では最弱セルが容量を決めるため、差が広がるほど無駄になります",
+                   "de":"Sie driften auseinander. In Serie begrenzt die schwächste Zelle das Pack — größere Streuung bedeutet mehr Verlust"},
+"p.cb_bad":       {"zh-Hans":"明显失衡。可用容量被最弱那节严重拉低，通常预示某节电芯已劣化",
+                   "en":"Clearly unbalanced. Usable capacity is dragged down by the weakest cell — usually a sign one cell has degraded",
+                   "ja":"明確に不均衡です。最弱セルが容量を大きく引き下げており、通常はいずれかのセルの劣化を示します",
+                   "de":"Deutlich unausgeglichen. Die schwächste Zelle drückt die nutzbare Kapazität — meist ein Zeichen für eine degradierte Zelle"},
+"p.cb_cells":     {"zh-Hans":"各电芯电压","en":"Per-cell voltage","ja":"セル別電圧","de":"Spannung je Zelle"},
+"p.ra_ok":        {"zh-Hans":"供电能力良好，大负载时电压不会明显塌陷","en":"Good power delivery — voltage holds up under heavy load",
+                   "ja":"出力に余裕があり、高負荷でも電圧が落ちにくい状態です","de":"Gute Leistungsabgabe — die Spannung bricht unter Last nicht ein"},
+"p.ra_mid":       {"zh-Hans":"内阻上升。大负载时压降更大，可用容量会缩水，发热也更多",
+                   "en":"Resistance rising. Bigger voltage sag under load means less usable capacity and more heat",
+                   "ja":"抵抗が上昇。高負荷時の電圧降下が大きくなり、使える容量が減り発熱も増えます",
+                   "de":"Widerstand steigt. Größerer Spannungsabfall unter Last: weniger nutzbare Kapazität, mehr Wärme"},
+"p.ra_bad":       {"zh-Hans":"内阻偏高。高倍率放电时容易触发低压关机，且发热加剧老化，形成恶性循环",
+                   "en":"High resistance. Heavy draw can trigger low-voltage shutdowns, and the extra heat accelerates ageing — a feedback loop",
+                   "ja":"抵抗が高い状態。高負荷時に低電圧シャットダウンを招きやすく、発熱が劣化を加速させる悪循環になります",
+                   "de":"Hoher Widerstand. Starke Last kann Unterspannungs-Abschaltungen auslösen, und die Zusatzwärme beschleunigt die Alterung — ein Teufelskreis"},
+"p.ra_cells":     {"zh-Hans":"各电芯内阻","en":"Per-cell resistance","ja":"セル別抵抗","de":"Widerstand je Zelle"},
+"p.cy_ok":        {"zh-Hans":"用量充裕。按 Apple 额定 1000 次计，还远未到寿命节点",
+                   "en":"Plenty of headroom. Against Apple's 1000-cycle rating you are nowhere near the end",
+                   "ja":"余裕があります。Apple の定格 1000 サイクルに対し、寿命にはまだ遠い状態です",
+                   "de":"Viel Spielraum. Gemessen an Apples 1000-Zyklen-Angabe sind Sie weit vom Ende entfernt"},
+"p.cy_mid":       {"zh-Hans":"过半。容量衰减通常在这一段趋于平缓，但绝对值会持续下降",
+                   "en":"Past halfway. Capacity fade usually flattens here, though the absolute number keeps falling",
+                   "ja":"半分を超えました。容量低下はこの辺りで緩やかになりますが、絶対値は下がり続けます",
+                   "de":"Über der Hälfte. Der Kapazitätsverlust flacht hier meist ab, sinkt aber weiter"},
+"p.cy_bad":       {"zh-Hans":"接近额定寿命。此后容量衰减和内阻上升都会明显加快，建议开始规划更换",
+                   "en":"Near the rated end. Fade and resistance rise both accelerate from here — worth planning a replacement",
+                   "ja":"定格寿命に近づいています。以降は容量低下も抵抗上昇も加速するため、交換の計画を",
+                   "de":"Nahe der Nennlebensdauer. Ab hier beschleunigen sich Verlust und Widerstandsanstieg — Austausch einplanen"},
+"p.hp_ok":        {"zh-Hans":"容量健康。续航与出厂时差别不大","en":"Healthy. Runtime is close to what it was new",
+                   "ja":"健全です。新品時と大きく変わりません","de":"Gesund. Die Laufzeit entspricht fast dem Neuzustand"},
+"p.hp_mid":       {"zh-Hans":"已有衰减但仍在正常范围。续航缩短可感知，日常使用无碍",
+                   "en":"Some fade but still normal. Shorter runtime is noticeable yet everyday use is fine",
+                   "ja":"多少低下していますが正常範囲です。持続時間の短縮は体感できますが日常使用に支障はありません",
+                   "de":"Etwas Verlust, aber normal. Die kürzere Laufzeit ist spürbar, der Alltag bleibt unproblematisch"},
+"p.hp_bad":       {"zh-Hans":"低于 80% —— 这是 Apple 判定「需要更换」的门槛。系统可能提示服务",
+                   "en":"Below 80% — Apple's own threshold for “service recommended”. macOS may start prompting",
+                   "ja":"80% 未満 —— Apple が「修理サービス推奨」とする閾値です。システムが通知を出す場合があります",
+                   "de":"Unter 80 % — Apples eigene Schwelle für „Service empfohlen“. macOS meldet das ggf."},
+"p.pw_low":       {"zh-Hans":"低于你的日常水平，续航会比平时更久","en":"Below your normal — you will get more runtime than usual",
+                   "ja":"平常より低く、いつもより長く持ちます","de":"Unter Ihrem Normalwert — mehr Laufzeit als sonst"},
+"p.pw_mid":       {"zh-Hans":"与你的日常水平相当","en":"About your normal level","ja":"平常並みの水準です","de":"Etwa Ihr Normalniveau"},
+"p.pw_high":      {"zh-Hans":"高于日常。续航会明显短于你习惯的时长","en":"Above normal. Runtime will be noticeably shorter than you are used to",
+                   "ja":"平常より高く、慣れている持続時間より明らかに短くなります","de":"Über normal. Die Laufzeit wird spürbar kürzer als gewohnt"},
+"p.pw_max":       {"zh-Hans":"接近满载。持续这样电池撑不了多久，且发热会加速老化",
+                   "en":"Near full load. The battery will not last long like this, and the heat accelerates ageing",
+                   "ja":"ほぼフル負荷。この状態が続くと持続時間は短く、発熱が劣化を早めます",
+                   "de":"Nahe Volllast. So hält der Akku nicht lange, und die Wärme beschleunigt die Alterung"},
+"p.pv_ok":        {"zh-Hans":"在这块电池历史上出现过的正常区间内","en":"Within the range this pack has historically operated in",
+                   "ja":"このパックが過去に動作してきた範囲内です","de":"Im historisch üblichen Bereich dieses Packs"},
+"p.pv_low":       {"zh-Hans":"低于历史最低。接近截止电压，系统随时可能关机保护",
+                   "en":"Below the all-time low. Close to cutoff — the system may shut down to protect the cells",
+                   "ja":"過去最低を下回っています。遮断電圧に近く、保護のため停止する可能性があります",
+                   "de":"Unter dem historischen Tief. Nahe der Abschaltschwelle — das System kann zum Schutz herunterfahren"},
+"p.pv_high":      {"zh-Hans":"高于历史最高。通常只在满充瞬间出现","en":"Above the all-time high — normally only seen at the instant of full charge",
+                   "ja":"過去最高を上回っています。通常は満充電の瞬間にのみ現れます","de":"Über dem historischen Hoch — normalerweise nur im Moment der Vollladung"},
 "p.tagline":      {"zh-Hans":"电池监控中心","en":"Battery Monitor","ja":"バッテリーモニター","de":"Batterie-Monitor"},
 "p.remaining":    {"zh-Hans":"还能用多久","en":"Time remaining","ja":"あと何時間使えるか","de":"Verbleibende Zeit"},
 "p.src_note":     {"zh-Hans":"直接来自电量计芯片，不是我们估的","en":"Straight from the gauge chip — not our estimate",
@@ -227,6 +303,54 @@ EXTRA = {
 for lc in LANGS:
     for k, v in EXTRA.items():
         I18N[lc][k] = v.get(lc, v["en"])
+
+
+# ── 指标解读规格：像验血单一样，每项给参考范围 + 含义 + 偏高偏低后果 + 范围出处
+# src: apple=Apple 官方规格 | personal=你自己的历史 | lit=锂电通用文献 | none=无权威范围
+def spec(key, val, unit, lo, hi, smin, smax, bands, src, refs, fmt="%.1f"):
+    return dict(key=key, val=val, unit=unit, lo=lo, hi=hi, smin=smin, smax=smax,
+                bands=bands, src=src, refs=refs, fmt=fmt)
+
+cellDelta = max(CELLS)-min(CELLS)
+maxRa = max(BD['WeightedRa'])
+cycUse = cyc/dcyc*100
+peakW = abs(LT['MaximumDischargeCurrent'])*volt/1000
+
+SPECS = [
+ spec("stat.temperature", round(temp,1), "°C", 15, 35, -20, 60,
+      [(-20,0,"p.tb_freeze","bad"),(0,15,"p.tb_cold","cold"),(15,35,"p.tb_ideal","ok"),
+       (35,45,"p.tb_warm","warn"),(45,60,"p.tb_hot","bad")], "lit",
+      [("p.t_lifeavg", LT['AverageTemperature']/10, "°C"),
+       ("p.t_histband", f"{LT['MinimumTemperature']}–{LT['MaximumTemperature']}", "°C")]),
+
+ spec("insight.factor.balance", cellDelta, "mV", 0, 20, 0, 100,
+      [(0,20,"p.cb_ok","ok"),(20,50,"p.cb_mid","warn"),(50,100,"p.cb_bad","bad")], "lit",
+      [("p.cb_cells", " / ".join(map(str,CELLS)), "mV")], fmt="%.0f"),
+
+ spec("insight.factor.resistance", maxRa, "mΩ", 0, 130, 0, 400,
+      [(0,130,"p.ra_ok","ok"),(130,200,"p.ra_mid","warn"),(200,400,"p.ra_bad","bad")], "none",
+      [("p.ra_cells", " / ".join(map(str,BD['WeightedRa'])), "mΩ")], fmt="%.0f"),
+
+ spec("insight.factor.cycles", round(cycUse,1), "%", 0, 50, 0, 100,
+      [(0,50,"p.cy_ok","ok"),(50,80,"p.cy_mid","warn"),(80,100,"p.cy_bad","bad")], "apple",
+      [("hw.m.cycles", f"{cyc} / {dcyc}", "")]),
+
+ spec("insight.factor.capacity", round(health_sys,1), "%", 80, 100, 50, 100,
+      [(50,80,"p.hp_bad","bad"),(80,90,"p.hp_mid","warn"),(90,100,"p.hp_ok","ok")], "apple",
+      [("hw.m.raw_max", f"{fcc} / {design}", "mAh")]),
+
+ spec("rt.power", round(watts,1), "W", 0, round(avg_w*1.3,1), 0, 45,
+      [(0,round(avg_w*.85,1),"p.pw_low","ok"),(round(avg_w*.85,1),round(avg_w*1.3,1),"p.pw_mid","ok"),
+       (round(avg_w*1.3,1),25,"p.pw_high","warn"),(25,45,"p.pw_max","bad")], "personal",
+      [("p.p_base", round(avg_w,1), "W"), ("p.p_peak", round(peakW), "W")]),
+
+ spec("hw.m.pack_voltage", round(volt,2), "V", LT['MinimumPackVoltage']/1000, LT['MaximumPackVoltage']/1000,
+      LT['MinimumPackVoltage']/1000-0.5, LT['MaximumPackVoltage']/1000+0.5,
+      [(LT['MinimumPackVoltage']/1000-0.5, LT['MinimumPackVoltage']/1000,"p.pv_low","bad"),
+       (LT['MinimumPackVoltage']/1000, LT['MaximumPackVoltage']/1000,"p.pv_ok","ok"),
+       (LT['MaximumPackVoltage']/1000, LT['MaximumPackVoltage']/1000+0.5,"p.pv_high","warn")], "personal",
+      [("p.t_histband", f"{LT['MinimumPackVoltage']/1000:.2f}–{LT['MaximumPackVoltage']/1000:.2f}", "V")], fmt="%.2f"),
+]
 
 # ── 硬件表（结构与 app 的 HardwareDetailView.build 对齐）────────
 def row(k, v, u, mk, rel="verified", nk=None):
@@ -305,7 +429,7 @@ DATA = dict(ra=RA, cells=CELLS, qmax=QMAX, design=design, fcc=fcc, cur=cur, rese
             peakW=round(abs(LT['MaximumDischargeCurrent'])*volt/1000), wh=round(fcc*volt/1000,1), tempAvg=round(LT['AverageTemperature']/10,1),
             tempMax=LT['MaximumTemperature'], tempMin=LT['MinimumTemperature'],
             model=subprocess.run(['sysctl','-n','hw.model'],capture_output=True,text=True).stdout.strip(),
-            table=TABLE, i18n=I18N, langs=LANGS)
+            specs=SPECS, table=TABLE, i18n=I18N, langs=LANGS)
 
 tpl = open(f"{ROOT}/Prototype/_template.html", encoding='utf-8').read()
 out = tpl.replace("/*__DATA__*/", "const D = " + json.dumps(DATA, ensure_ascii=False) + ";")
