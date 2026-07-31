@@ -57,6 +57,7 @@ struct ContentView: View {
 
                             ProcessListView(
                                 processes: processService.topProcesses,
+                                hasSampled: processService.hasSampled,
                                 onRefresh: { processService.fetchProcesses() }
                             )
                         }
@@ -71,6 +72,7 @@ struct ContentView: View {
                             ChargingHabitCard(habit: insight.habit)
                             AccessoryCard(accessory: insight.accessory)
                         }
+                        .fixedSize(horizontal: false, vertical: true)
                         .modifier(AppTheme.reveal(0.12))
 
                         PowerAnalysisCard(analysis: insight.power)

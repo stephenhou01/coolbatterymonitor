@@ -62,17 +62,28 @@ final class L10n {
 
     // MARK: - Lookup
 
-    func string(_ key: String) -> String {
+    /// 语言包里的原文，`%%` 未还原。只给 format(_:_:) 用。
+    private func raw(_ key: String) -> String {
         let code = effectiveCode    // ← 依赖就在这一行建立
         return packs[code]?.strings[key]
             ?? packs[Self.fallback]?.strings[key]
             ?? key
     }
 
-    /// 带参版本。必须传 locale：不传等价 POSIX，`%.1f` 永远输出 12.5，而
-    /// fr/de/es/pt/it 的小数分隔符是逗号，应为 12,5。
+    /// 直接展示用。把 `%%` 还原成 `%` —— 语言包里的字面百分号统一写成 `%%`
+    /// （否则散文里的裸 `%` 会被格式符校验器当成说明符：`"100% overnight"` 的
+    /// `%` 后面跟空格再跟 `o`，`o` 是八进制说明符，签名算出 ['o']，而中文
+    /// 「80% 左右」后面是汉字签名为空 —— 签名不一致会导致该 key 被丢弃回落英文）。
+    /// 这条路径不走 String(format:)，所以必须自己还原。
+    func string(_ key: String) -> String {
+        raw(key).replacingOccurrences(of: "%%", with: "%")
+    }
+
+    /// 带参版本。用 raw() 而非 string()：`%%` 要留给 String(format:) 自己还原。
+    /// 必须传 locale：不传等价 POSIX，`%.1f` 永远输出 12.5，而 fr/de/es/pt/it
+    /// 的小数分隔符是逗号，应为 12,5。
     func format(_ key: String, _ args: [CVarArg]) -> String {
-        String(format: string(key), locale: Locale(identifier: effectiveCode), arguments: args)
+        String(format: raw(key), locale: Locale(identifier: effectiveCode), arguments: args)
     }
 
     /// 只从 Menu/Button 的 action 调用 —— 绝不在 body 求值期间调用。

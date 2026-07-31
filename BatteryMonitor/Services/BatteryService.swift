@@ -36,6 +36,8 @@ class BatteryService: ObservableObject {
     /// 自记录的每日 SOC / 温度 / 满充存放快照。习惯评分、周报、循环速率都靠它。
     private var socHistory = SOCHistory()
     private var lastInsightRefresh: Date?
+    /// 上次算 insight 时的语言，用来在切换语言后立即重算
+    private var lastInsightLanguage: String?
     /// 硬件参数变化慢，洞察不需要每 3 秒重算
     private let insightRefreshInterval: TimeInterval = 30
 
@@ -192,10 +194,20 @@ class BatteryService: ObservableObject {
 
     /// 洞察是纯计算，但没必要每 3 秒跑一遍 —— 硬件参数变化慢。
     /// 进程列表变化快，所以 ProcessMonitorService 刷新时会单独触发一次。
+    ///
+    /// 语言变化也必须立即重算：InsightEngine 里的 headline / 各项 detail / note 是
+    /// 在 body 之外算好存进结构体的本地化字符串，Observation 追踪不到它们。若不在
+    /// 这里比对语言，切换语言后这些句子会残留旧语言直到下次 30 秒周期 —— 实测出现过
+    /// 日语界面里夹一句中文诊断。
+    /// （更彻底的做法是让 model 只存 key+参数、由 View 求值，但那要改 6 个字段和
+    ///   所有构造点；这里比对语言能把不一致窗口压到 0，代价小得多。）
     private func refreshInsightIfNeeded(_ data: BatteryData, force: Bool = false) {
-        if !force, let last = lastInsightRefresh,
+        let lang = L10n.shared.effectiveCode
+        let languageChanged = lang != lastInsightLanguage
+        if !force, !languageChanged, let last = lastInsightRefresh,
            Date().timeIntervalSince(last) < insightRefreshInterval { return }
         lastInsightRefresh = Date()
+        lastInsightLanguage = lang
         insight = InsightEngine.analyze(data: data,
                                         history: chargingHistory,
                                         processes: latestProcesses,

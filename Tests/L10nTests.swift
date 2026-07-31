@@ -30,6 +30,26 @@ expect(l.format("status.charging", [17.25, 65]).contains("17,2"), "德语逗号�
 l.select("en")
 expect(l.format("status.charging", [17.25, 65]).contains("17.2"), "英语点号小数: \(l.format("status.charging", [17.25, 65]))")
 
+print("── 3b) %% 转义与散文里的百分号")
+l.select("zh-Hans")
+let tip = l.string("insight.habit.tip_avoid_overnight")
+expect(!tip.contains("%%"), "单参 L() 把 %% 还原成 % [\(tip.suffix(24))]")
+expect(tip.contains("80%"), "还原后是单个百分号")
+expect(!tip.hasPrefix("You often"), "中文包该 key 未被格式符校验器误丢弃回落英文")
+for code in ["en","zh-Hans","ja","de","fr"] {
+    l.select(code)
+    let all = ["insight.habit.tip_avoid_overnight","insight.habit.tip_full_cycle",
+               "insight.habit.tip_optimized_charging","tip.health","tip.cycles",
+               "hist.rate_chart","rt.y_percent","proc.cpu_live"]
+    expect(all.allSatisfy { !l.string($0).contains("%%") },
+           "\(code): 所有含百分号的展示文案都无 %% 残留")
+}
+// 带参路径仍须正常：%% 交给 String(format:) 还原，且实参不被吃掉
+l.select("zh-Hans")
+let d1 = l.format("insight.habit.depth_detail", [22, 92])
+expect(d1.contains("22") && d1.contains("92") && !d1.contains("%%"),
+       "带参 key 的 %% 由 String(format:) 还原且实参正确 [\(d1)]")
+
 print("── 4) 选择不存在的语言 → 回落跟随系统")
 l.select("xx-NOPE")
 expect(l.isFollowingSystem, "select(不存在的 code) 后 isFollowingSystem == true")

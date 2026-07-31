@@ -81,17 +81,21 @@ struct RealtimeMonitorView: View {
                         .help(L(selectedMetric.tooltipKey))
                 }
                 Spacer()
-
-                // Metric selector
-                Picker("", selection: $selectedMetric) {
-                    ForEach(MetricType.allCases, id: \.self) { metric in
-                        Text(metric.displayName).tag(metric)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .fixedSize()
-                .layoutPriority(1)
             }
+
+            // Metric selector 独占一行。
+            //
+            // 原来它和标题挤在同一行，两者都 fixedSize 不能压缩：实测法语头部需求
+            // 542pt / 意大利语 558pt，而右栏只有 552pt —— 余量只有几个 pt，任何字体
+            // 度量误差都会让整块内容超出窗口，ScrollView 居中后两侧被裁，左边留白
+            // 直接消失。独占一行后最宽的语言（法语 346pt）也有充裕余量。
+            Picker("", selection: $selectedMetric) {
+                ForEach(MetricType.allCases, id: \.self) { metric in
+                    Text(metric.displayName).tag(metric)
+                }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
 
             // Time range selector
             HStack(spacing: 8) {

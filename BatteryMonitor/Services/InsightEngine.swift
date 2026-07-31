@@ -13,7 +13,7 @@ import Foundation
 //      改为并列两个真事实：当前总功耗（真实读数）+ 谁占 CPU 最多。
 //   3. 不显示适配器效率 —— 见 BatteryHardwareDetail.adapterEfficiency 注释。
 
-enum FactorStatus: Equatable { case pass, warn, fail }
+enum FactorStatus: Equatable { case pass, warn, fail, neutral }
 
 enum HealthLevel: Equatable {
     case excellent, good, fair, poor, critical
@@ -156,6 +156,8 @@ enum InsightEngine {
     // MARK: 可调参数
     /// 认为电池该退役的容量保持率阈值（%）
     static let retirementHealthThreshold: Double = 80
+    /// 磨合期循环数。低于此值时容量衰减斜率不可靠（前期陡降），不用它下修剩余寿命。
+    static let runInCycles = 300
     /// 给出年份预估前需要观测的天数
     static let observationDaysNeeded = 14
     /// 生成充电习惯评分需要的天数
@@ -308,21 +310,32 @@ enum InsightEngine {
         }
     }
 
-    /// 剩余寿命。剩余循环数由容量衰减速率推出（真实可推）；年份只有在
-    /// 观测到用户自己的循环速率后才给 —— 否则就是拿行业均值当事实。
+    /// 剩余寿命。
+    ///
+    /// **以额定循环寿命为基准**（Apple 标称 1000 次，`DesignCycleCount9C` 直接读得到），
+    /// 而不是拿当前容量做线性外推。原因：锂电池容量衰减是前期快、之后趋平的，
+    /// 用早期斜率线性外推会严重高估衰减速度 —— 实测这块 210 循环 / 88.7% 的电池，
+    /// 线性外推只剩 162 次循环（约 5 个月），却和「状态良好」的结论直接打脸。
+    /// 额定基准给出 790 次（约 2 年），既有出处又自洽。
+    ///
+    /// 容量外推仅用作**下修**：只有当它比额定基准更保守且电池已过磨合期
+    /// （循环数足够多，斜率才有意义）时才采用，避免新电池被前期陡降误判。
     static func remainingLife(data: BatteryData, d: BatteryHardwareDetail,
                               health: Double, socLog: SOCHistory) -> RemainingLife {
         var remainingCycles: Int?
-        // 每循环损耗 = 已损耗 / 已用循环，据此外推到退役阈值
-        if data.cycleCount > 0, health > retirementHealthThreshold {
+
+        // 基准：额定循环寿命剩余
+        if d.designCycleCount > 0 {
+            remainingCycles = max(0, d.designCycleCount - data.cycleCount)
+        }
+
+        // 下修：过了磨合期后，若容量衰减明显更快则采纳更保守的数
+        if data.cycleCount >= runInCycles, health > retirementHealthThreshold {
             let lossPerCycle = (100.0 - health) / Double(data.cycleCount)
             if lossPerCycle > 0.0001 {
-                remainingCycles = max(0, Int((health - retirementHealthThreshold) / lossPerCycle))
+                let byCapacity = max(0, Int((health - retirementHealthThreshold) / lossPerCycle))
+                remainingCycles = remainingCycles.map { min($0, byCapacity) } ?? byCapacity
             }
-        }
-        // 设计循环寿命是硬上限
-        if let rc = remainingCycles, d.designCycleCount > 0 {
-            remainingCycles = min(rc, max(0, d.designCycleCount - data.cycleCount))
         }
 
         var months: Int?
@@ -386,13 +399,15 @@ enum InsightEngine {
             if t > 38 { suggestions.append(L("insight.habit.tip_temp", Int(t.rounded()))) }
         }
 
-        // 浅充频率（浅充是好习惯）
+        // 浅充频率（浅充是好习惯）。0 次不算问题，只是没这个加分项 ——
+        // 状态与文案必须一致，不能一边显示黄色警告一边写「习惯良好」。
         let shallow = history.filter { $0.durationMinutes < 40 }.count
         if !history.isEmpty {
             items.append(BehaviorItem(
                 labelKey: "insight.habit.shallow",
-                status: shallow > 0 ? .pass : .warn,
-                detail: L("insight.habit.shallow_detail", shallow)))
+                status: shallow > 0 ? .pass : .neutral,
+                detail: shallow > 0 ? L("insight.habit.shallow_detail", shallow)
+                                    : L("insight.habit.shallow_none")))
         }
 
         score = max(0, min(100, score))
@@ -457,7 +472,9 @@ enum InsightEngine {
         // 「刚插上还没开始充」时都会出现，是正常状态；NotChargingReason 是无文档的
         // bitmask，推不出可靠结论。宁可少一项，也不给用户一个瞎猜的红叉。
 
-        let type = d.adapterDescription.isEmpty ? L("insight.accessory.usbc") : d.adapterDescription
+        // adapterDescription 是 IOKit 原始字符串（实测 "pd charger"），小写英文且不
+        // 本地化，直接显示很生硬。映射到已知类型，认不出来才回落原值。
+        let type = localizedAdapterType(d.adapterDescription, hasPD: !d.usbHvcMenu.isEmpty)
         return AccessoryDiagnosis(
             isConnected: true,
             summary: watts > 0 ? L("insight.accessory.summary", watts, type) : type,
@@ -467,6 +484,14 @@ enum InsightEngine {
                 : "",
             checks: checks,
             suggestion: suggestion)
+    }
+
+    /// 把 IOKit 的原始描述映射成本地化的充电器类型名。
+    static func localizedAdapterType(_ raw: String, hasPD: Bool) -> String {
+        let s = raw.lowercased()
+        if s.contains("magsafe") { return L("insight.accessory.magsafe") }
+        if s.contains("pd") || hasPD { return L("insight.accessory.pd") }
+        return raw.isEmpty ? L("insight.accessory.usbc") : raw
     }
 
     // MARK: - 耗电分析

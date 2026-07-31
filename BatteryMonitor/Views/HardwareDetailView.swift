@@ -110,7 +110,7 @@ struct HardwareDetailView: View {
         HStack(spacing: 8) {
             Text(L("hw.field")).frame(width: 190, alignment: .leading)
             Text(L("hw.value")).frame(width: 130, alignment: .leading)
-            Text("Unit").frame(width: 56, alignment: .leading)
+            Text(L("hw.unit")).frame(width: 56, alignment: .leading)
             Text(L("hw.meaning"))
             Spacer(minLength: 0)
         }
@@ -145,100 +145,97 @@ struct HardwareDetailView: View {
 
         // 电芯
         let cells = rows([
-            arr("CellVoltage", d.cellVoltages, "mV", cellsMeaning(d)),
-            d.cellVoltageDelta.flatMap { int("CellVoltage.delta", $0, "mV", L("insight.factor.balance")) },
-            arr("WeightedRa", d.weightedRa, "mΩ", L("insight.factor.resistance")),
-            arr("Qmax", d.qmax, "mAh", L("hw.group.capacity")),
-            arr("PresentDOD", d.presentDOD, "%", "depth of discharge"),
+            arr("CellVoltage", d.cellVoltages, "mV", L("hw.m.cell_voltage", d.cellVoltages.count)),
+            d.cellVoltageDelta.flatMap { int("CellVoltage.delta", $0, "mV", L("hw.m.cell_delta")) },
+            arr("WeightedRa", d.weightedRa, "mΩ", L("hw.m.weighted_ra")),
+            arr("Qmax", d.qmax, "mAh", L("hw.m.qmax")),
+            arr("PresentDOD", d.presentDOD, "%", L("hw.m.dod")),
         ])
         if !cells.isEmpty { groups.append(.init(titleKey: "hw.group.cells", rows: cells)) }
 
         // 容量与寿命
         let cap = rows([
-            int("DesignCapacity", d.designCapacity, "mAh", "factory design capacity"),
-            int("AppleRawMaxCapacity", d.appleRawMaxCapacity, "mAh", "current full-charge capacity"),
-            int("AppleRawCurrentCapacity", d.appleRawCurrentCapacity, "mAh", "charge available now"),
-            int("NominalChargeCapacity", d.nominalChargeCapacity, "mAh", "nominal capacity"),
-            int("PackReserve", d.packReserve, "mAh", "reserved capacity"),
-            int("CycleCount", d.cycleCount, "", "charge cycles used"),
-            int("DesignCycleCount9C", d.designCycleCount, "", "rated cycle life"),
-            d.rawHealthPercent.flatMap { dbl("→ health", $0, "%.1f", "%", L("insight.factor.capacity")) },
+            int("DesignCapacity", d.designCapacity, "mAh", L("hw.m.design_capacity")),
+            int("AppleRawMaxCapacity", d.appleRawMaxCapacity, "mAh", L("hw.m.raw_max")),
+            int("AppleRawCurrentCapacity", d.appleRawCurrentCapacity, "mAh", L("hw.m.raw_current")),
+            int("NominalChargeCapacity", d.nominalChargeCapacity, "mAh", L("hw.m.nominal")),
+            int("PackReserve", d.packReserve, "mAh", L("hw.m.reserve")),
+            int("CycleCount", d.cycleCount, "", L("hw.m.cycles")),
+            int("DesignCycleCount9C", d.designCycleCount, "", L("hw.m.design_cycles")),
+            d.rawHealthPercent.flatMap { dbl("→ health", $0, "%.1f", "%", L("hw.m.health")) },
         ])
         if !cap.isEmpty { groups.append(.init(titleKey: "hw.group.capacity", rows: cap)) }
 
         // 电气
         let elec = rows([
-            int("AppleRawBatteryVoltage", d.packVoltage, "mV", "pack voltage"),
-            int("InstantAmperage", d.instantAmperage, "mA", "instantaneous current", hideZero: false),
-            int("Amperage", d.smoothedAmperage, "mA", "smoothed current", hideZero: false),
-            dbl("VirtualTemperature", d.virtualTemperature, "%.2f", "°C", "with thermal model"),
-            dbl("BatteryData.SystemPower", d.systemPowerWatts, "%.2f", "W", "total system power"),
+            int("AppleRawBatteryVoltage", d.packVoltage, "mV", L("hw.m.pack_voltage")),
+            int("InstantAmperage", d.instantAmperage, "mA", L("hw.m.instant_amperage"), hideZero: false),
+            int("Amperage", d.smoothedAmperage, "mA", L("hw.m.smoothed_amperage"), hideZero: false),
+            dbl("VirtualTemperature", d.virtualTemperature, "%.2f", "°C", L("hw.m.virtual_temp")),
+            dbl("BatteryData.SystemPower", d.systemPowerWatts, "%.2f", "W", L("hw.m.system_power")),
         ])
         if !elec.isEmpty { groups.append(.init(titleKey: "hw.group.electrical", rows: elec)) }
 
         // 充电器（拔电时整组隐藏）
         let chg = rows([
-            int("AdapterDetails.Watts", d.adapterWatts, "W", "rated power"),
-            int("AdapterDetails.AdapterVoltage", d.adapterVoltage, "mV", "negotiated voltage"),
-            int("AdapterDetails.Current", d.adapterCurrent, "mA", "negotiated current"),
-            str("AdapterDetails.Description", d.adapterDescription, "connector type"),
+            int("AdapterDetails.Watts", d.adapterWatts, "W", L("hw.m.adapter_watts")),
+            int("AdapterDetails.AdapterVoltage", d.adapterVoltage, "mV", L("hw.m.adapter_voltage")),
+            int("AdapterDetails.Current", d.adapterCurrent, "mA", L("hw.m.adapter_current")),
+            str("AdapterDetails.Description", d.adapterDescription, L("hw.m.adapter_desc")),
             d.usbHvcMenu.isEmpty ? nil : HardwareRow(
                 key: "AdapterDetails.UsbHvcMenu",
                 value: d.usbHvcMenu.map { LNum("%.0fV/%.1fA", Double($0.voltage) / 1000, Double($0.current) / 1000) }
                                    .joined(separator: " · "),
-                unit: "—", meaning: "PD profiles"),
-            int("ChargerData.ChargingVoltage", d.chargingVoltageLimit, "mV", "charge voltage limit"),
+                unit: "—", meaning: L("hw.m.pd_menu")),
+            int("ChargerData.ChargingVoltage", d.chargingVoltageLimit, "mV", L("hw.m.charge_v_limit")),
             // hideZero 必须为 true：否则拔电时这一行会单独把整个充电器组撑着不隐藏
-            int("ChargerData.ChargingCurrent", d.chargingCurrentLimit, "mA", "charge current limit"),
-            int("ChargerData.NotChargingReason", d.notChargingReason, "", "bitmask"),
-            int("ChargerData.ChargerID", d.chargerID, "", "charger id"),
+            int("ChargerData.ChargingCurrent", d.chargingCurrentLimit, "mA", L("hw.m.charge_i_limit")),
+            int("ChargerData.NotChargingReason", d.notChargingReason, "", L("hw.m.not_charging_reason")),
+            int("ChargerData.ChargerID", d.chargerID, "", L("hw.m.charger_id")),
         ])
         if !chg.isEmpty { groups.append(.init(titleKey: "hw.group.charger", rows: chg)) }
 
         // 功耗遥测（电池供电时瞬时字段为 0，会自动隐藏）
         let tel = rows([
-            int("PowerTelemetryData.SystemLoad", d.systemLoad, "mW", "system load"),
-            int("PowerTelemetryData.BatteryPower", d.batteryPower, "mW", "battery power flow", hideZero: false),
-            int("PowerTelemetryData.SystemPowerIn", d.systemPowerIn, "mW", "wall input power"),
-            int("PowerTelemetryData.SystemVoltageIn", d.systemVoltageIn, "mV", "wall input voltage"),
-            int("PowerTelemetryData.SystemCurrentIn", d.systemCurrentIn, "mA", "wall input current"),
-            d.adapterEfficiency.flatMap { dbl("→ adapter efficiency", $0, "%.1f", "%", "computed") },
+            int("PowerTelemetryData.SystemLoad", d.systemLoad, "mW", L("hw.m.system_load")),
+            int("PowerTelemetryData.BatteryPower", d.batteryPower, "mW", L("hw.m.battery_power"), hideZero: false),
+            int("PowerTelemetryData.SystemPowerIn", d.systemPowerIn, "mW", L("hw.m.power_in")),
+            int("PowerTelemetryData.SystemVoltageIn", d.systemVoltageIn, "mV", L("hw.m.voltage_in")),
+            int("PowerTelemetryData.SystemCurrentIn", d.systemCurrentIn, "mA", L("hw.m.current_in")),
+            d.adapterEfficiency.flatMap { dbl("→ adapter efficiency", $0, "%.1f", "%", L("hw.m.efficiency")) },
         ])
         if !tel.isEmpty { groups.append(.init(titleKey: "hw.group.telemetry", rows: tel)) }
 
         // 身份
         let ident = rows([
-            str("Serial", d.serialNumber, "battery serial"),
-            str("DeviceName", d.gaugeChip, "gas gauge chip"),
-            int("GasGaugeFirmwareVersion", d.gaugeFirmwareVersion, "", "gauge firmware"),
-            int("BatteryData.ChemID", d.chemistryID, "", "cell chemistry"),
-            int("BatteryData.DataFlashWriteCount", d.dataFlashWriteCount, "", "flash writes"),
-            int("PermanentFailureStatus", d.permanentFailureStatus, "", "0 = healthy", hideZero: false),
-            int("BatteryCellDisconnectCount", d.cellDisconnectCount, "", "cell disconnects", hideZero: false),
-            str("hw.model", BatteryService.hardwareModel(), "machine model"),
+            str("Serial", d.serialNumber, L("hw.m.serial")),
+            str("DeviceName", d.gaugeChip, L("hw.m.gauge_chip")),
+            int("GasGaugeFirmwareVersion", d.gaugeFirmwareVersion, "", L("hw.m.gauge_fw")),
+            int("BatteryData.ChemID", d.chemistryID, "", L("hw.m.chem_id")),
+            int("BatteryData.DataFlashWriteCount", d.dataFlashWriteCount, "", L("hw.m.flash_writes")),
+            int("PermanentFailureStatus", d.permanentFailureStatus, "", L("hw.m.pf_status"), hideZero: false),
+            int("BatteryCellDisconnectCount", d.cellDisconnectCount, "", L("hw.m.cell_disconnect"), hideZero: false),
+            str("hw.model", BatteryService.hardwareModel(), L("hw.m.machine_model")),
         ])
         if !ident.isEmpty { groups.append(.init(titleKey: "hw.group.identity", rows: ident)) }
 
         // 寿命统计
         let life = rows([
-            int("LifetimeData.TotalOperatingTime", d.totalOperatingMinutes, "min", "total operating time"),
-            int("LifetimeData.MaximumTemperature", d.maximumTemperature, "°C", "all-time high"),
-            int("LifetimeData.MinimumTemperature", d.minimumTemperature, "°C", "all-time low"),
-            dbl("LifetimeData.AverageTemperature", d.averageTemperature, "%.1f", "°C", "lifetime average"),
-            int("LifetimeData.MaximumChargeCurrent", d.maximumChargeCurrent, "mA", "peak charge current"),
-            int("LifetimeData.MaximumDischargeCurrent", d.maximumDischargeCurrent, "mA", "peak discharge current"),
-            int("LifetimeData.MinimumPackVoltage", d.minimumPackVoltage, "mV", "lowest pack voltage"),
-            int("LifetimeData.MaximumPackVoltage", d.maximumPackVoltage, "mV", "highest pack voltage"),
-            int("LifetimeData.TemperatureSamples", d.temperatureSamples, "", "temperature samples"),
-            int("BatteryData.DailyMaxSoc", d.dailyMaxSoc, "%", "today's high"),
-            int("BatteryData.DailyMinSoc", d.dailyMinSoc, "%", "today's low", hideZero: false),
+            int("LifetimeData.TotalOperatingTime", d.totalOperatingMinutes, "min", L("hw.m.total_runtime")),
+            int("LifetimeData.MaximumTemperature", d.maximumTemperature, "°C", L("hw.m.temp_max")),
+            int("LifetimeData.MinimumTemperature", d.minimumTemperature, "°C", L("hw.m.temp_min")),
+            dbl("LifetimeData.AverageTemperature", d.averageTemperature, "%.1f", "°C", L("hw.m.temp_avg")),
+            int("LifetimeData.MaximumChargeCurrent", d.maximumChargeCurrent, "mA", L("hw.m.max_charge_current")),
+            int("LifetimeData.MaximumDischargeCurrent", d.maximumDischargeCurrent, "mA", L("hw.m.max_discharge_current")),
+            int("LifetimeData.MinimumPackVoltage", d.minimumPackVoltage, "mV", L("hw.m.min_pack_voltage")),
+            int("LifetimeData.MaximumPackVoltage", d.maximumPackVoltage, "mV", L("hw.m.max_pack_voltage")),
+            int("LifetimeData.TemperatureSamples", d.temperatureSamples, "", L("hw.m.temp_samples")),
+            int("BatteryData.DailyMaxSoc", d.dailyMaxSoc, "%", L("hw.m.daily_max_soc")),
+            int("BatteryData.DailyMinSoc", d.dailyMinSoc, "%", L("hw.m.daily_min_soc"), hideZero: false),
         ])
         if !life.isEmpty { groups.append(.init(titleKey: "hw.group.lifetime", rows: life)) }
 
         return groups
     }
 
-    private static func cellsMeaning(_ d: BatteryHardwareDetail) -> String {
-        d.cellVoltages.isEmpty ? "" : "\(d.cellVoltages.count) cells in series"
-    }
 }

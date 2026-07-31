@@ -123,6 +123,7 @@ extension AppTheme {
         case .pass: return batteryGreen
         case .warn: return batteryYellow
         case .fail: return batteryRed
+        case .neutral: return textTertiary
         }
     }
 
@@ -148,21 +149,18 @@ extension AppTheme {
 }
 
 // MARK: - 分区小标题
-// 「Battery Health Diagnosis · 电池健康诊断」这种双语标签在原型里是写死的，
-// 这里改成当前语言 + 英文并列（中文界面下才显示英文副标，避免英文界面重复）。
+// 只显示当前语言。原型里是「Battery Health Diagnosis · 电池健康诊断」双语并排，
+// 但界面已经有统一的语言开关了，再并排一个英文只是噪音。
 
 struct SectionLabel: View {
     let key: String
-    let englishFallback: String
 
     var body: some View {
-        let localized = L(key)
-        let showsDual = localized != englishFallback
-        return HStack(spacing: 6) {
+        HStack(spacing: 6) {
             Rectangle()
                 .fill(AppTheme.chargingCyan)
                 .frame(width: 2, height: 10)
-            Text(showsDual ? "\(englishFallback) · \(localized)" : localized)
+            Text(L(key))
                 .font(.system(size: 9, weight: .semibold, design: .monospaced))
                 .foregroundStyle(AppTheme.textTertiary)
                 .textCase(.uppercase)

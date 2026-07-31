@@ -185,9 +185,10 @@ struct StatCard: View {
                     .font(.system(size: 11))
                     .foregroundStyle(AppTheme.textTertiary)
                     // 长语言（如日语「バッテリーコンディション」、德语复合词）会换行撑破卡片，
-                    // 导致同排卡片高度不齐。与下方 value/subtitle 保持同样的收缩策略。
+                    // 导致同排卡片高度不齐。0.6 是实测值：三列网格挤在 440pt 左栏里，
+                    // 日语最宽标题按 0.75 缩放仍需 474pt，会溢出左栏。
                     .lineLimit(1)
-                    .minimumScaleFactor(0.75)
+                    .minimumScaleFactor(0.6)
                 if let key = tooltipKey {
                     Image(systemName: "exclamationmark.circle")
                         .font(.system(size: 9, weight: .medium))

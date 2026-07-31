@@ -2,6 +2,8 @@ import SwiftUI
 
 struct ProcessListView: View {
     let processes: [ProcessPowerInfo]
+    /// 是否已完成首次采样，用来区分「加载中」和「采过了但确实没有活跃进程」
+    var hasSampled: Bool = true
     let onRefresh: () -> Void
 
     var body: some View {
@@ -46,10 +48,21 @@ struct ProcessListView: View {
 
             if processes.isEmpty {
                 VStack(spacing: 8) {
-                    ProgressView().progressViewStyle(.circular).scaleEffect(0.8)
-                    Text(L("proc.loading"))
-                        .font(.system(size: 12))
-                        .foregroundStyle(AppTheme.textTertiary)
+                    // 采样完成后仍为空 ≠ 加载中。空闲机器确实可能没有活跃进程，
+                    // 这时该说清楚，而不是让转圈图标一直转。
+                    if hasSampled {
+                        Image(systemName: "moon.zzz")
+                            .font(.system(size: 18))
+                            .foregroundStyle(AppTheme.textTertiary)
+                        Text(L("proc.empty"))
+                            .font(.system(size: 12))
+                            .foregroundStyle(AppTheme.textTertiary)
+                    } else {
+                        ProgressView().progressViewStyle(.circular).scaleEffect(0.8)
+                        Text(L("proc.loading"))
+                            .font(.system(size: 12))
+                            .foregroundStyle(AppTheme.textTertiary)
+                    }
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 30)

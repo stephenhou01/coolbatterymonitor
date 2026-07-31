@@ -10,7 +10,7 @@ struct HealthDiagnosisCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            SectionLabel(key: "insight.section.health", englishFallback: "Battery Health Diagnosis")
+            SectionLabel(key: "insight.section.health")
 
             HStack(alignment: .top, spacing: 20) {
                 scoreRing
@@ -81,6 +81,12 @@ struct HealthDiagnosisCard: View {
                 metaItem(L("insight.age.label"),
                          L("insight.age.value", age.years, age.months) + " " + estimatedTag,
                          help: L("insight.age.tip"))
+            }
+            if let cycles = diagnosis.factors.first(where: { $0.labelKey == "insight.factor.cycles" }) {
+                metaItem(L("insight.factor.cycles"), cycles.rawValue)
+            }
+            if let cap = diagnosis.factors.first(where: { $0.labelKey == "insight.factor.capacity" }) {
+                metaItem(L("insight.factor.capacity"), cap.consumerDetail)
             }
         }
         .fixedSize(horizontal: true, vertical: false)
@@ -176,7 +182,7 @@ struct ChargingHabitCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            SectionLabel(key: "insight.section.habit", englishFallback: "Charging Habit")
+            SectionLabel(key: "insight.section.habit")
 
             if let score = habit.score {
                 HStack(alignment: .center, spacing: 12) {
@@ -235,7 +241,7 @@ struct AccessoryCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            SectionLabel(key: "insight.section.accessory", englishFallback: "Accessory Check")
+            SectionLabel(key: "insight.section.accessory")
 
             HStack(spacing: 9) {
                 Image(systemName: accessory.isConnected ? "powerplug.fill" : "powerplug")
@@ -296,7 +302,7 @@ struct PowerAnalysisCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 13) {
-            SectionLabel(key: "insight.section.power", englishFallback: "Power Analysis")
+            SectionLabel(key: "insight.section.power")
 
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(LNum("%.1f", analysis.currentWatts))
@@ -356,7 +362,7 @@ struct WeeklyReportCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 13) {
-            SectionLabel(key: "insight.section.weekly", englishFallback: "Weekly Report")
+            SectionLabel(key: "insight.section.weekly")
 
             if report.isReady {
                 HStack(spacing: 10) {
