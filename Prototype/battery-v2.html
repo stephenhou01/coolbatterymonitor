@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<title>BatteryMonitor · 产品原型 v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ─────────────────────────────────────────────────────────────
+   设计方向：实验室示波器 / 精密仪器，不是 SaaS 仪表盘。
+   数值一律等宽（对齐 + 仪器质感），磷光绿描迹，琥珀色示警。
+   ───────────────────────────────────────────────────────────── */
+:root{
+  --ink:#050708; --ink-2:#0a0e11; --surface:#0d1215; --surface-2:#111a1e;
+  --line:rgba(91,255,199,.10); --line-strong:rgba(91,255,199,.22);
+  --phos:#5bffc7; --phos-dim:rgba(91,255,199,.45);
+  --amber:#ffb020; --red:#ff5c5c; --violet:#a98bff;
+  --txt:#e6f2ee; --txt-2:#93a5a1; --txt-3:#5d6f6b;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+  --disp:'Chakra Petch','PingFang SC','Hiragino Sans GB',sans-serif;
+  --han:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased}
+body{
+  background:var(--ink); color:var(--txt); font-family:var(--han);
+  padding:34px 30px 90px; min-height:100vh; position:relative; overflow-x:hidden;
+}
+/* 仪器网格 + 微噪点 */
+body::before{
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background-image:linear-gradient(var(--line) 1px,transparent 1px),
+                   linear-gradient(90deg,var(--line) 1px,transparent 1px);
+  background-size:36px 36px;
+  mask-image:radial-gradient(ellipse 120% 90% at 50% 0%,#000 35%,transparent 100%);
+}
+body::after{
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:0; opacity:.035;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.wrap{max-width:1140px;margin:0 auto;position:relative;z-index:1}
+
+/* ── 铭牌式页眉 ── */
+.plate{
+  display:flex;align-items:flex-end;justify-content:space-between;gap:24px;
+  padding-bottom:14px;margin-bottom:26px;
+  border-bottom:1px solid var(--line-strong);
+}
+.plate h1{
+  font-family:var(--disp);font-size:19px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;display:flex;align-items:center;gap:11px;
+}
+.plate h1 .bolt{color:var(--phos);filter:drop-shadow(0 0 8px var(--phos-dim))}
+.plate .sub{font-family:var(--mono);font-size:10.5px;color:var(--txt-3);letter-spacing:.06em;margin-top:5px}
+.chips{display:flex;gap:7px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.chip{
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;
+  padding:4px 9px;border:1px solid var(--line-strong);color:var(--txt-2);
+  border-radius:2px;white-space:nowrap;
+}
+.chip.live{color:var(--phos);border-color:var(--phos-dim);display:flex;align-items:center;gap:6px}
+.chip.live i{width:5px;height:5px;border-radius:50%;background:var(--phos);animation:blip 1.9s infinite}
+@keyframes blip{0%,100%{opacity:1;box-shadow:0 0 0 0 var(--phos-dim)}50%{opacity:.35;box-shadow:0 0 0 5px transparent}}
+
+/* ── 卡片 ── */
+.card{
+  background:linear-gradient(170deg,var(--surface) 0%,var(--ink-2) 100%);
+  border:1px solid var(--line-strong); border-radius:3px; padding:20px 22px;
+  position:relative; opacity:0; transform:translateY(16px);
+  animation:rise .62s cubic-bezier(.2,.7,.3,1) forwards;
+}
+@keyframes rise{to{opacity:1;transform:none}}
+.card::before{ /* 左上角刻度标记 */
+  content:'';position:absolute;top:-1px;left:-1px;width:16px;height:16px;
+  border-top:1px solid var(--phos);border-left:1px solid var(--phos);opacity:.5;
+}
+.card:hover{border-color:rgba(91,255,199,.34)}
+.card:hover::before{opacity:1}
+.tag{
+  font-family:var(--mono);font-size:9px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--txt-3);display:flex;align-items:center;gap:8px;margin-bottom:16px;
+}
+.tag::before{content:'';width:14px;height:1px;background:var(--phos);opacity:.7}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+.stack{display:flex;flex-direction:column;gap:16px}
+
+/* ── HERO 1：还能用多久 ── */
+.hero-time{display:flex;align-items:flex-start;gap:34px;flex-wrap:wrap}
+.bigtime{display:flex;align-items:baseline;gap:4px;font-family:var(--mono);line-height:.92}
+.bigtime .h{font-size:78px;font-weight:300;letter-spacing:-.03em;color:var(--phos);
+  text-shadow:0 0 26px rgba(91,255,199,.28)}
+.bigtime .u{font-size:19px;color:var(--txt-2);font-weight:400;margin-right:12px}
+.readouts{display:flex;gap:26px;margin-top:14px;flex-wrap:wrap}
+.ro{display:flex;flex-direction:column;gap:3px}
+.ro .k{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--txt-3)}
+.ro .v{font-family:var(--mono);font-size:16px;color:var(--txt)}
+.ro .v small{font-size:10px;color:var(--txt-2);margin-left:2px}
+.src{font-family:var(--mono);font-size:9.5px;color:var(--txt-3);margin-top:14px;
+  padding-left:10px;border-left:1px solid var(--line-strong);line-height:1.6}
+.src b{color:var(--txt-2);font-weight:400}
+
+/* 变化归因 */
+.attr{
+  flex:1;min-width:290px;background:rgba(255,176,32,.05);
+  border:1px solid rgba(255,176,32,.2);border-radius:2px;padding:13px 15px;
+}
+.attr .hd{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--amber);margin-bottom:9px;display:flex;align-items:center;gap:7px}
+.attr .hd::before{content:'△';font-size:8px}
+.attr p{font-size:12.5px;line-height:1.75;color:var(--txt-2)}
+.attr p b{color:var(--txt);font-weight:600}
+.attr .num{font-family:var(--mono);color:var(--amber)}
+.delta{display:flex;align-items:center;gap:9px;margin-top:11px;font-family:var(--mono);font-size:11px}
+.delta .was{color:var(--txt-3);text-decoration:line-through}
+.delta .arw{color:var(--amber)}
+.delta .now{color:var(--txt)}
+
+/* ── HERO 2：内阻示波器 ── */
+.scope-head{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;flex-wrap:wrap;margin-bottom:6px}
+.scope-title{font-family:var(--disp);font-size:20px;font-weight:600;letter-spacing:.01em}
+.scope-title em{color:var(--amber);font-style:normal}
+.scope-sub{font-size:12px;color:var(--txt-2);margin-top:6px;line-height:1.7;max-width:620px}
+.scope-stats{display:flex;gap:22px}
+.sstat{text-align:right}
+.sstat .n{font-family:var(--mono);font-size:23px;color:var(--amber);line-height:1}
+.sstat .n.ph{color:var(--phos)}
+.sstat .l{font-family:var(--mono);font-size:8.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--txt-3);margin-top:5px}
+.scope{position:relative;margin-top:12px;border:1px solid var(--line-strong);
+  background:radial-gradient(ellipse at 30% 20%,rgba(91,255,199,.045),transparent 62%),var(--ink);border-radius:2px}
+svg{display:block;width:100%;height:auto}
+.legend{display:flex;gap:20px;margin-top:11px;flex-wrap:wrap;font-family:var(--mono);font-size:9.5px;color:var(--txt-3)}
+.legend span{display:flex;align-items:center;gap:6px}
+.legend i{width:14px;height:2px;border-radius:1px;display:inline-block}
+.takeaway{
+  margin-top:14px;padding:13px 15px;border-left:2px solid var(--amber);
+  background:linear-gradient(90deg,rgba(255,176,32,.07),transparent);
+  font-size:13px;line-height:1.8;color:var(--txt-2);
+}
+.takeaway b{color:var(--txt);font-weight:600}
+.takeaway .hl{color:var(--amber);font-family:var(--mono)}
+
+/* ── 健康度 ── */
+.hstack{display:flex;align-items:center;gap:20px}
+.dial{position:relative;width:96px;height:96px;flex-shrink:0}
+.dial .pct{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.dial .pct b{font-family:var(--mono);font-size:27px;font-weight:400;color:var(--phos);line-height:1}
+.dial .pct s{font-family:var(--mono);font-size:8px;letter-spacing:.1em;color:var(--txt-3);text-decoration:none;margin-top:3px}
+.hmeta{flex:1;min-width:0}
+.hrow{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px dashed rgba(255,255,255,.055);font-size:12px}
+.hrow:last-child{border:0}
+.hrow .k{color:var(--txt-2)}
+.hrow .v{font-family:var(--mono);color:var(--txt)}
+.hrow .v.dim{color:var(--txt-3)}
+.note{margin-top:12px;font-size:11px;line-height:1.75;color:var(--txt-3);
+  padding:10px 12px;background:rgba(255,255,255,.022);border-radius:2px}
+.note b{color:var(--txt-2);font-weight:500}
+
+/* ── 趋势 ── */
+.trend-num{display:flex;align-items:baseline;gap:9px;font-family:var(--mono)}
+.trend-num .a{font-size:31px;color:var(--txt-3)}
+.trend-num .arw{font-size:15px;color:var(--amber)}
+.trend-num .b{font-size:31px;color:var(--amber)}
+.trend-num .d{font-size:11px;color:var(--red);margin-left:5px}
+
+/* ── 习惯 ── */
+.habits{display:flex;flex-direction:column;gap:9px}
+.hb{display:flex;align-items:flex-start;gap:10px;font-size:12.5px;line-height:1.6}
+.hb .dot{width:6px;height:6px;border-radius:50%;margin-top:6px;flex-shrink:0}
+.hb .dot.ok{background:var(--phos)} .hb .dot.warn{background:var(--amber)} .hb .dot.n{background:var(--txt-3)}
+.hb .lb{color:var(--txt);min-width:82px;font-weight:500}
+.hb .dt{color:var(--txt-2)}
+.hb .dt em{font-family:var(--mono);font-style:normal;color:var(--txt)}
+.advice{margin-top:14px;padding:13px 15px;border:1px solid var(--line-strong);border-radius:2px;
+  background:rgba(91,255,199,.035);font-size:12.5px;line-height:1.8;color:var(--txt-2)}
+.advice .hd{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--phos);margin-bottom:8px}
+.advice b{color:var(--txt);font-weight:600}
+
+/* ── 折叠 ── */
+details{border:1px solid var(--line-strong);border-radius:3px;background:var(--ink-2)}
+summary{padding:15px 20px;cursor:pointer;list-style:none;display:flex;align-items:center;gap:11px;
+  font-family:var(--disp);font-size:14px;letter-spacing:.05em;text-transform:uppercase}
+summary::-webkit-details-marker{display:none}
+summary .cnt{font-family:var(--mono);font-size:9px;color:var(--txt-3);border:1px solid var(--line);padding:2px 7px;border-radius:2px;text-transform:none;letter-spacing:0}
+summary .ar{margin-left:auto;color:var(--txt-3);font-size:10px;transition:transform .3s}
+details[open] summary .ar{transform:rotate(180deg)}
+.tbl{padding:0 20px 18px;font-family:var(--mono);font-size:10.5px}
+.tbl .r{display:grid;grid-template-columns:1.9fr 1.2fr .5fr 2fr;gap:12px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.035)}
+.tbl .r.hd{color:var(--txt-3);font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;border-bottom-color:var(--line-strong);padding-bottom:8px}
+.tbl .r .k{color:var(--txt-2)} .tbl .r .v{color:var(--txt)} .tbl .r .u{color:var(--txt-3)} .tbl .r .m{color:var(--txt-3)}
+.grp{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--phos);opacity:.8;margin:16px 0 6px}
+
+/* 核心等式：2.8 × 210 = 587 */
+.eq{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:15px 18px;
+  background:rgba(255,176,32,.05);border:1px solid rgba(255,176,32,.18);border-radius:2px}
+.eqi{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:74px}
+.eqi b{font-family:var(--mono);font-size:27px;font-weight:400;color:var(--txt);line-height:1}
+.eqi s{font-family:var(--mono);font-size:9px;color:var(--txt-3);text-decoration:none}
+.eqi i{font-size:10px;color:var(--txt-2);font-style:normal;margin-top:3px}
+.eqi.hl b{color:var(--amber);text-shadow:0 0 18px rgba(255,176,32,.35)}
+.eqop{font-family:var(--mono);font-size:17px;color:var(--txt-3)}
+
+/* 容量条 */
+.capbar{display:flex;height:22px;border:1px solid var(--line-strong);border-radius:2px;overflow:hidden}
+.capfill{background:linear-gradient(90deg,rgba(91,255,199,.35),rgba(91,255,199,.6));width:0;
+  transition:width 1.2s cubic-bezier(.2,.7,.3,1)}
+.caplost{flex:1;background:repeating-linear-gradient(45deg,rgba(255,176,32,.16) 0 6px,transparent 6px 12px)}
+.caplbl{display:flex;justify-content:space-between;margin-top:7px;font-size:10px;color:var(--txt-3)}
+.caplbl em{font-family:var(--mono);font-style:normal;color:var(--txt-2)}
+
+/* 容量链条 */
+.chain{display:flex;align-items:stretch;gap:0;flex-wrap:wrap}
+.ch{flex:1;min-width:132px;padding:13px 12px;border:1px solid var(--line-strong);
+  border-radius:2px;display:flex;flex-direction:column;gap:2px;background:rgba(255,255,255,.012)}
+.ch.hl{border-color:var(--phos-dim);background:rgba(91,255,199,.06)}
+.ch .cn{font-family:var(--mono);font-size:23px;color:var(--txt);line-height:1}
+.ch.hl .cn{color:var(--phos)}
+.ch .cu{font-family:var(--mono);font-size:9px;color:var(--txt-3);margin-top:-2px}
+.ch .cl{font-size:11px;color:var(--txt);margin-top:6px;font-weight:500}
+.ch .cd{font-size:9.5px;color:var(--txt-3);line-height:1.4}
+.carw{display:flex;align-items:center;padding:0 9px;font-family:var(--mono);font-size:11px;color:var(--txt-3)}
+.carw.amber{color:var(--amber)}
+
+.foot{margin-top:26px;font-family:var(--mono);font-size:9.5px;color:var(--txt-3);line-height:1.8;
+  padding-top:14px;border-top:1px solid var(--line)}
+@media(max-width:940px){.grid2{grid-template-columns:1fr}.bigtime .h{font-size:58px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="plate">
+    <div>
+      <h1><span class="bolt">⚡</span> BatteryMonitor</h1>
+      <div class="sub">MAC16,12 · APPLE M4 · 电量计 BQ40Z651 · SN F8YHD700BM70000G42</div>
+    </div>
+    <div class="chips">
+      <span class="chip live"><i></i>采样 3s</span>
+      <span class="chip">APPLE SILICON</span>
+      <span class="chip">简体中文</span>
+    </div>
+  </div>
+
+  <div class="stack">
+
+    <!-- ══ HERO 1 ══ -->
+    <section class="card" style="animation-delay:.05s">
+      <div class="tag">还能用多久</div>
+      <div class="hero-time">
+        <div>
+          <div class="bigtime"><span class="h" id="hh">5</span><span class="u">小时</span><span class="h" id="mm">18</span><span class="u">分</span></div>
+          <div class="readouts">
+            <div class="ro"><span class="k">当前功耗</span><span class="v">10.5<small>W</small></span></div>
+            <div class="ro"><span class="k">剩余电量</span><span class="v">95<small>%</small></span></div>
+            <div class="ro"><span class="k">放电电流</span><span class="v">823<small>mA</small></span></div>
+            <div class="ro"><span class="k">组电压</span><span class="v">12.81<small>V</small></span></div>
+          </div>
+          <div class="src">这个数<b>直接来自电量计芯片</b>（AvgTimeToEmpty = 318 分钟）。<br>
+            它用 Impedance Track 算法按当前负载推算，比任何外部估算都准 —— 我们不重造它，只解释它。</div>
+        </div>
+        <div class="attr">
+          <div class="hd">刚才发生了什么</div>
+          <p>过去 <span class="num">18</span> 分钟里，<b>Xcode</b> 的 CPU 占用从 <span class="num">4%</span> 升到 <span class="num">61%</span>，
+             同期系统功耗从 <span class="num">7.8W</span> 涨到 <span class="num">10.5W</span>。</p>
+          <div class="delta"><span class="was">6 小时 42 分</span><span class="arw">→</span><span class="now">5 小时 18 分</span></div>
+          <p style="margin-top:11px;font-size:11.5px;color:var(--txt-3)">
+            只报「同期什么变了」，不给「某进程用了多少瓦」—— 进程 CPU 高度共线，屏幕亮度和 GPU 也不在可读数据里。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ HERO 2：内阻示波器 ══ -->
+    <section class="card" style="animation-delay:.14s">
+      <div class="tag">为什么最后 20% 掉得特别快</div>
+      <div class="scope-head">
+        <div>
+          <div class="scope-title">你的电池不是被「用完」的 —— 是<em>电压塌了</em>先关机</div>
+          <div class="scope-sub">电量越低，电芯内阻越高。同样的电流，压降越大；当端电压跌到截止线，
+            机器就必须关机 —— 而此时电还留在电池里，只是取不出来。</div>
+        </div>
+        <div class="scope-stats">
+          <div class="sstat"><div class="n">11.5×</div><div class="l">末端 / 中段</div></div>
+          <div class="sstat"><div class="n">674<span style="font-size:12px">mAh</span></div><div class="l">取不出来</div></div>
+          <div class="sstat"><div class="n ph">99<span style="font-size:12px">mΩ</span></div><div class="l">中段内阻</div></div>
+        </div>
+      </div>
+
+      <div class="scope"><svg id="scope" viewBox="0 0 1000 340" preserveAspectRatio="xMidYMid meet"></svg></div>
+
+      <div class="legend">
+        <span><i style="background:var(--phos)"></i>单体内阻 Ra（实测 15 点）</span>
+        <span><i style="background:var(--amber)"></i>压降 = 电流 × 内阻</span>
+        <span><i style="background:var(--txt-3);opacity:.6"></i>端点数据不足，不参与结论</span>
+        <span><i style="background:rgba(255,92,92,.5)"></i>取不出来的区域</span>
+      </div>
+
+      <div class="takeaway">
+        <b>能拿来做的一件事：</b>电量低于 <span class="hl">20%</span> 时别跑重负载。
+        那时内阻已是中段的 <span class="hl">2.7×</span>，同样的活多出来的能量全变成热 —— 高倍率 + 高温，是对电池的双重损耗。
+      </div>
+    </section>
+
+    <div class="grid2">
+      <!-- 健康度：以「锂被扣押」的物理图像为主角 -->
+      <section class="card" style="animation-delay:.22s">
+        <div class="tag">电池是怎么变弱的</div>
+
+        <div class="hstack" style="margin-bottom:16px">
+          <div class="dial">
+            <svg viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(91,255,199,.11)" stroke-width="6"/>
+              <circle id="dialArc" cx="50" cy="50" r="42" fill="none" stroke="var(--phos)" stroke-width="6"
+                      stroke-linecap="butt" transform="rotate(-90 50 50)"
+                      stroke-dasharray="0 999" style="filter:drop-shadow(0 0 6px var(--phos-dim))"/>
+            </svg>
+            <div class="pct"><b>94</b><s>% 健康度</s></div>
+          </div>
+          <div style="flex:1">
+            <div style="font-family:var(--disp);font-size:15px;font-weight:600;line-height:1.5;margin-bottom:7px">
+              电池老化不是「变弱」——是每次充放电<br>都有一小撮锂离子被<em style="color:var(--amber);font-style:normal">永久扣押</em>
+            </div>
+            <div style="font-size:11.5px;color:var(--txt-3);line-height:1.7">
+              副反应会在电极表面结成钝化膜，吃掉的锂再也回不到循环里。
+              这些电荷不流经采样电阻，所以库仑计数不到——必须靠静置时重新校准才量得出来。
+            </div>
+          </div>
+        </div>
+
+        <!-- 核心等式 -->
+        <div class="eq">
+          <div class="eqi"><b>2.8</b><s>mAh</s><i>每循环扣押</i></div>
+          <div class="eqop">×</div>
+          <div class="eqi"><b>210</b><s>次</s><i>已完成循环</i></div>
+          <div class="eqop">=</div>
+          <div class="eqi hl"><b>587</b><s>mAh</s><i>累计扣押</i></div>
+        </div>
+
+        <!-- 容量条 -->
+        <div style="margin-top:15px">
+          <div class="capbar">
+            <div class="capfill" id="capFill"></div>
+            <div class="caplost"></div>
+          </div>
+          <div class="caplbl">
+            <span>现在 <em>4042</em> mAh</span>
+            <span style="color:var(--amber)">已扣押 <em>587</em> mAh</span>
+            <span>出厂 <em>4629</em> mAh</span>
+          </div>
+        </div>
+
+        <div class="note" style="margin-top:15px">
+          <b>为什么不能拿 2.8 mAh/循环 去预测寿命？</b>
+          锂电衰减是<b>前期快、之后趋平</b>的，用早期斜率线性外推会算出「只剩 121 次循环」这种荒谬结论。
+          剩余寿命仍以额定循环为准（790 次）。<br><br>
+          <b>为什么别的工具显示 87%？</b> 两个都对。Apple 把预留缓冲
+          <span style="font-family:var(--mono)">PackReserve 127mAh</span> 加回分子、又从分母减掉，得 94%；
+          裸电芯比值是 87.3%。<br><br>
+          <b>这个读数有多新鲜？</b> 距电量计上次重新校准
+          <span style="font-family:var(--mono);color:var(--phos)">1 次循环</span> —— 很新鲜。
+          长期插电不深放电会让校准变陈旧，届时我们会提示你放一次电。
+        </div>
+      </section>
+
+      <!-- 已实现续航趋势 -->
+      <section class="card" style="animation-delay:.30s">
+        <div class="tag">已实现续航趋势 · 你自己的负载</div>
+        <div class="trend-num">
+          <span class="a">5.3<span style="font-size:14px">h</span></span>
+          <span class="arw">→</span>
+          <span class="b">4.6<span style="font-size:14px">h</span></span>
+          <span class="d">−13%</span>
+        </div>
+        <div style="font-size:11.5px;color:var(--txt-3);margin-top:7px;line-height:1.7">
+          过去 6 个月，在你<b style="color:var(--txt-2)">典型负载</b>下这块电池实际能给你的小时数。
+        </div>
+        <svg id="trend" viewBox="0 0 460 150" style="margin-top:14px"></svg>
+        <div class="note" style="margin-top:6px">
+          系统只告诉你容量还剩 <b>94%</b>，但你真正在意的单位是<b>小时</b>。
+          这条线需要长期记录才画得出来 —— 电量计只算瞬时，不存历史。
+        </div>
+      </section>
+    </div>
+
+    <!-- 容量链条：这些数字是怎么来的 -->
+    <section class="card" style="animation-delay:.34s">
+      <div class="tag">「还剩多少电」是怎么算出来的</div>
+      <div class="scope-head" style="margin-bottom:14px">
+        <div>
+          <div class="scope-title">电池里没有「电量表」—— 这个数是<em>推算</em>出来的</div>
+          <div class="scope-sub">采样电阻量电流 → 对时间积分得电荷 → 静置时用开路电压校正漂移 →
+            再减去「电压塌陷前取不出来」的部分。四层下来才是你看到的百分比。</div>
+        </div>
+      </div>
+
+      <div class="chain">
+        <div class="ch"><span class="cn">4629</span><span class="cu">mAh</span>
+          <span class="cl">出厂设计容量</span><span class="cd">铭牌值，固定不变</span></div>
+        <div class="carw">−34</div>
+        <div class="ch"><span class="cn">4595</span><span class="cu">mAh</span>
+          <span class="cl">化学总容量 Qmax</span><span class="cd">三节串联取最弱那节</span></div>
+        <div class="carw amber">−520</div>
+        <div class="ch"><span class="cn">4075</span><span class="cu">mAh</span>
+          <span class="cl">可用满充 FCC</span><span class="cd">= AppleRawMaxCapacity</span></div>
+        <div class="carw">−992</div>
+        <div class="ch hl"><span class="cn">3083</span><span class="cu">mAh</span>
+          <span class="cl">当前剩余</span><span class="cd">= AppleRawCurrentCapacity</span></div>
+      </div>
+
+      <div class="takeaway" style="margin-top:16px">
+        <b>那 <span class="hl">520 mAh</span> 去哪了？</b>
+        化学上它还在电池里，但电量计用内阻表算出：放到那里电压就会跌破截止线，机器先关机。
+        <b>这个数是电量计自己算的（Qmax − FCC），不是我们估的</b> —— 它就是上面那条内阻曲线的直接产物。
+      </div>
+
+      <div class="grid2" style="margin-top:16px">
+        <div class="note" style="margin:0">
+          <b>为什么 Qmax 有三个值，容量却不是三倍？</b><br>
+          三节电芯是<b>串联</b>：电压相加、容量不加。实测各电芯
+          <span style="font-family:var(--mono)">4025+4015+4024 = 12064 mV</span>，
+          组电压 <span style="font-family:var(--mono)">12065 mV</span> —— 误差 1mV，铁证。<br>
+          串联时任何一节先到截止电压，整组就得停，所以瓶颈是<b>最弱那节</b>。
+        </div>
+        <div class="note" style="margin:0">
+          <b>那 UI 上的百分比（79%）又是怎么来的？</b><br>
+          不等于原始 SOC（75%）。反推分母约为
+          <span style="font-family:var(--mono)">0.95 × FCC</span> —— Apple 把底部约 5% 当作不可用余量，
+          再把 0–95% 拉伸成 0–100%，并做了平滑（实测原始值从 75.34% 漂到 74.99%，UI 纹丝不动停在 79%）。<br>
+          <span style="color:var(--txt-3)">⚠️ 只有 75–85% 区间的采样点，「偏移 +4」和「缩放 ÷0.95」两种拟合都吻合，尚无法区分。</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 非原装电池检测 -->
+    <section class="card" style="animation-delay:.42s">
+      <div class="tag">电池真伪与校准可信度</div>
+      <div class="scope-head" style="margin-bottom:14px">
+        <div>
+          <div class="scope-title">换过电池的人，最需要知道<em>这块电池报的数能不能信</em></div>
+          <div class="scope-sub">上面所有数字都来自电池包<b>内部的电量计芯片</b>，不是 Mac 算的。
+            换成第三方电池后，数据照样有 —— 但可能全是编的。</div>
+        </div>
+        <div class="scope-stats"><div class="sstat"><div class="n ph">5/5</div><div class="l">检查通过</div></div></div>
+      </div>
+      <div class="grid2" style="margin-top:0">
+        <div class="habits">
+          <div class="hb"><span class="dot ok"></span><span class="lb" style="min-width:104px">容量在学习</span>
+            <span class="dt">距上次 Qmax 校准 <em>1</em> 循环</span></div>
+          <div class="hb"><span class="dot ok"></span><span class="lb" style="min-width:104px">阻抗在学习</span>
+            <span class="dt">Ra 表 15 点各不相同，非固定值</span></div>
+          <div class="hb"><span class="dot ok"></span><span class="lb" style="min-width:104px">校准未失效</span>
+            <span class="dt">QmaxDisqualificationReason = <em>0</em></span></div>
+          <div class="hb"><span class="dot ok"></span><span class="lb" style="min-width:104px">设计容量合理</span>
+            <span class="dt"><em>4629</em> mAh 与 Mac16,12 相符</span></div>
+          <div class="hb"><span class="dot ok"></span><span class="lb" style="min-width:104px">序列号有效</span>
+            <span class="dt">F8YHD700BM70000G42</span></div>
+        </div>
+        <div class="advice">
+          <div class="hd">这些检查在查什么</div>
+          劣质第三方电池的电量计往往<b>不做学习</b>——容量和内阻是写死的常数，
+          于是「健康度 100%」永远不变，而实际续航一路下滑。<br><br>
+          <span style="color:var(--txt-3);font-size:11.5px">
+          典型特征：<span style="font-family:var(--mono)">CycleCountLastQmax</span> 恒为 0、
+          <span style="font-family:var(--mono)">Ra00–Ra14</span> 全部相同或全零、
+          设计容量被卖家虚标得比原厂还高。<br><br>
+          ⚠️ 这套判据是从原理推出来的，<b>尚未在真实第三方电池上验证过</b>——我们手上只有原装电池。</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 怎么损失的 / 如何避免 -->
+    <section class="card" style="animation-delay:.38s">
+      <div class="tag">电池是怎么损失的 · 基于你自己 20 天的记录</div>
+      <div class="grid2" style="margin-top:0">
+        <div class="habits">
+          <div class="hb"><span class="dot ok"></span><span class="lb">充电深度</span><span class="dt">通常 <em>22%</em> → <em>92%</em>，区间健康</span></div>
+          <div class="hb"><span class="dot warn"></span><span class="lb">满充存放</span><span class="dt">检测到 <em>3</em> 次充满后整夜插电</span></div>
+          <div class="hb"><span class="dot warn"></span><span class="lb">充电温度</span><span class="dt">充电时最高 <em>36°C</em></span></div>
+          <div class="hb"><span class="dot n"></span><span class="lb">低电重载</span><span class="dt">本月 <em>2</em> 次在 15% 以下跑高负载</span></div>
+          <div class="hb"><span class="dot ok"></span><span class="lb">硬件自检</span><span class="dt">无故障码，电芯无断连</span></div>
+        </div>
+        <div class="advice">
+          <div class="hd">最该改的一件事</div>
+          你经常整夜满充插电。在「系统设置 → 电池」里开启<b>「优化电池充电」</b>，
+          系统会学习你的作息、暂缓充满最后 20%。<br><br>
+          <span style="color:var(--txt-3);font-size:11.5px">按你当前的循环速率（实测 <span style="font-family:var(--mono)">1.0 次/天</span>），
+          这一项改善预计能把到达 80% 容量的时间往后推 <span style="font-family:var(--mono);color:var(--phos)">4–7 个月</span>。</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 硬件原始数据 -->
+    <details style="animation-delay:.46s">
+      <summary>硬件原始数据 <span class="cnt">50 字段</span> <span class="ar">▼</span></summary>
+      <div class="tbl">
+        <div class="r hd"><span>字段</span><span>值</span><span>单位</span><span>说明</span></div>
+        <div class="grp">电芯</div>
+        <div class="r"><span class="k">CellVoltage</span><span class="v">4387 / 4384 / 4382</span><span class="u">mV</span><span class="m">3 节电芯串联</span></div>
+        <div class="r"><span class="k">WeightedRa</span><span class="v">94 / 105 / 113</span><span class="u">mΩ</span><span class="m">电池内部阻力</span></div>
+        <div class="r"><span class="k">Qmax</span><span class="v">4595 / 4631 / 4661</span><span class="u">mAh</span><span class="m">电量计实测容量</span></div>
+        <div class="grp">容量与寿命</div>
+        <div class="r"><span class="k">DesignCapacity</span><span class="v">4629</span><span class="u">mAh</span><span class="m">出厂设计容量</span></div>
+        <div class="r"><span class="k">AppleRawMaxCapacity</span><span class="v">4077</span><span class="u">mAh</span><span class="m">当前满充容量</span></div>
+        <div class="r"><span class="k">PackReserve</span><span class="v">127</span><span class="u">mAh</span><span class="m">系统保留容量</span></div>
+        <div class="r"><span class="k">→ health (system)</span><span class="v">94.1</span><span class="u">%</span><span class="m">与系统设置一致</span></div>
+        <div class="r"><span class="k">→ health (raw)</span><span class="v">88.8</span><span class="u">%</span><span class="m">裸比值，不含保留容量</span></div>
+        <div class="grp">寿命统计</div>
+        <div class="r"><span class="k">CycleCountLastQmax</span><span class="v">209</span><span class="u">—</span><span class="m">距今 1 次循环，标定新鲜</span></div>
+        <div class="r"><span class="k">TemperatureSamples</span><span class="v">211,869</span><span class="u">—</span><span class="m">温度采样次数</span></div>
+        <div class="r"><span class="k">MinimumPackVoltage</span><span class="v">9,225</span><span class="u">mV</span><span class="m">历史最低组电压</span></div>
+      </div>
+    </details>
+  </div>
+
+  <div class="foot">
+    产品原型 v2 · 数据取自本机真实 IOKit 读数（AppleSmartBattery）<br>
+    「已实现续航趋势」为目标态示意 —— 需长期记录才有真实数据；其余数值均为实测。
+  </div>
+</div>
+
+<script>
+/* ── 实测 Ra 表：15 个放电深度网格点，单体 mΩ ── */
+const RA = [419, 81, 70, 77, 122, 81, 98, 111, 132, 141, 154, 173, 266, 657, 1138];
+const CELLS = 3, LOAD_A = 0.823;            // 3 串；当前放电 823mA
+const OUTLIER = 0;                           // Ra00 端点数据不足，画成虚线不参与结论
+const W = 1000, H = 340, ML = 58, MR = 24, MT = 26, MB = 42;
+const iw = W - ML - MR, ih = H - MT - MB;
+const maxRa = 1200;
+// index i → DOD = i/14 → SOC = 1 - i/14；SOC 100% 在左，0% 在右
+const X = i => ML + (i / 14) * iw;
+const Y = v => MT + ih - (Math.min(v, maxRa) / maxRa) * ih;
+const socAt = i => 100 - (i / 14) * 100;
+
+let s = '';
+// 网格
+for (let g = 0; g <= 4; g++) {
+  const y = MT + (ih * g / 4);
+  s += `<line x1="${ML}" y1="${y}" x2="${W-MR}" y2="${y}" stroke="rgba(91,255,199,.07)" stroke-width="1"/>`;
+  s += `<text x="${ML-9}" y="${y+3.5}" fill="#5d6f6b" font-size="9.5" font-family="IBM Plex Mono" text-anchor="end">${Math.round(maxRa - maxRa*g/4)}</text>`;
+}
+[0, 20, 40, 60, 80, 100].forEach(soc => {
+  const i = (100 - soc) / 100 * 14, x = X(i);
+  s += `<line x1="${x}" y1="${MT}" x2="${x}" y2="${MT+ih}" stroke="rgba(91,255,199,.05)"/>`;
+  s += `<text x="${x}" y="${MT+ih+20}" fill="#5d6f6b" font-size="9.5" font-family="IBM Plex Mono" text-anchor="middle">${soc}%</text>`;
+});
+s += `<text x="${ML-9}" y="${MT-10}" fill="#5d6f6b" font-size="8.5" font-family="IBM Plex Mono" text-anchor="end">mΩ</text>`;
+s += `<text x="${W-MR}" y="${MT+ih+36}" fill="#5d6f6b" font-size="8.5" font-family="IBM Plex Mono" text-anchor="end">← 剩余电量 SOC</text>`;
+
+// 「取不出来」危险区：SOC < 16.4%（当前负载下的关机点）
+const xCut = X((100 - 16.4) / 100 * 14);
+s += `<rect x="${xCut}" y="${MT}" width="${W-MR-xCut}" height="${ih}" fill="rgba(255,92,92,.07)"/>`;
+s += `<line x1="${xCut}" y1="${MT}" x2="${xCut}" y2="${MT+ih}" stroke="rgba(255,92,92,.5)" stroke-width="1" stroke-dasharray="3 3"/>`;
+s += `<text x="${xCut+8}" y="${MT+16}" fill="rgba(255,92,92,.85)" font-size="10" font-family="IBM Plex Mono">机器在此关机 · 16.4%</text>`;
+
+// 主描迹（跳过端点异常值）
+let d = '';
+for (let i = 1; i <= 14; i++) d += (i === 1 ? 'M' : 'L') + X(i) + ' ' + Y(RA[i]);
+s += `<path d="${d}" fill="none" stroke="var(--phos)" stroke-width="2.4" stroke-linejoin="round"
+       filter="url(#glow)" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1">
+       <animate attributeName="stroke-dashoffset" from="1" to="0" dur="1.5s" begin=".5s" fill="freeze" calcMode="spline" keySplines=".3 0 .2 1"/></path>`;
+// 端点异常值虚线补上
+s += `<path d="M${X(0)} ${Y(RA[0])} L${X(1)} ${Y(RA[1])}" fill="none" stroke="#5d6f6b" stroke-width="1.4" stroke-dasharray="4 4" opacity=".7"/>`;
+s += `<circle cx="${X(0)}" cy="${Y(RA[0])}" r="3" fill="none" stroke="#5d6f6b" stroke-width="1.2"/>`;
+
+// 采样点
+for (let i = 1; i <= 14; i++)
+  s += `<circle cx="${X(i)}" cy="${Y(RA[i])}" r="2.6" fill="var(--ink)" stroke="var(--phos)" stroke-width="1.4" opacity="0">
+        <animate attributeName="opacity" to="1" dur=".3s" begin="${1.4 + i*0.045}s" fill="freeze"/></circle>`;
+
+// 当前电量游标 95%
+const xNow = X((100 - 95) / 100 * 14);
+s += `<line x1="${xNow}" y1="${MT-6}" x2="${xNow}" y2="${MT+ih}" stroke="var(--phos)" stroke-width="1.2" opacity=".75"/>
+      <circle cx="${xNow}" cy="${MT-9}" r="3.4" fill="var(--phos)"><animate attributeName="r" values="3.4;5;3.4" dur="2.2s" repeatCount="indefinite"/></circle>
+      <text x="${xNow+9}" y="${MT+2}" fill="var(--phos)" font-size="10" font-family="IBM Plex Mono">你在这 · 95%</text>`;
+
+// 关键标注
+const annot = (i, txt, dy) => {
+  const x = X(i), y = Y(RA[i]);
+  return `<line x1="${x}" y1="${y}" x2="${x}" y2="${y+dy}" stroke="var(--amber)" stroke-width="1" opacity=".55"/>
+          <text x="${x-6}" y="${y+dy+(dy<0?-4:13)}" fill="var(--amber)" font-size="10" font-family="IBM Plex Mono" text-anchor="end">${txt}</text>`;
+};
+s += annot(2, '最低 70mΩ', 52);
+s += annot(14, '1138mΩ · 16×', -14);
+
+s = `<defs><filter id="glow" x="-20%" y="-40%" width="140%" height="180%">
+      <feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+     </filter></defs>` + s;
+document.getElementById('scope').innerHTML = s;
+
+/* ── 健康度圆环 ── */
+const arc = document.getElementById('dialArc'), C = 2 * Math.PI * 42;
+setTimeout(() => { arc.style.transition = 'stroke-dasharray 1.1s cubic-bezier(.2,.7,.3,1)';
+                   arc.setAttribute('stroke-dasharray', `${C*0.94} ${C}`); }, 320);
+
+/* ── 续航趋势折线（目标态示意）── */
+const TR = [{m:'2月',h:5.3},{m:'3月',h:5.2},{m:'4月',h:5.0},{m:'5月',h:4.9},{m:'6月',h:4.7},{m:'7月',h:4.6}];
+(() => {
+  const w=460,h=150,l=34,r=12,t=14,b=26, iw=w-l-r, ih=h-t-b;
+  const lo=4.4, hi=5.5;
+  const px=i=>l+(i/(TR.length-1))*iw, py=v=>t+ih-((v-lo)/(hi-lo))*ih;
+  let g='';
+  [4.5,5.0,5.5].forEach(v=>{ g+=`<line x1="${l}" y1="${py(v)}" x2="${w-r}" y2="${py(v)}" stroke="rgba(91,255,199,.07)"/>
+    <text x="${l-7}" y="${py(v)+3}" fill="#5d6f6b" font-size="8.5" font-family="IBM Plex Mono" text-anchor="end">${v}h</text>`; });
+  let ln='', ar='';
+  TR.forEach((p,i)=>{ ln+=(i?'L':'M')+px(i)+' '+py(p.h); });
+  ar = ln + `L${px(TR.length-1)} ${t+ih} L${px(0)} ${t+ih} Z`;
+  g+=`<path d="${ar}" fill="url(#tg)" opacity=".5"/>`;
+  g+=`<path d="${ln}" fill="none" stroke="var(--amber)" stroke-width="2" stroke-linejoin="round"
+        pathLength="1" stroke-dasharray="1" stroke-dashoffset="1">
+        <animate attributeName="stroke-dashoffset" from="1" to="0" dur="1.2s" begin=".7s" fill="freeze"/></path>`;
+  TR.forEach((p,i)=>{ g+=`<circle cx="${px(i)}" cy="${py(p.h)}" r="2.8" fill="var(--ink)" stroke="var(--amber)" stroke-width="1.4"/>
+    <text x="${px(i)}" y="${h-8}" fill="#5d6f6b" font-size="8.5" font-family="IBM Plex Mono" text-anchor="middle">${p.m}</text>`; });
+  document.getElementById('trend').innerHTML =
+    `<defs><linearGradient id="tg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="rgba(255,176,32,.28)"/><stop offset="1" stop-color="rgba(255,176,32,0)"/>
+     </linearGradient></defs>` + g;
+})();
+</script>
+</body>
+</html>

@@ -186,7 +186,7 @@ enum InsightEngine {
         var factors: [HealthFactor] = []
 
         // 1) 容量保持率 30%
-        let health = d.rawHealthPercent ?? Double(data.maxCapacityPercent)
+        let health = d.systemHealthPercent ?? Double(data.maxCapacityPercent)
         let capDeduct: Int
         switch health {
         case 95...:    capDeduct = 0
@@ -292,7 +292,7 @@ enum InsightEngine {
             headline: headline(level: level, data: data, d: d, health: health),
             factors: factors,
             remainingLife: remainingLife(data: data, d: d, health: health, socLog: socLog),
-            age: BatteryAgeEstimator.estimate(cycleCount: data.cycleCount, healthPercent: d.rawHealthPercent))
+            age: BatteryAgeEstimator.estimate(cycleCount: data.cycleCount, healthPercent: d.systemHealthPercent))
     }
 
     static func headline(level: HealthLevel, data: BatteryData,

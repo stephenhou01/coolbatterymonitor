@@ -74,6 +74,7 @@ extension BatteryService {
                 d.maximumDischargeCurrent = lt["MaximumDischargeCurrent"] as? Int ?? 0
                 d.minimumPackVoltage = lt["MinimumPackVoltage"] as? Int ?? 0
                 d.maximumPackVoltage = lt["MaximumPackVoltage"] as? Int ?? 0
+                d.cycleCountLastQmax = lt["CycleCountLastQmax"] as? Int ?? 0
             }
         }
 

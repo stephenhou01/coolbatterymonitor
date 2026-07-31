@@ -36,10 +36,65 @@ struct BatteryHardwareDetail: Equatable {
     var designCapacity: Int = 0
     var designCycleCount: Int = 0          // DesignCycleCount9C，本机 = 1000
 
-    /// 原始容量保持率（%）。用 AppleRaw 而非 MaxCapacity —— 后者在 AS 上是百分比。
+    /// 原始容量保持率（%）：实测满充容量 ÷ 设计容量，不做任何修正。
+    /// **比系统「设置 → 电池 → 最大容量」显示的数低**，两者定义不同，见
+    /// `systemHealthPercent`。这个数只给硬件表格用。
     var rawHealthPercent: Double? {
         guard designCapacity > 0, appleRawMaxCapacity > 0 else { return nil }
         return Double(appleRawMaxCapacity) / Double(designCapacity) * 100.0
+    }
+
+    /// 与 macOS「设置 → 电池 → 电池健康 → 最大容量」一致的容量保持率（%）。
+    ///
+    /// 公式是逆推出来的：`(AppleRawMaxCapacity + PackReserve) / (DesignCapacity - PackReserve)`。
+    /// PackReserve 是电池预留、不暴露给用户的缓冲容量；Apple 把它加回分子（电芯
+    /// 实际能装这么多）又从分母减掉（用户可见的设计容量不含缓冲）。
+    ///
+    /// 实测本机：(4111 + 127) / (4629 - 127) = 94.14% → 系统显示 94%，
+    /// 而裸比值是 88.8%。穷举过的其他候选公式分别落在 89% / 92%，只有这个对得上。
+    ///
+    /// **注意这是逆向推断，只在一台机器上验证过。** 之所以以它为主显示：用户会拿
+    /// 系统设置对照，差 6 个点只会被当成我们算错，可信度直接归零。若日后在别的
+    /// 机型上发现不符，改这里一处即可。
+    var systemHealthPercent: Double? {
+        guard designCapacity > 0, appleRawMaxCapacity > 0, packReserve >= 0,
+              designCapacity > packReserve else { return rawHealthPercent }
+        return Double(appleRawMaxCapacity + packReserve)
+             / Double(designCapacity - packReserve) * 100.0
+    }
+
+    /// 「化学上存在但取不出来」的电荷（mAh）。
+    ///
+    /// = min(Qmax) − FCC。**这是电量计自己算的数**，不是我们估的：Impedance Track
+    /// 用 Ra 阻抗表推算出「放到这里端电压就会跌破截止线」，把这部分从可用容量里扣掉。
+    /// 串联取 min，因为任何一节先到截止整组就得停。
+    /// （早先我用自建物理模型估过 674 mAh，同量级，但这个 520 才是权威值。）
+    var unusableCharge: Int? {
+        guard let q = qmax.min(), q > 0, appleRawMaxCapacity > 0, q > appleRawMaxCapacity else { return nil }
+        return q - appleRawMaxCapacity
+    }
+
+    /// 累计被永久「扣押」的电荷（mAh）：出厂设计容量 − 当前可用满充。
+    /// 物理上对应副反应消耗掉的锂（SEI 膜等），这些电荷不流经采样电阻，
+    /// 库仑计数不到，只能靠重新学习 Qmax 才量得出来。
+    var chargeDeficitTotal: Int? {
+        guard designCapacity > 0, appleRawMaxCapacity > 0,
+              designCapacity > appleRawMaxCapacity else { return nil }
+        return designCapacity - appleRawMaxCapacity
+    }
+
+    /// 平均每循环扣押的电荷（mAh）。
+    /// ⚠️ 只用于描述**已发生**的事，不可用于外推寿命 —— 锂电衰减前期快后期趋平，
+    /// 线性外推会算出荒谬的短寿命。剩余寿命请以额定循环数为准。
+    var chargeDeficitPerCycle: Double? {
+        guard let total = chargeDeficitTotal, cycleCount > 0 else { return nil }
+        return Double(total) / Double(cycleCount)
+    }
+
+    /// 距电量计上次成功学习 Qmax 过了多少循环。越小，健康度读数越新鲜可信。
+    var calibrationAgeCycles: Int? {
+        guard cycleCountLastQmax > 0, cycleCount >= cycleCountLastQmax else { return nil }
+        return cycleCount - cycleCountLastQmax
     }
 
     /// 循环使用率（0–1）
@@ -118,6 +173,8 @@ struct BatteryHardwareDetail: Equatable {
     var minimumPackVoltage: Int = 0        // mV
     var maximumPackVoltage: Int = 0        // mV
     var temperatureSamples: Int = 0
+    /// 上次成功学习 Qmax 时的循环数，用来判断健康度读数的新鲜度
+    var cycleCountLastQmax: Int = 0
 
     // MARK: 当日 SOC 快照（只有当天，做周报要 app 自己攒历史）
     var dailyMaxSoc: Int = 0
