@@ -92,6 +92,35 @@ svg{display:block;width:100%;height:auto}
 .eqi.hl b{color:var(--amber);text-shadow:0 0 16px rgba(255,176,32,.35)}
 .eqo{font-family:var(--mono);font-size:16px;color:var(--t3)}
 
+/* 功率拆分 */
+.split{display:flex;align-items:center;gap:12px;margin-top:13px;flex-wrap:wrap;padding:13px 15px;
+  background:rgba(255,255,255,.02);border-radius:2px}
+.sp{display:flex;flex-direction:column;gap:2px;min-width:96px}
+.sp b{font-family:var(--mono);font-size:20px;line-height:1}
+.sp s{font-family:var(--mono);font-size:9px;color:var(--t3);text-decoration:none}
+.sp i{font-size:10px;font-style:normal;margin-top:3px;line-height:1.5}
+.spo{font-family:var(--mono);font-size:17px;color:var(--t3)}
+.spn{flex:1;min-width:220px;font-size:11.5px;color:var(--t2);line-height:1.7;padding-left:13px;border-left:1px solid var(--line2)}
+.spn b{color:var(--txt)}
+
+/* 指标解读卡 */
+.rd{padding:15px 16px;border:1px solid var(--line);border-radius:3px;background:rgba(255,255,255,.014)}
+.rd .hd{display:flex;align-items:baseline;gap:9px;margin-bottom:11px}
+.rd .hd b{font-family:var(--mono);font-size:31px;line-height:1}
+.rd .hd s{font-size:12px;color:var(--t2);text-decoration:none}
+.rd .verdict{margin-left:auto;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px}
+.scale{display:flex;height:7px;border-radius:4px;overflow:hidden;margin:11px 0 5px}
+.scale div{flex:1}
+.scmark{position:relative;height:12px;margin-bottom:9px}
+.scmark i{position:absolute;top:-3px;width:2px;height:11px;background:var(--txt);border-radius:1px;
+  box-shadow:0 0 6px rgba(255,255,255,.6)}
+.scmark s{position:absolute;top:11px;font-family:var(--mono);font-size:8.5px;color:var(--t3);text-decoration:none;transform:translateX(-50%)}
+.rdrow{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dashed rgba(255,255,255,.05);font-size:11.5px}
+.rdrow:last-of-type{border:0}
+.rdrow .k{color:var(--t2)} .rdrow .v{font-family:var(--mono);color:var(--txt)}
+.rdimp{margin-top:11px;font-size:11px;color:var(--t3);line-height:1.7;padding:9px 11px;background:rgba(255,255,255,.02);border-radius:2px}
+.rdimp b{color:var(--t2)}
+
 /* 容量去向条 */
 .whbar{display:flex;height:54px;border-radius:3px;overflow:hidden;margin-top:14px;border:1px solid var(--line2)}
 .whseg{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;position:relative;
@@ -191,11 +220,19 @@ details[open] summary .a{transform:rotate(180deg)}
       </div>
     </section>
 
-    <!-- ② 实时曲线 -->
+    <!-- ② 实时：功率 × 剩余时间 双线 -->
     <section class="card" style="animation-delay:.10s">
       <div class="tag" data-i="rt.title"></div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:9px" id="metricTabs"></div>
-      <div class="scope"><svg id="live" viewBox="0 0 1000 210"></svg></div>
+      <h2 class="t" style="font-size:15px" data-i="p.dual_head"></h2>
+      <div class="scope"><svg id="dual" viewBox="0 0 1000 230"></svg></div>
+      <div class="legend" id="dualLeg"></div>
+      <div class="split" id="split"></div>
+    </section>
+
+    <!-- ②b 指标解读：温度 / 功率 各自的参照系 -->
+    <section class="card" style="animation-delay:.13s">
+      <div class="tag" data-i="p.read_title"></div>
+      <div class="g2" id="readCards"></div>
     </section>
 
     <!-- ③ 你买的容量去哪了 -->
@@ -282,43 +319,37 @@ function ringSvg() {
         calcMode="spline" keySplines=".25 .1 .25 1"/></circle>`;
 }
 
-/* 实时曲线：用真实读数做基线 + 轻微抖动，形态与 app 的 Swift Charts 一致 */
-const METRICS = [
-  { k: 'rt.power',       base: D.watts,        unit: 'W',  fmt: v => v.toFixed(1),  col: '#4da3ff', j: .18 },
-  { k: 'rt.voltage',     base: D.volt,         unit: 'V',  fmt: v => v.toFixed(2),  col: '#a98bff', j: .04 },
-  { k: 'rt.amperage',    base: Math.abs(D.amp),unit: 'mA', fmt: v => v.toFixed(0),  col: '#5bffc7', j: 60  },
-  { k: 'rt.temperature', base: D.temp,         unit: '°C', fmt: v => v.toFixed(1),  col: '#ffb020', j: .25 },
-  { k: 'rt.percent',     base: D.socUI,        unit: '%',  fmt: v => v.toFixed(0),  col: '#2ddc78', j: .3  },
-];
-let mi = 0;
-let SERIES = METRICS.map(m => Array.from({ length: 42 }, (_, i) =>
-  m.base + Math.sin(i / 5.5) * m.j + (Math.random() - .5) * m.j * 1.2));
-
-function drawLive() {
-  const m = METRICS[mi], s = SERIES[mi];
-  const W = 1000, H = 210, ML = 56, MR = 16, MT = 14, MB = 26;
-  const iw = W - ML - MR, ih = H - MT - MB;
-  const lo = Math.min(...s), hi = Math.max(...s), pad = (hi - lo) * .25 + 1e-6;
-  const y = v => MT + ih - (v - lo + pad) / (hi - lo + pad * 2) * ih;
-  const x = i => ML + i / (s.length - 1) * iw;
-  let g = '';
-  for (let i = 0; i <= 3; i++) { const yy = MT + ih * i / 3;
-    g += `<line x1="${ML}" y1="${yy}" x2="${W - MR}" y2="${yy}" stroke="rgba(91,255,199,.06)"/>
-          <text x="${ML - 8}" y="${yy + 3.5}" fill="#5d6f6b" font-size="9" font-family="IBM Plex Mono" text-anchor="end">${m.fmt(lo + pad + (hi - lo + pad * 2) * (3 - i) / 3 - pad)}</text>`; }
-  let ln = '', ar = '';
-  s.forEach((v, i) => { ln += (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(v).toFixed(1); });
-  ar = ln + `L${x(s.length - 1)} ${MT + ih} L${ML} ${MT + ih} Z`;
-  g += `<defs><linearGradient id="lg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="${m.col}" stop-opacity=".32"/><stop offset="1" stop-color="${m.col}" stop-opacity="0"/>
-    </linearGradient></defs><path d="${ar}" fill="url(#lg)"/>
-    <path d="${ln}" fill="none" stroke="${m.col}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-    <circle cx="${x(s.length - 1)}" cy="${y(s[s.length - 1])}" r="3.5" fill="${m.col}">
-      <animate attributeName="r" values="3.5;6;3.5" dur="2s" repeatCount="indefinite"/></circle>
-    <text x="${W - MR}" y="${MT + 12}" fill="${m.col}" font-size="15" font-family="IBM Plex Mono" text-anchor="end">${m.fmt(s[s.length - 1])} ${m.unit}</text>`;
-  $('#live').innerHTML = g;
+/* 双线：功率（左轴）+ 剩余时间（右轴）。
+   功率一跳，剩余时间必然跟着动 —— 把因果画在同一张图上。 */
+let PW = Array.from({length:44},(_,i)=> D.watts + Math.sin(i/6)*.5 + (Math.random()-.5)*.7);
+let TM = PW.map(w => Math.round(D.wh / w * 60));
+function drawDual(){
+  const W=1000,H=230,ML=52,MR=56,MT=16,MB=26,iw=W-ML-MR,ih=H-MT-MB;
+  const pLo=Math.min(...PW)*.9,pHi=Math.max(...PW)*1.1;
+  const tLo=Math.min(...TM)*.9,tHi=Math.max(...TM)*1.1;
+  const x=i=>ML+i/(PW.length-1)*iw;
+  const yP=v=>MT+ih-(v-pLo)/(pHi-pLo)*ih;
+  const yT=v=>MT+ih-(v-tLo)/(tHi-tLo)*ih;
+  let g=`<defs><linearGradient id="pg" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#4da3ff" stop-opacity=".26"/><stop offset="1" stop-color="#4da3ff" stop-opacity="0"/></linearGradient></defs>`;
+  for(let k=0;k<=3;k++){const yy=MT+ih*k/3;
+    g+=`<line x1="${ML}" y1="${yy}" x2="${W-MR}" y2="${yy}" stroke="rgba(91,255,199,.06)"/>
+        <text x="${ML-7}" y="${yy+3.5}" fill="#4da3ff" font-size="9" font-family="IBM Plex Mono" text-anchor="end" opacity=".8">${(pHi-(pHi-pLo)*k/3).toFixed(1)}</text>
+        <text x="${W-MR+7}" y="${yy+3.5}" fill="#5bffc7" font-size="9" font-family="IBM Plex Mono" opacity=".8">${Math.round(tHi-(tHi-tLo)*k/3)}</text>`;}
+  let lp='',lt='';
+  PW.forEach((v,i)=>lp+=(i?'L':'M')+x(i).toFixed(1)+' '+yP(v).toFixed(1));
+  TM.forEach((v,i)=>lt+=(i?'L':'M')+x(i).toFixed(1)+' '+yT(v).toFixed(1));
+  g+=`<path d="${lp}L${x(PW.length-1)} ${MT+ih}L${ML} ${MT+ih}Z" fill="url(#pg)"/>
+      <path d="${lt}" fill="none" stroke="#5bffc7" stroke-width="1.8" stroke-dasharray="5 3" opacity=".85"/>
+      <path d="${lp}" fill="none" stroke="#4da3ff" stroke-width="2.2" stroke-linejoin="round"/>
+      <circle cx="${x(PW.length-1)}" cy="${yP(PW[PW.length-1])}" r="3.5" fill="#4da3ff"><animate attributeName="r" values="3.5;6;3.5" dur="2s" repeatCount="indefinite"/></circle>
+      <circle cx="${x(TM.length-1)}" cy="${yT(TM[TM.length-1])}" r="3" fill="#5bffc7"/>
+      <text x="${ML}" y="${MT-3}" fill="#4da3ff" font-size="9" font-family="IBM Plex Mono">W</text>
+      <text x="${W-MR+7}" y="${MT-3}" fill="#5bffc7" font-size="9" font-family="IBM Plex Mono">min</text>`;
+  document.getElementById('dual').innerHTML=g;
 }
-setInterval(() => { SERIES.forEach((s, i) => { const m = METRICS[i];
-  s.push(m.base + Math.sin(Date.now() / 3200) * m.j + (Math.random() - .5) * m.j * 1.2); s.shift(); }); drawLive(); }, 1600);
+setInterval(()=>{ const w=D.watts+Math.sin(Date.now()/4000)*.6+(Math.random()-.5)*.8;
+  PW.push(w); PW.shift(); TM.push(Math.round(D.wh/w*60)); TM.shift(); drawDual(); },1600);
 
 /* 内阻示波器 */
 function drawScope() {
@@ -384,10 +415,49 @@ function render() {
     [T('rt.power'), D.watts.toFixed(1), 'W'],
   ].map(([l, v, u]) => `<div class="sc"><div class="l">${l}</div><div class="v">${v}<small> ${u}</small></div></div>`).join('');
 
-  $('#metricTabs').innerHTML = METRICS.map((m, i) =>
-    `<button onclick="mi=${i};drawLive();render()" style="font-family:var(--mono);font-size:10px;padding:4px 11px;cursor:pointer;
-      border-radius:20px;border:1px solid ${i === mi ? 'var(--phosd)' : 'var(--line)'};
-      background:${i === mi ? 'rgba(91,255,199,.13)' : 'transparent'};color:${i === mi ? 'var(--phos)' : 'var(--t3)'}">${T(m.k)}</button>`).join('');
+  $('#dualLeg').innerHTML =
+    `<span><i style="background:#4da3ff"></i>${T('rt.power')} (W)</span>
+     <span><i style="background:var(--phos)"></i>${T('p.remaining')} (min)</span>`;
+  $('#split').innerHTML =
+    `<div class="sp"><b style="color:var(--blue)">${D.watts.toFixed(1)}</b><s>W</s><i style="color:var(--t2)">${T('rt.power')}</i></div>
+     <div class="spo">=</div>
+     <div class="sp"><b style="color:var(--violet)">${D.volt.toFixed(2)}</b><s>V</s><i style="color:var(--t3)">${T('p.split_v')}</i></div>
+     <div class="spo">×</div>
+     <div class="sp"><b style="color:var(--phos)">${Math.abs(D.amp)}</b><s>mA</s><i style="color:var(--t3)">${T('p.split_i')}</i></div>
+     <div class="spn">${T('p.split_note')}</div>`;
+
+  // 指标解读：温度 / 功率，各自给参照系
+  const tAvg = D.tempAvg, tMax = D.tempMax, tMin = D.tempMin, tNow = D.temp;
+  const tv = tNow < 35 ? ['ok', T('p.t_ok')] : tNow < 40 ? ['warn', T('p.t_warn')] : ['bad', T('p.t_bad')];
+  const pRatio = D.watts / D.avgW;
+  const pv = pRatio < .85 ? ['ok', T('p.p_low')] : pRatio < 1.3 ? ['mid', T('p.p_mid')] : ['warn', T('p.p_high')];
+  const COL = { ok: 'var(--phos)', mid: 'var(--blue)', warn: 'var(--amber)', bad: 'var(--red)' };
+  const mark = (v, lo, hi) => Math.max(0, Math.min(100, (v - lo) / (hi - lo) * 100));
+  $('#readCards').innerHTML = `
+   <div class="rd">
+     <div class="hd"><b style="color:${COL[tv[0]]}">${tNow.toFixed(1)}</b><s>°C · ${T('stat.temperature')}</s>
+       <span class="verdict" style="color:${COL[tv[0]]};background:${COL[tv[0]].replace('var(--','rgba(').replace(')','')};background:rgba(255,255,255,.06)">${tv[1]}</span></div>
+     <div class="scale"><div style="background:rgba(91,255,199,.5)"></div><div style="background:rgba(255,176,32,.5)"></div><div style="background:rgba(255,92,92,.5)"></div></div>
+     <div class="scmark"><i style="left:${mark(tNow, 0, 60)}%"></i>
+       <s style="left:${mark(35,0,60)}%">35</s><s style="left:${mark(45,0,60)}%">45</s></div>
+     <div class="rdrow"><span class="k">${T('p.t_lifeavg')}</span><span class="v">${tAvg.toFixed(1)} °C</span></div>
+     <div class="rdrow"><span class="k">${T('p.t_hist')}</span><span class="v">${tMin} – ${tMax} °C</span></div>
+     <div class="rdrow"><span class="k">${T('p.t_today')}</span><span class="v" style="color:var(--t3)">${T('p.collecting')}</span></div>
+     <div class="rdrow"><span class="k">${T('p.t_vs')}</span><span class="v" style="color:${tNow > tAvg ? 'var(--amber)' : 'var(--phos)'}">${(tNow - tAvg >= 0 ? '+' : '') + (tNow - tAvg).toFixed(1)} °C</span></div>
+     <div class="rdimp">${T('p.t_impact')}</div>
+   </div>
+   <div class="rd">
+     <div class="hd"><b style="color:${COL[pv[0]]}">${D.watts.toFixed(1)}</b><s>W · ${T('rt.power')}</s>
+       <span class="verdict" style="color:${COL[pv[0]]};background:rgba(255,255,255,.06)">${pv[1]}</span></div>
+     <div class="scale"><div style="background:rgba(91,255,199,.5)"></div><div style="background:rgba(77,163,255,.5)"></div><div style="background:rgba(255,176,32,.5)"></div><div style="background:rgba(255,92,92,.5)"></div></div>
+     <div class="scmark"><i style="left:${mark(D.watts, 0, 45)}%"></i>
+       <s style="left:${mark(D.avgW,0,45)}%">${D.avgW}</s><s style="left:${mark(25,0,45)}%">25</s></div>
+     <div class="rdrow"><span class="k">${T('p.p_base')}</span><span class="v">${D.avgW} W</span></div>
+     <div class="rdrow"><span class="k">${T('p.p_ratio')}</span><span class="v" style="color:${COL[pv[0]]}">${(pRatio * 100).toFixed(0)}%</span></div>
+     <div class="rdrow"><span class="k">${T('p.p_energy')}</span><span class="v">${D.wh} Wh</span></div>
+     <div class="rdrow"><span class="k">${T('p.p_theory')}</span><span class="v">${(D.wh / D.watts).toFixed(1)} h</span></div>
+     <div class="rdimp">${T('p.p_impact').replace('{a}', `<b>${(D.wh / D.avgW).toFixed(1)}h</b>`).replace('{b}', `<b>${(D.wh / 25).toFixed(1)}h</b>`).replace('{c}', `<b>${(D.wh / 45).toFixed(1)}h</b>`)}</div>
+   </div>`;
 
   // ③ 你买的容量去哪了 —— 三段加起来正好等于出厂标称
   const use = D.fcc, un = D.unusable, ag = D.aged, tot = D.design;
@@ -448,7 +518,7 @@ function render() {
     「变化趋势」为目标态示意，需长期记录才有真实数据；其余均为实测`;
 }
 
-ringSvg(); drawScope(); drawTrend(); drawLive(); render();
+ringSvg(); drawScope(); drawTrend(); drawDual(); render();
 </script>
 </body>
 </html>
