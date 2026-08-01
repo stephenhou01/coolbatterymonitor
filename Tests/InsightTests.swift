@@ -554,6 +554,13 @@ expect(menuPresentation.runtimeMinutes == 248 && !menuPresentation.isForecast,
        "电池供电时菜单栏直接采用macOS的248分钟，不被当前功率二次改写")
 expect(MenuBarPresentation.durationText(menuPresentation.runtimeMinutes) == "4h 08m",
        "菜单栏分钟数格式化为小时和分钟")
+var textOnlyStatusBattery = menuBattery
+textOnlyStatusBattery.percent = 60
+textOnlyStatusBattery.timeRemainingMinutes = 246
+let textOnlyStatus = MenuBarPresentation(data: textOnlyStatusBattery)
+    .menuBarText(secondaryMetric: .runtime)
+expect(textOnlyStatus == "60% (4h 06m)",
+       "顶部状态项只展示电量与所选指标文字，不混入电池或充电图标")
 
 var menuAC = menuBattery
 menuAC.isOnAC = true

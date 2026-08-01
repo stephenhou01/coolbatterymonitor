@@ -108,47 +108,105 @@ struct MenuBarStatusLabel: View {
     private var presentation: MenuBarPresentation { .init(data: data) }
 
     var body: some View {
-        HStack(spacing: 5) {
-            MenuBarBatteryGlyph(percent: data.percent, isCharging: data.isCharging || data.isOnAC)
-            Text(presentation.menuBarText(secondaryMetric: secondaryMetric))
-                .monospacedDigit()
-        }
+        Text(presentation.menuBarText(secondaryMetric: secondaryMetric))
+            .monospacedDigit()
         .accessibilityLabel("\(presentation.percentText), \(presentation.title(for: secondaryMetric)) \(presentation.value(for: secondaryMetric))")
     }
 }
 
-private struct MenuBarBatteryGlyph: View {
-    let percent: Int
-    let isCharging: Bool
+/// Shared configuration for the text-only status item. The percentage remains
+/// the stable anchor; users choose the live metric shown in parentheses.
+struct MenuBarTopStatusConfigurationView: View {
+    let data: BatteryData
+    var compact = false
 
-    private var fraction: CGFloat {
-        CGFloat(max(0, min(100, percent))) / 100
-    }
+    @Environment(MenuBarSettings.self) private var menuSettings
+
+    private var presentation: MenuBarPresentation { .init(data: data) }
 
     var body: some View {
-        HStack(spacing: 1) {
-            ZStack(alignment: .leading) {
-                RoundedRectangle(cornerRadius: 2.2, style: .continuous)
-                    .stroke(.primary, lineWidth: 1.25)
-                GeometryReader { geometry in
-                    RoundedRectangle(cornerRadius: 1.2, style: .continuous)
-                        .fill(.primary)
-                        .frame(width: max(1, (geometry.size.width - 3) * fraction))
-                        .padding(1.5)
+        VStack(alignment: .leading, spacing: compact ? 8 : 12) {
+            HStack(alignment: .center, spacing: 12) {
+                if !compact {
+                    MetricGlyph(.stateOfCharge, tint: AppTheme.chargingCyan, scale: .card)
                 }
-                if isCharging {
-                    Image(systemName: "bolt.fill")
-                        .font(.system(size: 5.5, weight: .black))
-                        .foregroundStyle(.background)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(dashboardText("menu.config.second_metric", fallback: "顶部状态栏"))
+                        .font(.system(size: compact ? 10.5 : 13, weight: .semibold))
+                        .foregroundStyle(AppTheme.textPrimary)
+                    Text(dashboardText("menu.config.status_hint", fallback: "固定显示电量，再选择一个实时指标"))
+                        .font(.system(size: compact ? 8.5 : 9.5))
+                        .foregroundStyle(AppTheme.textSecondary)
+                        .lineLimit(1)
+                }
+
+                Spacer(minLength: 10)
+
+                Text(presentation.menuBarText(secondaryMetric: menuSettings.secondaryMetric))
+                    .font(.system(size: compact ? 10 : 11.5, weight: .semibold, design: .rounded))
+                    .foregroundStyle(AppTheme.textPrimary)
+                    .monospacedDigit()
+                    .padding(.horizontal, 10)
+                    .frame(height: compact ? 27 : 30)
+                    .background(Capsule().fill(AppTheme.chargingBlue.opacity(0.12)))
+                    .overlay(Capsule().stroke(AppTheme.chargingBlue.opacity(0.28), lineWidth: 1))
+                    .accessibilityLabel(presentation.menuBarText(secondaryMetric: menuSettings.secondaryMetric))
+            }
+
+            HStack(spacing: 8) {
+                Text(dashboardText("menu.config.metric_choice", fallback: "第二项显示"))
+                    .font(.system(size: 9.5, weight: .medium))
+                    .foregroundStyle(AppTheme.textSecondary)
+                Spacer()
+                metricPicker
+            }
+        }
+        .padding(compact ? 10 : 14)
+        .background(
+            RoundedRectangle(cornerRadius: compact ? 9 : 12, style: .continuous)
+                .fill(AppTheme.contrastOverlay(0.028))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: compact ? 9 : 12, style: .continuous)
+                .stroke(AppTheme.cardBorder, lineWidth: 1)
+        )
+    }
+
+    private var metricPicker: some View {
+        Menu {
+            ForEach(MenuBarMetric.allCases) { metric in
+                Button {
+                    menuSettings.selectSecondaryMetric(metric)
+                } label: {
+                    if menuSettings.secondaryMetric == metric {
+                        Label(metric.title, systemImage: "checkmark")
+                    } else {
+                        Label(metric.title, systemImage: metric.symbol)
+                    }
                 }
             }
-            .frame(width: 19, height: 10)
-
-            Capsule().fill(.primary).frame(width: 1.8, height: 4.5)
+        } label: {
+            HStack(spacing: 6) {
+                MetricGlyph(menuSettings.secondaryMetric.icon,
+                            tint: AppTheme.chargingBlue,
+                            scale: .micro,
+                            style: .plain)
+                Text(menuSettings.secondaryMetric.title)
+                    .lineLimit(1)
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.system(size: 7, weight: .bold))
+            }
+            .font(.system(size: 9.5, weight: .medium))
+            .foregroundStyle(AppTheme.chargingBlue)
+            .padding(.horizontal, 9)
+            .frame(height: 29)
+            .background(RoundedRectangle(cornerRadius: 7).fill(AppTheme.contrastOverlay(0.05)))
+            .overlay(RoundedRectangle(cornerRadius: 7).stroke(AppTheme.cardBorder))
         }
-        .frame(width: 22, height: 12)
-        .accessibilityHidden(true)
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .fixedSize()
     }
 }
 
@@ -365,6 +423,9 @@ struct MenuBarDashboardView: View {
 
     private var values: some View {
         VStack(spacing: 0) {
+            MenuBarTopStatusConfigurationView(data: data, compact: true)
+                .padding(.vertical, 10)
+
             HStack {
                 Text(dashboardText("menu.config.title", fallback: "已显示指标"))
                     .font(.system(size: 10.5, weight: .semibold))
@@ -397,7 +458,6 @@ struct MenuBarDashboardView: View {
             }
 
             if isCustomizing {
-                secondaryMetricEditor
                 addMoreMetricsButton
             }
         }
@@ -484,52 +544,6 @@ struct MenuBarDashboardView: View {
                 dropTarget = nil
             }
         }
-    }
-
-    private var secondaryMetricEditor: some View {
-        HStack(spacing: 10) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(dashboardText("menu.config.second_metric", fallback: "顶部第二指标"))
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(AppTheme.textPrimary)
-                Text("\(presentation.percentText) + \(presentation.value(for: menuSettings.secondaryMetric))")
-                    .font(.system(size: 8.5, design: .monospaced))
-                    .foregroundStyle(AppTheme.textTertiary)
-            }
-            Spacer()
-            Menu {
-                ForEach(MenuBarMetric.allCases) { metric in
-                    Button {
-                        menuSettings.selectSecondaryMetric(metric)
-                    } label: {
-                        if menuSettings.secondaryMetric == metric {
-                            Label(metric.title, systemImage: "checkmark")
-                        } else {
-                            Text(metric.title)
-                        }
-                    }
-                }
-            } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: menuSettings.secondaryMetric.symbol)
-                    Text(menuSettings.secondaryMetric.title)
-                    Image(systemName: "chevron.up.chevron.down")
-                        .font(.system(size: 7, weight: .bold))
-                }
-                .font(.system(size: 9.5, weight: .medium))
-                .foregroundStyle(AppTheme.chargingBlue)
-                .padding(.horizontal, 9)
-                .frame(height: 29)
-                .background(RoundedRectangle(cornerRadius: 7).fill(AppTheme.contrastOverlay(0.05)))
-                .overlay(RoundedRectangle(cornerRadius: 7).stroke(AppTheme.cardBorder))
-            }
-            .menuStyle(.borderlessButton)
-            .menuIndicator(.hidden)
-            .fixedSize()
-        }
-        .padding(.horizontal, 7)
-        .frame(height: 45)
-        .overlay(alignment: .bottom) { Divider().overlay(AppTheme.cardBorder) }
     }
 
     private var addMoreMetricsButton: some View {

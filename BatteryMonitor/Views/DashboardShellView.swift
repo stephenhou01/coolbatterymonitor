@@ -688,6 +688,10 @@ struct DashboardSettingsPage: View {
 
     private var menuBarMetricSettingsCard: some View {
         VStack(alignment: .leading, spacing: 14) {
+            MenuBarTopStatusConfigurationView(data: batteryService.batteryData)
+
+            Divider().overlay(AppTheme.cardBorder)
+
             HStack(spacing: 14) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 11).fill(AppTheme.batteryGreen.opacity(0.10))
@@ -695,7 +699,7 @@ struct DashboardSettingsPage: View {
                 }
                 .frame(width: 42, height: 42)
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(dashboardText("menu.config.title", fallback: "显示指标"))
+                    Text(dashboardText("menu.config.title", fallback: "弹出面板指标"))
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(AppTheme.textPrimary)
                     Text(dashboardText("menu.config.manage_in_dashboard", fallback: "选择菜单栏面板要显示的指标；顺序和删除可在面板编辑状态调整。"))

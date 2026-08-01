@@ -45,7 +45,7 @@ let shellAndMenuKeys = [
     "shell.diagnosing", "shell.system_anomalies", "shell.settings_subtitle", "shell.appearance",
     "shell.live_refresh", "shell.privacy_note", "shell.dynamic_trends", "shell.last_minutes",
     "shell.instant_power", "shell.current", "shell.top_processes", "shell.cpu_context",
-    "menu.config.title", "menu.config.second_metric", "menu.config.customize", "menu.config.empty",
+    "menu.config.title", "menu.config.second_metric", "menu.config.status_hint", "menu.config.metric_choice", "menu.config.customize", "menu.config.empty",
     "menu.config.drag_to_reorder", "menu.config.add_more", "menu.config.manage_in_dashboard",
     "menu.config.show", "menu.config.hide", "menu.config.move_up", "menu.config.move_down",
     "menu.config.restore_defaults", "menu.metric.runtime", "menu.metric.power",
@@ -75,8 +75,10 @@ for pack in bundledPacks.sorted(by: { $0.meta.order < $1.meta.order }) {
     expect(missing.isEmpty, "\(pack.meta.code): 外观/主壳/菜单栏配置 key 齐全\(missing.isEmpty ? "" : "，缺少 \(missing)")")
 }
 l.select("zh-Hans")
-expect(l.string("menu.config.title") == "显示指标"
-       && l.string("menu.config.second_metric") == "顶部第二项"
+expect(l.string("menu.config.title") == "弹出面板指标"
+       && l.string("menu.config.second_metric") == "顶部状态栏"
+       && l.string("menu.config.status_hint") == "固定显示电量，再选择一个实时指标"
+       && l.string("menu.config.metric_choice") == "第二项显示"
        && l.string("menu.process.latest_real_sample") == "使用最近一次真实采样",
        "简体中文菜单栏配置文案准确")
 l.select("fr")
