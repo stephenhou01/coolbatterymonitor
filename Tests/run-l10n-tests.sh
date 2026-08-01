@@ -10,45 +10,26 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 ROOT=$(pwd)
-
-TEST_TMP_ROOT=${TMPDIR:-/tmp}
-BUILD=$(mktemp -d "$TEST_TMP_ROOT/BatteryMonitor-l10n-build.XXXXXX")
-TEST_HOME=$(mktemp -d "$TEST_TMP_ROOT/BatteryMonitor-l10n-home.XXXXXX")
+BUILD="$ROOT/.build/tests/l10n"
+TEST_HOME="$ROOT/.build/tests/l10n-home"
+SIGN_IDENTITY=${BATTERYMONITOR_TEST_SIGN_IDENTITY:-Apple Development: ningjun hou (3FAB9WC88G)}
 
 # CFFIXED_USER_HOME 是 Foundation 测试使用的用户目录覆盖。测试进程因此只能看到
-# 临时 Application Support 和 UserDefaults，绝不读写真实用户目录。
+# 项目 .build 内隔离的 Application Support 和 UserDefaults，绝不读写真实用户目录。
 OVERRIDE="$TEST_HOME/Library/Application Support/BatteryMonitor/Languages"
-
-# 所有删除目标都是本脚本创建、路径明确的单个文件或空目录。目录非空时 rmdir
-# 会安全失败并留给系统临时目录清理；这里有意不使用任何递归删除。
-cleanup() {
-    rm -f "$OVERRIDE/de.json"
-    rm -f "$OVERRIDE/it.json"
-    rm -f "$TEST_HOME/Library/Preferences/com.stephen.L10nTest.plist"
-    rm -f "$TEST_HOME/.CFUserTextEncoding"
-    rm -f "$APP/Contents/Resources/Languages"
-    rm -f "$APP/Contents/MacOS/T"
-    rm -f "$APP/Contents/Info.plist"
-    rm -f "$BUILD/main.swift"
-    rmdir "$OVERRIDE" 2>/dev/null || true
-    rmdir "$TEST_HOME/Library/Application Support/BatteryMonitor" 2>/dev/null || true
-    rmdir "$TEST_HOME/Library/Application Support" 2>/dev/null || true
-    rmdir "$TEST_HOME/Library/Preferences" 2>/dev/null || true
-    rmdir "$TEST_HOME/Library/Caches" 2>/dev/null || true
-    rmdir "$TEST_HOME/Library" 2>/dev/null || true
-    rmdir "$TEST_HOME" 2>/dev/null || true
-    rmdir "$APP/Contents/Resources" 2>/dev/null || true
-    rmdir "$APP/Contents/MacOS" 2>/dev/null || true
-    rmdir "$APP/Contents" 2>/dev/null || true
-    rmdir "$APP" 2>/dev/null || true
-    rmdir "$BUILD" 2>/dev/null || true
-}
-trap cleanup EXIT
 
 APP="$BUILD/T.app"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-# 语言包是只读 fixture；使用符号链接避免复制整棵目录，也让清理保持逐文件。
-ln -s "$ROOT/Localization/Languages" "$APP/Contents/Resources/Languages"
+# 固定构建目录只覆盖已知单文件，不做递归删除。
+rm -f "$OVERRIDE/de.json" "$OVERRIDE/it.json"
+rm -f "$APP/Contents/MacOS/T" "$APP/Contents/Info.plist"
+if [ -L "$APP/Contents/Resources/Languages" ]; then
+    rm -f "$APP/Contents/Resources/Languages"
+fi
+# 语言包是只读 fixture。复制十个已知 JSON 到包内，让固定路径下的测试 App
+# 可以用 Apple Development 证书正常签名，不依赖指向包外的符号链接。
+mkdir -p "$APP/Contents/Resources/Languages"
+cp "$ROOT/Localization/Languages/"*.json "$APP/Contents/Resources/Languages/"
 cat > "$APP/Contents/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -67,6 +48,11 @@ swiftc -O -target arm64-apple-macos14 \
     -o "$APP/Contents/MacOS/T" \
     "$ROOT/BatteryMonitor/Services/Localization.swift" \
     "$BUILD/main.swift"
+
+echo "▸ 签名"
+codesign --force --sign "$SIGN_IDENTITY" --timestamp=none "$APP/Contents/MacOS/T"
+codesign --force --deep --sign "$SIGN_IDENTITY" --timestamp=none "$APP"
+codesign --verify --strict --deep "$APP"
 
 echo "▸ 阶段1：仅 bundle 内置语言包"
 env HOME="$TEST_HOME" CFFIXED_USER_HOME="$TEST_HOME" "$APP/Contents/MacOS/T"

@@ -51,6 +51,9 @@ let shellAndMenuKeys = [
     "menu.metric.temperature", "menu.metric.health", "menu.metric.cycles", "menu.metric.current",
     "menu.process.none", "menu.process.latest_real_sample", "p.menu_settings",
     "p.menu_close", "p.menu_language", "p.menu_quit",
+    "p.help_summary_adapter_power", "p.help_source_adapter_power",
+    "p.help_summary_charging_power", "p.help_source_charging_power",
+    "p.help_summary_cycle_count", "p.help_source_cycle_count",
 ]
 let bundledPackURLs = Bundle.main.urls(forResourcesWithExtension: "json", subdirectory: "Languages") ?? []
 let bundledPacks = bundledPackURLs.compactMap { try? JSONDecoder().decode(LanguagePack.self, from: Data(contentsOf: $0)) }

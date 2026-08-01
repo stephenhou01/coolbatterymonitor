@@ -934,6 +934,93 @@ enum DashboardHelp {
         )
     }
 
+    static func adapterPower(_ s: DashboardMetricSnapshot) -> MetricHelpContent {
+        let detail = s.detail
+        let watts = detail.adapterWatts > 0 ? detail.adapterWatts : s.data.chargerWattage
+        let displayedWatts = watts > 0 ? "\(watts) W" : "unavailable"
+        return content(
+            id: "power.adapter",
+            title: dashboardText("shell.adapter", fallback: "适配器功率"),
+            summary: dashboardText(
+                "p.help_summary_adapter_power",
+                fallback: "这是充电器与电脑协商出的额定功率，不是电脑此刻一定正在消耗这么多。拔掉电源后，这组字段通常会消失。"
+            ),
+            result: watts > 0 ? "\(watts) W" : "—",
+            fields: [
+                field("AdapterDetails.Watts", watts, "W"),
+                field("AdapterDetails.AdapterVoltage", detail.adapterVoltage, "mV"),
+                field("AdapterDetails.Current", detail.adapterCurrent, "mA"),
+                field("AdapterDetails.Description", detail.adapterDescription),
+            ],
+            formula: dashboardText("p.help_direct", fallback: "无公式：直接读取系统字段。"),
+            substitution: "AdapterDetails.Watts → \(displayedWatts)",
+            source: dashboardText(
+                "p.help_source_adapter_power",
+                fallback: "IOKit AppleSmartBattery.AdapterDetails。它表示当前电源协商档位；实际输入功率请看 SystemPowerIn。"
+            )
+        )
+    }
+
+    static func chargingPower(_ s: DashboardMetricSnapshot) -> MetricHelpContent {
+        let detail = s.detail
+        let watts = max(0, Double(detail.systemPowerIn) / 1000.0)
+        let displayedWatts = LNum("%.1f W", watts)
+        return content(
+            id: "power.charging",
+            title: dashboardText("shell.charge_power", fallback: "充电功率"),
+            summary: dashboardText(
+                "p.help_summary_charging_power",
+                fallback: "这里展示电源送进整机的实时输入功率。它包含电脑当下运行所需的电，因此不等于全部进入电池的功率。"
+            ),
+            result: displayedWatts,
+            fields: [
+                field("PowerTelemetryData.SystemPowerIn", detail.systemPowerIn, "mW"),
+                field("PowerTelemetryData.VoltageIn", detail.systemVoltageIn, "mV"),
+                field("PowerTelemetryData.CurrentIn", detail.systemCurrentIn, "mA"),
+                field("PowerTelemetryData.AdapterEfficiencyLoss", detail.adapterEfficiencyLoss, "mW"),
+            ],
+            formula: "inputPowerW = SystemPowerIn ÷ 1000",
+            substitution: "\(detail.systemPowerIn) ÷ 1000 = \(displayedWatts)",
+            source: dashboardText(
+                "p.help_source_charging_power",
+                fallback: "IOKit PowerTelemetryData.SystemPowerIn。该字段只在连接电源且系统提供实时遥测时有效。"
+            )
+        )
+    }
+
+    static func cycleCount(_ s: DashboardMetricSnapshot) -> MetricHelpContent {
+        let count = s.detail.cycleCount > 0 ? s.detail.cycleCount : s.data.cycleCount
+        let rated = s.detail.designCycleCount
+        let usage = rated > 0 ? Double(count) / Double(rated) * 100 : nil
+        let substitution: String
+        if let usage {
+            substitution = "\(count) ÷ \(rated) × 100 = \(LNum("%.1f%%", usage))"
+        } else {
+            substitution = "CycleCount → \(count)"
+        }
+        return content(
+            id: "cycles.count",
+            title: MenuBarMetric.cycles.title,
+            summary: dashboardText(
+                "p.help_summary_cycle_count",
+                fallback: "一次循环等于累计用掉 100% 的设计电量，可以由多次浅充浅放累加。它像里程表，不能单独代表电池健康。"
+            ),
+            result: "\(count)",
+            fields: [
+                field("CycleCount", count, "cycles"),
+                field("DesignCycleCount9C", rated, "cycles"),
+            ],
+            formula: rated > 0
+                ? "cycleUse = CycleCount ÷ DesignCycleCount × 100"
+                : dashboardText("p.help_direct", fallback: "无公式：直接读取系统字段。"),
+            substitution: substitution,
+            source: dashboardText(
+                "p.help_source_cycle_count",
+                fallback: "IOKit CycleCount；额定参考来自 DesignCycleCount9C。达到额定循环数不等于电池会立即失效。"
+            )
+        )
+    }
+
     static func temperature(_ s: DashboardMetricSnapshot) -> MetricHelpContent {
         let raw = s.detail.temperatureRaw
         let divisor: Double

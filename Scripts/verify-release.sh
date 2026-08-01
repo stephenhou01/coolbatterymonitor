@@ -3,6 +3,8 @@
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
+ROOT=$(pwd)
+DERIVED_DATA="$ROOT/.build/verify-release/DerivedData"
 
 for tool in xcodebuild swiftc python3 plutil rg lipo sips; do
     if ! command -v "$tool" >/dev/null 2>&1; then
@@ -56,6 +58,9 @@ assert len(paths) == 10, f"expected 10 language packs, got {len(paths)}"
 reference_keys = None
 required_help_keys = {
     "p.help_summary_soc", "p.help_summary_health", "p.help_summary_power",
+    "p.help_summary_adapter_power", "p.help_source_adapter_power",
+    "p.help_summary_charging_power", "p.help_source_charging_power",
+    "p.help_summary_cycle_count", "p.help_source_cycle_count",
     "p.help_summary_temperature", "p.help_summary_time_history",
     "p.help_summary_capacity", "p.help_origin_model",
     "p.help_origin_derived", "p.help_origin_iokit",
@@ -107,7 +112,8 @@ assert "BatteryMonitor" in p["schemes"]
 assert "BatteryMonitor" in p["targets"]
 '
 settings=$(xcodebuild -project BatteryMonitor.xcodeproj -scheme BatteryMonitor \
-    -configuration Release -destination 'generic/platform=macOS' -showBuildSettings 2>/dev/null)
+    -configuration Release -destination 'generic/platform=macOS' \
+    -derivedDataPath "$DERIVED_DATA" -showBuildSettings 2>/dev/null)
 grep -q 'PRODUCT_BUNDLE_IDENTIFIER = com.stephen.BatteryMonitor' <<<"$settings"
 grep -q 'ARCHS = arm64 x86_64' <<<"$settings"
 grep -q 'ENABLE_HARDENED_RUNTIME = YES' <<<"$settings"
@@ -119,6 +125,7 @@ fi
 echo "▸ 编译 Release 应用（不签名、不归档、不上传）"
 xcodebuild -quiet -project BatteryMonitor.xcodeproj -scheme BatteryMonitor \
     -configuration Release -destination 'generic/platform=macOS' \
+    -derivedDataPath "$DERIVED_DATA" \
     CODE_SIGNING_ALLOWED=NO build
 built_products=$(awk -F ' = ' '/^[[:space:]]*BUILT_PRODUCTS_DIR = / {print $2; exit}' <<<"$settings")
 app="$built_products/BatteryMonitor.app"

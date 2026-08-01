@@ -8,27 +8,35 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 ROOT=$(pwd)
-
-TEST_TMP_ROOT=${TMPDIR:-/tmp}
-BUILD=$(mktemp -d "$TEST_TMP_ROOT/BatteryMonitor-insight.XXXXXX")
-
-# 只清理由本脚本创建且路径完全确定的两个文件。禁止递归删除，避免临时变量
-# 异常时误伤工作区或用户目录；目录非空时 rmdir 会安全失败并留给系统清理。
-cleanup() {
-    rm -f "$BUILD/main.swift"
-    rm -f "$BUILD/t"
-    rmdir "$BUILD" 2>/dev/null || true
-}
-trap cleanup EXIT
+BUILD="$ROOT/.build/tests/insight"
+SIGN_IDENTITY=${BATTERYMONITOR_TEST_SIGN_IDENTITY:-Apple Development: ningjun hou (3FAB9WC88G)}
+APP="$BUILD/InsightTests.app"
+mkdir -p "$APP/Contents/MacOS"
+rm -f "$APP/Contents/MacOS/InsightTests" "$APP/Contents/Info.plist"
+cat > "$APP/Contents/Info.plist" <<'PLIST'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+<key>CFBundleExecutable</key><string>InsightTests</string>
+<key>CFBundleIdentifier</key><string>com.stephen.BatteryMonitor.InsightTests</string>
+<key>CFBundleName</key><string>BatteryMonitor Insight Tests</string>
+<key>CFBundlePackageType</key><string>APPL</string>
+</dict></plist>
+PLIST
 
 echo "▸ 编译…"
 cp "$ROOT/Tests/InsightTests.swift" "$BUILD/main.swift"
 # shellcheck disable=SC2046
 swiftc -O -target arm64-apple-macos14 \
     -framework IOKit -framework AppKit -framework SwiftUI -framework Charts \
-    -o "$BUILD/t" \
+    -o "$APP/Contents/MacOS/InsightTests" \
     $(find "$ROOT/BatteryMonitor" -name "*.swift" ! -name "BatteryMonitorApp.swift") \
     "$BUILD/main.swift"
 
+echo "▸ 签名"
+codesign --force --sign "$SIGN_IDENTITY" --timestamp=none "$APP/Contents/MacOS/InsightTests"
+codesign --force --deep --sign "$SIGN_IDENTITY" --timestamp=none "$APP"
+codesign --verify --strict --deep "$APP"
+
 echo "▸ 运行"
-"$BUILD/t"
+"$APP/Contents/MacOS/InsightTests"
