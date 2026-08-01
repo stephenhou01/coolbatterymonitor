@@ -765,6 +765,9 @@
     "menu.config.restore_defaults": "Rétablir les réglages par défaut",
     "menu.process.none": "Aucune app active",
     "menu.process.latest_real_sample": "Utiliser la dernière mesure réelle",
-    "menu.config.empty": "Aucun indicateur affiché. Ajoutez-en via Modifier."
+    "menu.config.empty": "Aucun indicateur affiché. Ajoutez-en via Modifier.",
+    "menu.config.drag_to_reorder": "Faire glisser pour réorganiser",
+    "menu.config.add_more": "Ajouter des indicateurs",
+    "menu.config.manage_in_dashboard": "Choisissez les indicateurs du panneau de la barre des menus. Réorganisez-les ou supprimez-les directement en mode Modifier."
   }
 }

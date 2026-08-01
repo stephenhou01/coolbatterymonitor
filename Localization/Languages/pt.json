@@ -765,6 +765,9 @@
     "menu.config.restore_defaults": "Repor predefinições",
     "menu.process.none": "Nenhum app ativo",
     "menu.process.latest_real_sample": "Usar a última amostra real",
-    "menu.config.empty": "Nenhum indicador visível. Adicione em Editar."
+    "menu.config.empty": "Nenhum indicador visível. Adicione em Editar.",
+    "menu.config.drag_to_reorder": "Arraste para reordenar",
+    "menu.config.add_more": "Adicionar mais métricas",
+    "menu.config.manage_in_dashboard": "Escolha as métricas do painel da barra de menus. Reordene ou remova-as diretamente no modo Editar do painel."
   }
 }

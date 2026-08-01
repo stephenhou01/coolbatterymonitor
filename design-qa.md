@@ -2,6 +2,9 @@
 
 ## Sources
 
+- Latest inline-editor reference: `/var/folders/6x/5n5xzp595qq6yg5b59ph39vw0000gp/T/codex-clipboard-de11a15f-9764-4281-85b4-0f43aa5fbe82.png`
+- Implemented inline editor, dark: `/Users/stephen/Desktop/BatteryMonitor/.build/qa/menu-inline-editor-dark.png`
+- Combined inline-editor reference/implementation comparison: `/Users/stephen/Desktop/BatteryMonitor/.build/qa/menu-inline-editor-reference-vs-implementation.png`
 - Latest six-metric help reference: `/var/folders/6x/5n5xzp595qq6yg5b59ph39vw0000gp/T/codex-clipboard-55a7ca7b-8878-4011-9b57-8c49309fe05e.png`
 - Implemented overview with six help buttons: `/Users/stephen/Desktop/BatteryMonitor/.build/qa/BatteryMonitor-overview-help-buttons.png`
 - Implemented lowest-level field drawer: `/Users/stephen/Desktop/BatteryMonitor/.build/qa/BatteryMonitor-overview-help-drawer.png`
@@ -20,6 +23,7 @@
 
 ## Viewport and states checked
 
+- Inline menu editor: 440 × 567 points at 2× in dark appearance, with all five default metric rows in Edit mode.
 - Overview QA: 1080 × 800 points at 2×, normal state and charging-power help drawer open.
 - App icon QA: exact square source compared against the generated 1024×1024 RGBA master; all seven asset sizes were inspected for dimensions and alpha.
 - Main window: 1240 × 860 points on a Retina display.
@@ -31,6 +35,11 @@
 
 ## Comparison findings
 
+- Editing now happens in the original metric rows: the separate duplicate customization panel is gone.
+- Every visible row keeps its current value and gains a red remove control plus a single three-line drag handle on the right. The hierarchy and row order remain scannable at the fixed 440-point panel width.
+- The former up/down arrow buttons were replaced by native drag-and-drop. The destination row receives a cyan highlight during a drag, and the persisted order is covered by logic tests.
+- “添加更多指标” is visually separated as the next action and opens the full dashboard directly on Settings, where all six available metrics can be enabled or disabled.
+- The top-second-item selector remains inline below the visible rows, so status-bar configuration is preserved without recreating the deleted overlay.
 - Each of the six overview metric tiles now has the same restrained circular `?` affordance in its top-right corner without moving the icon, title, value, or hint.
 - Opening a metric shows only that metric's consumer explanation, current result, lowest-level IOKit fields, formula, current-machine substitution, and source/reliability. The charging-power state was rendered with live values and all blocks visible.
 - The supplied pink battery artwork is preserved without recropping or redrawing. The 1024 master and 16/32/64/128/256/512 derivatives retain the source composition and an alpha channel required by the release verifier.
@@ -43,6 +52,10 @@
 
 ## Patches made during QA
 
+- Reworked the menu panel into true inline edit mode with drag handles, delete controls, drop-target feedback, and no duplicate floating editor.
+- Added a full-dashboard metric picker and shared navigation state so “添加更多指标” opens the correct Settings destination.
+- Added the three new editor strings to all ten language packs and extended localization/release checks.
+- Replaced the snapshot harness's off-screen `ImageRenderer` path with a native hosted window capture so drag, menu, and toolbar controls render faithfully during fixed-directory QA.
 - Added help affordances and dedicated field/formula definitions for current power, adapter power, charging power, temperature, cycles, and health.
 - Added native help text for the three new metric definitions to all ten language packs.
 - Replaced the complete AppIcon asset set and `Tools/AppIcon.icns` with the supplied pink battery artwork.

@@ -765,6 +765,9 @@
     "menu.config.restore_defaults": "初期設定に戻す",
     "menu.process.none": "アクティブなアプリはありません",
     "menu.process.latest_real_sample": "直近の実測サンプルを使用",
-    "menu.config.empty": "表示中の指標はありません。「編集」から追加できます。"
+    "menu.config.empty": "表示中の指標はありません。「編集」から追加できます。",
+    "menu.config.drag_to_reorder": "ドラッグして並べ替え",
+    "menu.config.add_more": "指標を追加",
+    "menu.config.manage_in_dashboard": "メニューバーパネルに表示する指標を選びます。並べ替えや削除はパネルの編集モードで行えます。"
   }
 }

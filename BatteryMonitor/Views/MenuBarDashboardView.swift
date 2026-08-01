@@ -161,6 +161,7 @@ struct MenuBarDashboardView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
     @State private var isCustomizing = false
+    @State private var dropTarget: MenuBarMetric?
 
     init(initiallyCustomizing: Bool = false) {
         _isCustomizing = State(initialValue: initiallyCustomizing)
@@ -193,9 +194,7 @@ struct MenuBarDashboardView: View {
                 Divider().overlay(AppTheme.cardBorder)
                 meters
                 values
-                if isCustomizing {
-                    customizationPanel
-                } else {
+                if !isCustomizing {
                     trendSection
                     processSection
                 }
@@ -403,15 +402,20 @@ struct MenuBarDashboardView: View {
                     .foregroundStyle(AppTheme.textTertiary)
                     .frame(maxWidth: .infinity, minHeight: 42)
             } else {
-                ForEach(menuSettings.visibleMetrics) { metric in
-                    metricValueRow(metric)
+                ForEach(Array(menuSettings.visibleMetrics.enumerated()), id: \.element.id) { index, metric in
+                    metricValueRow(metric, index: index)
                 }
+            }
+
+            if isCustomizing {
+                secondaryMetricEditor
+                addMoreMetricsButton
             }
         }
         .overlay(alignment: .top) { Divider().overlay(AppTheme.cardBorder) }
     }
 
-    private func metricValueRow(_ metric: MenuBarMetric) -> some View {
+    private func metricValueRow(_ metric: MenuBarMetric, index: Int) -> some View {
         HStack(spacing: 9) {
             Image(systemName: metric.symbol)
                 .font(.system(size: 10.5, weight: .semibold))
@@ -427,157 +431,148 @@ struct MenuBarDashboardView: View {
                               design: .monospaced))
                 .foregroundStyle(metric == .runtime ? AppTheme.chargingCyan : AppTheme.textPrimary)
                 .monospacedDigit()
+
+            if isCustomizing {
+                Button {
+                    withAnimation(.easeOut(duration: 0.15)) {
+                        menuSettings.setVisible(metric, visible: false)
+                    }
+                } label: {
+                    Image(systemName: "minus.circle")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(AppTheme.batteryRed)
+                        .frame(width: 24, height: 24)
+                        .background(Circle().fill(AppTheme.batteryRed.opacity(0.08)))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("\(dashboardText("menu.config.hide", fallback: "隐藏")) \(metric.title)")
+                .help(dashboardText("menu.config.hide", fallback: "隐藏"))
+                .pointerOnHover()
+
+                Image(systemName: "line.3.horizontal")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(AppTheme.textSecondary)
+                    .frame(width: 26, height: 26)
+                    .background(Circle().fill(AppTheme.contrastOverlay(0.045)))
+                    .contentShape(Circle())
+                    .draggable(metric.rawValue) {
+                        Label(metric.title, systemImage: metric.symbol)
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(AppTheme.textPrimary)
+                            .padding(.horizontal, 11)
+                            .padding(.vertical, 8)
+                            .background(RoundedRectangle(cornerRadius: 8).fill(AppTheme.surfaceRaised))
+                    }
+                    .accessibilityLabel("\(dashboardText("menu.config.drag_to_reorder", fallback: "拖动调整顺序")) \(metric.title)")
+                    .help(dashboardText("menu.config.drag_to_reorder", fallback: "拖动调整顺序"))
+                    .pointerOnHover()
+            }
         }
-        .frame(minHeight: 38)
+        .padding(.horizontal, isCustomizing ? 7 : 0)
+        .frame(minHeight: isCustomizing ? 44 : 38)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(dropTarget == metric ? AppTheme.chargingCyan.opacity(0.09) : .clear)
+        )
+        .overlay {
+            if isCustomizing {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .stroke(dropTarget == metric ? AppTheme.chargingCyan.opacity(0.52) : AppTheme.cardBorder,
+                            lineWidth: 1)
+            }
+        }
+        .overlay(alignment: .bottom) { Divider().overlay(AppTheme.cardBorder) }
+        .dropDestination(for: String.self) { items, _ in
+            guard isCustomizing,
+                  let rawValue = items.first,
+                  let draggedMetric = MenuBarMetric(rawValue: rawValue) else { return false }
+            withAnimation(.easeInOut(duration: 0.18)) {
+                menuSettings.move(draggedMetric, to: index)
+            }
+            dropTarget = nil
+            return true
+        } isTargeted: { targeted in
+            if targeted {
+                dropTarget = metric
+            } else if dropTarget == metric {
+                dropTarget = nil
+            }
+        }
+    }
+
+    private var secondaryMetricEditor: some View {
+        HStack(spacing: 10) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(dashboardText("menu.config.second_metric", fallback: "顶部第二指标"))
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(AppTheme.textPrimary)
+                Text("\(presentation.percentText) + \(presentation.value(for: menuSettings.secondaryMetric))")
+                    .font(.system(size: 8.5, design: .monospaced))
+                    .foregroundStyle(AppTheme.textTertiary)
+            }
+            Spacer()
+            Menu {
+                ForEach(MenuBarMetric.allCases) { metric in
+                    Button {
+                        menuSettings.selectSecondaryMetric(metric)
+                    } label: {
+                        if menuSettings.secondaryMetric == metric {
+                            Label(metric.title, systemImage: "checkmark")
+                        } else {
+                            Text(metric.title)
+                        }
+                    }
+                }
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: menuSettings.secondaryMetric.symbol)
+                    Text(menuSettings.secondaryMetric.title)
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(.system(size: 7, weight: .bold))
+                }
+                .font(.system(size: 9.5, weight: .medium))
+                .foregroundStyle(AppTheme.chargingBlue)
+                .padding(.horizontal, 9)
+                .frame(height: 29)
+                .background(RoundedRectangle(cornerRadius: 7).fill(AppTheme.contrastOverlay(0.05)))
+                .overlay(RoundedRectangle(cornerRadius: 7).stroke(AppTheme.cardBorder))
+            }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .fixedSize()
+        }
+        .padding(.horizontal, 7)
+        .frame(height: 45)
         .overlay(alignment: .bottom) { Divider().overlay(AppTheme.cardBorder) }
     }
 
-    private var customizationPanel: some View {
-        VStack(alignment: .leading, spacing: 10) {
+    private var addMoreMetricsButton: some View {
+        Button(action: showMetricSettings) {
             HStack(spacing: 10) {
+                Image(systemName: "plus.circle.fill")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(AppTheme.batteryGreen)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(dashboardText("menu.config.second_metric", fallback: "顶部第二指标"))
+                    Text(dashboardText("menu.config.add_more", fallback: "添加更多指标"))
                         .font(.system(size: 10.5, weight: .semibold))
                         .foregroundStyle(AppTheme.textPrimary)
-                    Text("\(presentation.percentText) + \(presentation.value(for: menuSettings.secondaryMetric))")
-                        .font(.system(size: 9, design: .monospaced))
+                    Text(dashboardText("menu.config.manage_in_dashboard", fallback: "前往完整看板选择其他指标"))
+                        .font(.system(size: 8.5))
                         .foregroundStyle(AppTheme.textTertiary)
                 }
                 Spacer()
-                Menu {
-                    ForEach(MenuBarMetric.allCases) { metric in
-                        Button {
-                            menuSettings.selectSecondaryMetric(metric)
-                        } label: {
-                            if menuSettings.secondaryMetric == metric {
-                                Label(metric.title, systemImage: "checkmark")
-                            } else {
-                                Text(metric.title)
-                            }
-                        }
-                    }
-                } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: menuSettings.secondaryMetric.symbol)
-                        Text(menuSettings.secondaryMetric.title)
-                        Image(systemName: "chevron.up.chevron.down")
-                            .font(.system(size: 7, weight: .bold))
-                    }
-                    .font(.system(size: 10, weight: .medium))
+                Image(systemName: "arrow.up.right")
+                    .font(.system(size: 9, weight: .bold))
                     .foregroundStyle(AppTheme.chargingBlue)
-                    .padding(.horizontal, 9)
-                    .frame(height: 29)
-                    .background(RoundedRectangle(cornerRadius: 7).fill(AppTheme.contrastOverlay(0.05)))
-                    .overlay(RoundedRectangle(cornerRadius: 7).stroke(AppTheme.cardBorder))
-                }
-                .menuStyle(.borderlessButton)
-                .menuIndicator(.hidden)
-                .fixedSize()
             }
-
-            VStack(spacing: 5) {
-                ForEach(Array(menuSettings.visibleMetrics.enumerated()), id: \.element.id) { index, metric in
-                    customizationRow(metric, index: index)
-                }
-
-                ForEach(hiddenMetrics) { metric in
-                    HStack(spacing: 8) {
-                        Image(systemName: metric.symbol)
-                            .foregroundStyle(AppTheme.textTertiary)
-                            .frame(width: 18)
-                        Text(metric.title)
-                            .font(.system(size: 10.5))
-                            .foregroundStyle(AppTheme.textTertiary)
-                        Spacer()
-                        Button {
-                            withAnimation(.easeOut(duration: 0.15)) {
-                                menuSettings.setVisible(metric, visible: true)
-                            }
-                        } label: {
-                            Label(dashboardText("menu.config.show", fallback: "显示"), systemImage: "plus")
-                                .font(.system(size: 9.5, weight: .medium))
-                        }
-                        .buttonStyle(.plain)
-                        .foregroundStyle(AppTheme.batteryGreen)
-                        .pointerOnHover()
-                    }
-                    .padding(.horizontal, 9)
-                    .frame(height: 33)
-                    .background(RoundedRectangle(cornerRadius: 7).fill(AppTheme.contrastOverlay(0.025)))
-                }
-            }
-
-            Button {
-                withAnimation(.easeOut(duration: 0.18)) { menuSettings.reset() }
-            } label: {
-                Label(dashboardText("menu.config.restore_defaults", fallback: "恢复默认"),
-                      systemImage: "arrow.counterclockwise")
-                    .font(.system(size: 9.5, weight: .medium))
-                    .foregroundStyle(AppTheme.textSecondary)
-            }
-            .buttonStyle(.plain)
-            .pointerOnHover()
-        }
-        .padding(.vertical, 12)
-        .overlay(alignment: .top) { Divider().overlay(AppTheme.cardBorder) }
-    }
-
-    private func customizationRow(_ metric: MenuBarMetric, index: Int) -> some View {
-        HStack(spacing: 7) {
-            Image(systemName: metric.symbol)
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(metricColor(metric))
-                .frame(width: 18)
-            Text(metric.title)
-                .font(.system(size: 10.5, weight: .medium))
-                .foregroundStyle(AppTheme.textPrimary)
-            Spacer()
-            smallControl("chevron.up", helpKey: "menu.config.move_up", fallback: "上移",
-                         subject: metric.title, disabled: index == 0) {
-                menuSettings.move(metric, by: -1)
-            }
-            smallControl("chevron.down", helpKey: "menu.config.move_down", fallback: "下移",
-                         subject: metric.title, disabled: index == menuSettings.visibleMetrics.count - 1) {
-                menuSettings.move(metric, by: 1)
-            }
-            smallControl("minus.circle", helpKey: "menu.config.hide", fallback: "隐藏",
-                         subject: metric.title, tint: AppTheme.batteryRed) {
-                withAnimation(.easeOut(duration: 0.15)) {
-                    menuSettings.setVisible(metric, visible: false)
-                }
-            }
-        }
-        .padding(.horizontal, 9)
-        .frame(height: 34)
-        .background(RoundedRectangle(cornerRadius: 7).fill(AppTheme.contrastOverlay(0.04)))
-        .overlay(RoundedRectangle(cornerRadius: 7).stroke(AppTheme.cardBorder))
-    }
-
-    private func smallControl(
-        _ symbol: String,
-        helpKey: String,
-        fallback: String,
-        subject: String,
-        tint: Color = AppTheme.textSecondary,
-        disabled: Bool = false,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            Image(systemName: symbol)
-                .font(.system(size: 8.5, weight: .bold))
-                .foregroundStyle(disabled ? AppTheme.textTertiary.opacity(0.35) : tint)
-                .frame(width: 23, height: 23)
-                .background(Circle().fill(AppTheme.contrastOverlay(disabled ? 0.015 : 0.045)))
+            .padding(.horizontal, 10)
+            .frame(height: 47)
+            .background(RoundedRectangle(cornerRadius: 9).fill(AppTheme.batteryGreen.opacity(0.055)))
+            .overlay(RoundedRectangle(cornerRadius: 9).stroke(AppTheme.batteryGreen.opacity(0.18)))
         }
         .buttonStyle(.plain)
-        .disabled(disabled)
-        .accessibilityLabel("\(dashboardText(helpKey, fallback: fallback)) \(subject)")
-        .help(dashboardText(helpKey, fallback: fallback))
         .pointerOnHover()
-    }
-
-    private var hiddenMetrics: [MenuBarMetric] {
-        MenuBarMetric.allCases.filter { !menuSettings.visibleMetrics.contains($0) }
+        .padding(.top, 8)
     }
 
     private func metricColor(_ metric: MenuBarMetric) -> Color {
@@ -772,6 +767,13 @@ struct MenuBarDashboardView: View {
     }
 
     private func showDashboard() {
+        openWindow(id: "dashboard")
+        NSApplication.shared.activate(ignoringOtherApps: true)
+        dismiss()
+    }
+
+    private func showMetricSettings() {
+        DashboardNavigation.shared.destination = .settings
         openWindow(id: "dashboard")
         NSApplication.shared.activate(ignoringOtherApps: true)
         dismiss()

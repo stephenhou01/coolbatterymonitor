@@ -765,6 +765,9 @@
     "menu.config.restore_defaults": "Ripristina predefiniti",
     "menu.process.none": "Nessuna app attiva",
     "menu.process.latest_real_sample": "Usa l’ultimo campione reale",
-    "menu.config.empty": "Nessun indicatore visibile. Aggiungilo da Modifica."
+    "menu.config.empty": "Nessun indicatore visibile. Aggiungilo da Modifica.",
+    "menu.config.drag_to_reorder": "Trascina per riordinare",
+    "menu.config.add_more": "Aggiungi altri indicatori",
+    "menu.config.manage_in_dashboard": "Scegli gli indicatori del pannello della barra dei menu. Riordinali o rimuovili direttamente nella modalità Modifica del pannello."
   }
 }

@@ -338,12 +338,19 @@ expect(menuPreferences.visibleMetrics == MenuBarSettings.defaultVisibleMetrics,
 menuPreferences.selectSecondaryMetric(.power)
 menuPreferences.setVisible(.runtime, visible: false)
 menuPreferences.move(.health, by: -2)
+menuPreferences.move(.cycles, to: 0)
 let restoredMenuPreferences = MenuBarSettings(defaults: preferenceDefaults)
 expect(restoredMenuPreferences.secondaryMetric == .power,
        "顶部第二指标可切换为当前功率并持久化")
 expect(!restoredMenuPreferences.visibleMetrics.contains(.runtime)
-       && restoredMenuPreferences.visibleMetrics.firstIndex(of: .health) == 1,
-       "弹层指标可隐藏、移动并保持用户顺序")
+       && restoredMenuPreferences.visibleMetrics.first == .cycles
+       && restoredMenuPreferences.visibleMetrics.firstIndex(of: .health) == 2,
+       "弹层指标可隐藏、按钮移动与拖放移动，并保持用户顺序")
+
+DashboardNavigation.shared.destination = .settings
+expect(DashboardNavigation.shared.destination == .settings,
+       "添加更多指标可把完整看板直接导航到设置页")
+DashboardNavigation.shared.destination = .overview
 preferenceDefaults.removePersistentDomain(forName: preferenceSuiteName)
 
 // MARK: - 11) 系统时间与功耗口径

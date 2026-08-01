@@ -639,6 +639,7 @@ private struct SystemAnomalySummaryCard: View {
 struct DashboardSettingsPage: View {
     @EnvironmentObject private var batteryService: BatteryService
     @EnvironmentObject private var processService: ProcessMonitorService
+    @Environment(MenuBarSettings.self) private var menuSettings
 
     var body: some View {
         ScrollView {
@@ -654,6 +655,7 @@ struct DashboardSettingsPage: View {
                     LanguageSelectionMenu(fullWidth: true)
                         .frame(width: 230)
                 }
+                menuBarMetricSettingsCard
                 settingsCard(icon: "arrow.triangle.2.circlepath", title: dashboardText("shell.live_refresh", fallback: "实时更新")) {
                     Toggle(isOn: Binding(
                         get: { batteryService.isLiveRefreshEnabled },
@@ -683,6 +685,54 @@ struct DashboardSettingsPage: View {
         .background(AppTheme.background)
     }
 
+    private var menuBarMetricSettingsCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 14) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 11).fill(AppTheme.batteryGreen.opacity(0.10))
+                    Image(systemName: "menubar.rectangle").foregroundStyle(AppTheme.batteryGreen)
+                }
+                .frame(width: 42, height: 42)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(dashboardText("menu.config.title", fallback: "显示指标"))
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(AppTheme.textPrimary)
+                    Text(dashboardText("menu.config.manage_in_dashboard", fallback: "选择菜单栏面板要显示的指标；顺序和删除可在面板编辑状态调整。"))
+                        .font(.system(size: 9.5))
+                        .foregroundStyle(AppTheme.textTertiary)
+                }
+                Spacer()
+            }
+
+            Divider().overlay(AppTheme.cardBorder)
+
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 9) {
+                ForEach(MenuBarMetric.allCases) { metric in
+                    Toggle(isOn: Binding(
+                        get: { menuSettings.visibleMetrics.contains(metric) },
+                        set: { menuSettings.setVisible(metric, visible: $0) }
+                    )) {
+                        HStack(spacing: 8) {
+                            Image(systemName: metric.symbol)
+                                .foregroundStyle(menuMetricColor(metric))
+                                .frame(width: 18)
+                            Text(metric.title)
+                                .font(.system(size: 10.5, weight: .medium))
+                                .foregroundStyle(AppTheme.textPrimary)
+                        }
+                    }
+                    .toggleStyle(.switch)
+                    .padding(.horizontal, 11)
+                    .frame(height: 40)
+                    .background(RoundedRectangle(cornerRadius: 9).fill(AppTheme.contrastOverlay(0.025)))
+                    .overlay(RoundedRectangle(cornerRadius: 9).stroke(AppTheme.cardBorder))
+                }
+            }
+        }
+        .padding(18)
+        .modifier(AppTheme.card(radius: 14))
+    }
+
     private func settingsCard<Content: View>(icon: String, title: String, @ViewBuilder content: () -> Content) -> some View {
         HStack(spacing: 16) {
             ZStack {
@@ -701,5 +751,15 @@ struct DashboardSettingsPage: View {
     private func setLiveRefresh(_ enabled: Bool) {
         batteryService.setLiveRefreshEnabled(enabled)
         processService.setLiveRefreshEnabled(enabled)
+    }
+
+    private func menuMetricColor(_ metric: MenuBarMetric) -> Color {
+        switch metric {
+        case .runtime: return AppTheme.chargingCyan
+        case .power: return AppTheme.chargingBlue
+        case .temperature, .health: return AppTheme.batteryGreen
+        case .cycles: return AppTheme.accentPurple
+        case .current: return AppTheme.batteryYellow
+        }
     }
 }

@@ -78,17 +78,32 @@ struct MenuBarSnapshotHarness {
             root = AnyView(panel)
         }
 
-        let renderer = ImageRenderer(content: root)
-        renderer.scale = 2
-        renderer.proposedSize = ProposedViewSize(width: 440, height: nil)
+        let hostingController = NSHostingController(rootView: root)
+        let fittingSize = hostingController.sizeThatFits(in: NSSize(width: 440, height: 1_200))
+        let renderSize = NSSize(width: 440, height: max(1, fittingSize.height))
+        let window = NSWindow(
+            contentRect: NSRect(origin: .zero, size: renderSize),
+            styleMask: [.borderless],
+            backing: .buffered,
+            defer: false
+        )
+        window.isOpaque = false
+        window.backgroundColor = .clear
+        window.contentViewController = hostingController
+        window.setContentSize(renderSize)
+        window.orderFrontRegardless()
+        RunLoop.main.run(until: Date().addingTimeInterval(0.35))
 
-        guard let image = renderer.nsImage,
-              let tiff = image.tiffRepresentation,
-              let bitmap = NSBitmapImageRep(data: tiff),
-              let png = bitmap.representation(using: .png, properties: [:]) else {
+        hostingController.view.layoutSubtreeIfNeeded()
+        guard let bitmap = hostingController.view.bitmapImageRepForCachingDisplay(in: hostingController.view.bounds) else {
+            throw SnapshotError.renderFailed
+        }
+        hostingController.view.cacheDisplay(in: hostingController.view.bounds, to: bitmap)
+        guard let png = bitmap.representation(using: .png, properties: [:]) else {
             throw SnapshotError.renderFailed
         }
         try png.write(to: outputURL, options: .atomic)
+        window.orderOut(nil)
         defaults.removePersistentDomain(forName: suiteName)
     }
 

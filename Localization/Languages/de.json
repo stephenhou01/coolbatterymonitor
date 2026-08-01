@@ -765,6 +765,9 @@
     "menu.config.restore_defaults": "Standard wiederherstellen",
     "menu.process.none": "Keine aktiven Apps",
     "menu.process.latest_real_sample": "Letzte echte Messung verwenden",
-    "menu.config.empty": "Keine Messwerte sichtbar. Über „Bearbeiten“ hinzufügen."
+    "menu.config.empty": "Keine Messwerte sichtbar. Über „Bearbeiten“ hinzufügen.",
+    "menu.config.drag_to_reorder": "Zum Sortieren ziehen",
+    "menu.config.add_more": "Weitere Messwerte hinzufügen",
+    "menu.config.manage_in_dashboard": "Wähle die Messwerte für das Menüleistenfenster. Sortieren und Entfernen erfolgen direkt im Bearbeitungsmodus des Fensters."
   }
 }

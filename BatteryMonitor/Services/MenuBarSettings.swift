@@ -97,6 +97,18 @@ final class MenuBarSettings {
         persistVisibleMetrics()
     }
 
+    /// Reorders a visible metric by dropping it on the row currently occupying
+    /// `destination`. This is the persistence boundary used by the inline drag
+    /// handle in the menu-bar panel.
+    func move(_ metric: MenuBarMetric, to destination: Int) {
+        guard let source = visibleMetrics.firstIndex(of: metric) else { return }
+        let boundedDestination = min(max(0, destination), visibleMetrics.count - 1)
+        guard source != boundedDestination else { return }
+        let moved = visibleMetrics.remove(at: source)
+        visibleMetrics.insert(moved, at: min(boundedDestination, visibleMetrics.count))
+        persistVisibleMetrics()
+    }
+
     func reset() {
         secondaryMetric = .runtime
         visibleMetrics = Self.defaultVisibleMetrics

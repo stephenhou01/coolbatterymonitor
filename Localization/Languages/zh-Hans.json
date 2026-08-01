@@ -765,6 +765,9 @@
     "menu.config.restore_defaults": "恢复默认",
     "menu.process.none": "暂无活跃程序",
     "menu.process.latest_real_sample": "使用最近一次真实采样",
-    "menu.config.empty": "没有显示指标，可点“编辑”添加"
+    "menu.config.empty": "没有显示指标，可点“编辑”添加",
+    "menu.config.drag_to_reorder": "拖动调整顺序",
+    "menu.config.add_more": "添加更多指标",
+    "menu.config.manage_in_dashboard": "选择菜单栏面板要显示的指标；顺序和删除可直接在面板的“编辑”状态调整。"
   }
 }

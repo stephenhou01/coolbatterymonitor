@@ -765,6 +765,9 @@
     "menu.config.restore_defaults": "回復預設",
     "menu.process.none": "暫無活躍程式",
     "menu.process.latest_real_sample": "使用最近一次真實取樣",
-    "menu.config.empty": "目前沒有顯示指標，可點「編輯」加入"
+    "menu.config.empty": "目前沒有顯示指標，可點「編輯」加入",
+    "menu.config.drag_to_reorder": "拖曳調整順序",
+    "menu.config.add_more": "加入更多指標",
+    "menu.config.manage_in_dashboard": "選擇選單列面板要顯示的指標；順序和移除可直接在面板的「編輯」狀態調整。"
   }
 }

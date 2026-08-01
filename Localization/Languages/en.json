@@ -765,6 +765,9 @@
     "menu.config.restore_defaults": "Restore defaults",
     "menu.process.none": "No active apps right now",
     "menu.process.latest_real_sample": "Use latest real sample",
-    "menu.config.empty": "No metrics shown. Choose Edit to add some."
+    "menu.config.empty": "No metrics shown. Choose Edit to add some.",
+    "menu.config.drag_to_reorder": "Drag to reorder",
+    "menu.config.add_more": "Add more metrics",
+    "menu.config.manage_in_dashboard": "Choose the metrics shown in the menu-bar panel. Reorder or remove them directly in the panel's Edit mode."
   }
 }

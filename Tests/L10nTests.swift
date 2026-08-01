@@ -46,6 +46,7 @@ let shellAndMenuKeys = [
     "shell.live_refresh", "shell.privacy_note", "shell.dynamic_trends", "shell.last_minutes",
     "shell.instant_power", "shell.current", "shell.top_processes", "shell.cpu_context",
     "menu.config.title", "menu.config.second_metric", "menu.config.customize", "menu.config.empty",
+    "menu.config.drag_to_reorder", "menu.config.add_more", "menu.config.manage_in_dashboard",
     "menu.config.show", "menu.config.hide", "menu.config.move_up", "menu.config.move_down",
     "menu.config.restore_defaults", "menu.metric.runtime", "menu.metric.power",
     "menu.metric.temperature", "menu.metric.health", "menu.metric.cycles", "menu.metric.current",
