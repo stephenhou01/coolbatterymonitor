@@ -1,0 +1,404 @@
+import SwiftUI
+
+private enum SystemWorkbenchTab: Hashable, Identifiable {
+    case meaningful
+    case anomalies
+    case source(SystemDataLayer)
+    case all
+
+    var id: String {
+        switch self {
+        case .meaningful: return "meaningful"
+        case .anomalies: return "anomalies"
+        case .source(let layer): return "source-\(layer.rawValue)"
+        case .all: return "all"
+        }
+    }
+}
+
+/// Bottom-level validation console. It keeps all 464 catalog entries while the
+/// first tab stays focused on fields that can actually support a user decision.
+struct SystemDataWorkbenchView: View {
+    let snapshot: SystemDataSnapshot
+    let isLive: Bool
+    let onToggleLive: () -> Void
+    let onRefresh: () -> Void
+    @Binding var selectedHelp: MetricHelpContent?
+
+    @State private var selection: SystemWorkbenchTab = .meaningful
+    @State private var searchText = ""
+
+    private var tabs: [SystemWorkbenchTab] {
+        [.meaningful, .anomalies]
+            + SystemDataLayer.allCases.map(SystemWorkbenchTab.source)
+            + [.all]
+    }
+
+    private var visibleFields: [SystemFieldReading] {
+        let base: [SystemFieldReading]
+        switch selection {
+        case .meaningful:
+            base = snapshot.fields.filter(\.isMeaningful)
+        case .anomalies:
+            base = snapshot.fields.filter { $0.anomalyLevel > .none }
+        case .source(let layer):
+            base = snapshot.fields.filter { $0.metadata.source == layer.sourceName }
+        case .all:
+            base = snapshot.fields
+        }
+
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines).localizedLowercase
+        guard !query.isEmpty else { return base }
+        return base.filter {
+            [
+                $0.metadata.path, $0.value, $0.metadata.group, $0.metadata.meaning,
+                $0.metadata.note, $0.metadata.source,
+            ].joined(separator: " ").localizedLowercase.contains(query)
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 15) {
+            header
+            description
+            tabBar
+            toolbar
+            table
+        }
+        .padding(20)
+        .finalDashboardCard(accent: AppTheme.accentPurple)
+    }
+
+    private var header: some View {
+        HStack(spacing: 9) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 10).fill(AppTheme.accentPurple.opacity(0.12))
+                Image(systemName: "server.rack")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(AppTheme.accentPurple)
+            }
+            .frame(width: 38, height: 38)
+
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 7) {
+                    Text(dashboardText("p.system_data_title", fallback: "所有系统数据 · 四层核验台"))
+                        .font(.system(size: 15.5, weight: .bold))
+                        .foregroundStyle(AppTheme.textPrimary)
+                    Text("\(snapshot.fields.count)")
+                        .font(.system(size: 9.5, weight: .bold, design: .monospaced))
+                        .foregroundStyle(AppTheme.accentPurple)
+                        .padding(.horizontal, 7).padding(.vertical, 3)
+                        .background(Capsule().fill(AppTheme.accentPurple.opacity(0.10)))
+                }
+                Text(dashboardText("p.system_data_source", fallback: "实时读取 macOS；Excel 仅提供字段含义，不提供页面数值"))
+                    .font(.system(size: 10))
+                    .foregroundStyle(AppTheme.textTertiary)
+            }
+            Spacer()
+            snapshotBadge("\(snapshot.availableCount)", dashboardText("p.system_data_available", fallback: "本次有值"), AppTheme.chargingCyan)
+            snapshotBadge("\(snapshot.anomalyCount)", dashboardText("p.system_data_anomaly", fallback: "需关注"), anomalyColor)
+            liveControls
+        }
+    }
+
+    private var description: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "checkmark.shield")
+                .foregroundStyle(AppTheme.batteryGreen)
+            Text(dashboardText(
+                "p.system_data_description",
+                fallback: "默认只显示能帮助判断续航、健康、功耗和温度的字段。切到异常可一键筛查；切到任一数据源或全部，可逐项对照上面的结论。Apple 未公开的内部字段会明确标为诊断项，不给它编造标准答案。"
+            ))
+            .font(.system(size: 10.5))
+            .foregroundStyle(AppTheme.textSecondary)
+            .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(12)
+        .background(RoundedRectangle(cornerRadius: 10).fill(AppTheme.batteryGreen.opacity(0.035)))
+        .overlay(RoundedRectangle(cornerRadius: 10).stroke(AppTheme.batteryGreen.opacity(0.10), lineWidth: 1))
+    }
+
+    private var tabBar: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 6) {
+                ForEach(tabs) { tab in
+                    Button {
+                        withAnimation(.easeOut(duration: 0.16)) { selection = tab }
+                    } label: {
+                        HStack(spacing: 5) {
+                            Image(systemName: tabIcon(tab)).font(.system(size: 9, weight: .semibold))
+                            Text(tabTitle(tab)).font(.system(size: 9.5, weight: .semibold))
+                            Text("\(count(for: tab))")
+                                .font(.system(size: 8.5, weight: .bold, design: .monospaced))
+                                .opacity(0.75)
+                        }
+                        .foregroundStyle(selection == tab ? Color.black : AppTheme.textSecondary)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 7)
+                        .background(Capsule().fill(selection == tab ? tabColor(tab) : Color.white.opacity(0.035)))
+                        .overlay(Capsule().stroke(selection == tab ? tabColor(tab) : Color.white.opacity(0.06), lineWidth: 1))
+                    }
+                    .buttonStyle(.plain)
+                    .pointerOnHover()
+                    .accessibilityLabel(tabTitle(tab))
+                }
+            }
+        }
+    }
+
+    private var toolbar: some View {
+        HStack(spacing: 9) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 10.5))
+                .foregroundStyle(AppTheme.textTertiary)
+            TextField(dashboardText("p.system_data_search", fallback: "搜索字段、当前值、含义或说明"), text: $searchText)
+                .textFieldStyle(.plain)
+                .font(.system(size: 10.5))
+            if !searchText.isEmpty {
+                Button { searchText = "" } label: {
+                    Image(systemName: "xmark.circle.fill").foregroundStyle(AppTheme.textTertiary)
+                }
+                .buttonStyle(.plain)
+            }
+            Spacer()
+            Text("\(visibleFields.count) / \(snapshot.fields.count)")
+                .font(.system(size: 9, weight: .medium, design: .monospaced))
+                .foregroundStyle(AppTheme.textTertiary)
+        }
+        .padding(.horizontal, 11)
+        .frame(height: 34)
+        .background(RoundedRectangle(cornerRadius: 8).fill(Color.black.opacity(0.18)))
+        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.white.opacity(0.06), lineWidth: 1))
+    }
+
+    private var table: some View {
+        ScrollView([.horizontal, .vertical]) {
+            LazyVStack(spacing: 4, pinnedViews: [.sectionHeaders]) {
+                Section(header: tableHeader) {
+                    if visibleFields.isEmpty {
+                        emptyState.frame(width: 1450, height: 180)
+                    } else {
+                        ForEach(visibleFields) { field in
+                            fieldRow(field)
+                        }
+                    }
+                }
+            }
+            .frame(minWidth: 1450, alignment: .leading)
+        }
+        .frame(height: min(610, max(260, CGFloat(visibleFields.count) * 41 + 44)))
+        .background(RoundedRectangle(cornerRadius: 11).fill(Color.black.opacity(0.16)))
+        .overlay(RoundedRectangle(cornerRadius: 11).stroke(Color.white.opacity(0.05), lineWidth: 1))
+    }
+
+    private var tableHeader: some View {
+        HStack(spacing: 8) {
+            headerCell("", width: 26)
+            headerCell(dashboardText("p.system_data_field", fallback: "字段路径"), width: 285)
+            headerCell(dashboardText("p.system_data_value", fallback: "系统实测值"), width: 210)
+            headerCell(dashboardText("p.system_data_unit", fallback: "单位"), width: 86)
+            headerCell(dashboardText("p.system_data_meaning", fallback: "这个数字说明什么"), width: 355)
+            headerCell(dashboardText("p.system_data_group", fallback: "分组"), width: 105)
+            headerCell(dashboardText("p.system_data_reliability", fallback: "来源可靠性"), width: 210)
+            headerCell(dashboardText("p.system_data_value_level", fallback: "价值"), width: 54)
+            Color.clear.frame(width: 22)
+        }
+        .padding(.horizontal, 10).padding(.vertical, 9)
+        .background(Color(red: 0.07, green: 0.09, blue: 0.105))
+    }
+
+    private func fieldRow(_ field: SystemFieldReading) -> some View {
+        HStack(spacing: 8) {
+            anomalyIcon(field).frame(width: 26)
+            Text(field.metadata.path)
+                .font(.system(size: 9.2, design: .monospaced))
+                .foregroundStyle(field.isAvailable ? AppTheme.textSecondary : AppTheme.textTertiary.opacity(0.6))
+                .textSelection(.enabled)
+                .lineLimit(2)
+                .frame(width: 285, alignment: .leading)
+            Text(field.value)
+                .font(.system(size: 9.7, weight: .semibold, design: .monospaced))
+                .foregroundStyle(field.isAvailable ? valueColor(field) : AppTheme.textTertiary.opacity(0.55))
+                .textSelection(.enabled)
+                .lineLimit(2)
+                .frame(width: 210, alignment: .leading)
+            Text(field.metadata.unit.isEmpty ? "—" : field.metadata.unit)
+                .font(.system(size: 8.8, design: .monospaced))
+                .foregroundStyle(AppTheme.textTertiary)
+                .frame(width: 86, alignment: .leading)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(field.metadata.meaning)
+                    .font(.system(size: 9.2))
+                    .foregroundStyle(AppTheme.textSecondary)
+                    .lineLimit(2)
+                if field.anomalyLevel > .none {
+                    Text(field.anomalyReason)
+                        .font(.system(size: 8.5, weight: .semibold))
+                        .foregroundStyle(valueColor(field))
+                        .lineLimit(2)
+                }
+            }
+            .frame(width: 355, alignment: .leading)
+            Text(field.metadata.group)
+                .font(.system(size: 8.7, weight: .semibold))
+                .foregroundStyle(AppTheme.chargingCyan.opacity(0.85))
+                .frame(width: 105, alignment: .leading)
+            Text(field.metadata.reliability)
+                .font(.system(size: 8.6))
+                .foregroundStyle(AppTheme.textTertiary)
+                .lineLimit(2)
+                .frame(width: 210, alignment: .leading)
+            Text(field.metadata.valueStars > 0 ? String(repeating: "★", count: field.metadata.valueStars) : "—")
+                .font(.system(size: 8.5))
+                .foregroundStyle(AppTheme.batteryYellow)
+                .frame(width: 54, alignment: .leading)
+            MetricHelpButton(content: field.help, selection: $selectedHelp)
+        }
+        .padding(.horizontal, 10).padding(.vertical, 7)
+        .background(RoundedRectangle(cornerRadius: 7).fill(rowBackground(field)))
+        .overlay(RoundedRectangle(cornerRadius: 7).stroke(rowStroke(field), lineWidth: 1))
+    }
+
+    private var liveControls: some View {
+        HStack(spacing: 7) {
+            Text(snapshot.timestamp == .distantPast
+                 ? "—"
+                 : snapshot.timestamp.formatted(date: .omitted, time: .standard))
+                .font(.system(size: 9, design: .monospaced))
+                .foregroundStyle(AppTheme.textTertiary)
+            Button(action: onToggleLive) {
+                Label(isLive
+                      ? dashboardText("p.pause_refresh", fallback: "暂停 10 秒更新")
+                      : dashboardText("p.resume_refresh", fallback: "继续 10 秒更新"),
+                      systemImage: isLive ? "pause.fill" : "play.fill")
+                    .font(.system(size: 9.5, weight: .semibold))
+            }
+            .buttonStyle(.plain).foregroundStyle(AppTheme.chargingCyan).pointerOnHover()
+            .accessibilityLabel(isLive
+                ? dashboardText("p.pause_refresh", fallback: "暂停 10 秒更新")
+                : dashboardText("p.resume_refresh", fallback: "继续 10 秒更新"))
+            Button(action: onRefresh) {
+                Image(systemName: "arrow.clockwise")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(AppTheme.chargingCyan)
+            }
+            .buttonStyle(.plain).pointerOnHover()
+            .help(dashboardText("p.refresh_now", fallback: "立即刷新"))
+        }
+    }
+
+    private func count(for tab: SystemWorkbenchTab) -> Int {
+        switch tab {
+        case .meaningful: return snapshot.fields.filter(\.isMeaningful).count
+        case .anomalies: return snapshot.anomalyCount
+        case .source(let layer): return snapshot.fields.filter { $0.metadata.source == layer.sourceName }.count
+        case .all: return snapshot.fields.count
+        }
+    }
+
+    private func tabTitle(_ tab: SystemWorkbenchTab) -> String {
+        switch tab {
+        case .meaningful: return dashboardText("p.system_tab_meaningful", fallback: "有意义")
+        case .anomalies: return dashboardText("p.system_tab_anomaly", fallback: "异常")
+        case .source(.powerSources): return "IOPowerSources"
+        case .source(.smartBattery): return "AppleSmartBattery"
+        case .source(.legacyIOPM): return "Legacy IOPM"
+        case .source(.processInfo): return "ProcessInfo"
+        case .all: return dashboardText("p.system_tab_all", fallback: "全部展开")
+        }
+    }
+
+    private func tabIcon(_ tab: SystemWorkbenchTab) -> String {
+        switch tab {
+        case .meaningful: return "sparkles"
+        case .anomalies: return "exclamationmark.triangle"
+        case .source(.powerSources): return "battery.75percent"
+        case .source(.smartBattery): return "cpu"
+        case .source(.legacyIOPM): return "clock.arrow.circlepath"
+        case .source(.processInfo): return "thermometer.medium"
+        case .all: return "square.grid.3x3"
+        }
+    }
+
+    private func tabColor(_ tab: SystemWorkbenchTab) -> Color {
+        switch tab {
+        case .anomalies: return anomalyColor
+        case .meaningful: return AppTheme.chargingCyan
+        case .all: return AppTheme.accentPurple
+        default: return AppTheme.chargingBlue
+        }
+    }
+
+    private var anomalyColor: Color {
+        snapshot.anomalyCount > 0 ? AppTheme.batteryYellow : AppTheme.batteryGreen
+    }
+
+    private func snapshotBadge(_ value: String, _ label: String, _ color: Color) -> some View {
+        VStack(alignment: .trailing, spacing: 1) {
+            Text(value).font(.system(size: 13, weight: .bold, design: .monospaced)).foregroundStyle(color)
+            Text(label).font(.system(size: 8.5)).foregroundStyle(AppTheme.textTertiary)
+        }
+        .padding(.horizontal, 9).padding(.vertical, 6)
+        .background(RoundedRectangle(cornerRadius: 8).fill(color.opacity(0.055)))
+    }
+
+    private func headerCell(_ text: String, width: CGFloat) -> some View {
+        Text(text.uppercased())
+            .font(.system(size: 8.2, weight: .semibold, design: .monospaced))
+            .tracking(0.4)
+            .foregroundStyle(AppTheme.textTertiary)
+            .frame(width: width, alignment: .leading)
+    }
+
+    @ViewBuilder
+    private func anomalyIcon(_ field: SystemFieldReading) -> some View {
+        switch field.anomalyLevel {
+        case .none:
+            Image(systemName: field.isAvailable ? "checkmark.circle" : "minus.circle")
+                .foregroundStyle(field.isAvailable ? AppTheme.batteryGreen.opacity(0.65) : AppTheme.textTertiary.opacity(0.4))
+        case .attention:
+            Image(systemName: "eye.circle.fill").foregroundStyle(AppTheme.batteryYellow)
+        case .warning:
+            Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(AppTheme.batteryYellow)
+        case .critical:
+            Image(systemName: "exclamationmark.octagon.fill").foregroundStyle(AppTheme.batteryRed)
+        }
+    }
+
+    private func valueColor(_ field: SystemFieldReading) -> Color {
+        switch field.anomalyLevel {
+        case .critical: return AppTheme.batteryRed
+        case .warning, .attention: return AppTheme.batteryYellow
+        case .none: return AppTheme.textPrimary
+        }
+    }
+
+    private func rowBackground(_ field: SystemFieldReading) -> Color {
+        switch field.anomalyLevel {
+        case .critical: return AppTheme.batteryRed.opacity(0.055)
+        case .warning, .attention: return AppTheme.batteryYellow.opacity(0.045)
+        case .none: return Color.white.opacity(field.isAvailable ? 0.017 : 0.008)
+        }
+    }
+
+    private func rowStroke(_ field: SystemFieldReading) -> Color {
+        switch field.anomalyLevel {
+        case .critical: return AppTheme.batteryRed.opacity(0.20)
+        case .warning, .attention: return AppTheme.batteryYellow.opacity(0.16)
+        case .none: return Color.white.opacity(0.035)
+        }
+    }
+
+    private var emptyState: some View {
+        VStack(spacing: 8) {
+            Image(systemName: selection == .anomalies ? "checkmark.shield.fill" : "magnifyingglass")
+                .font(.system(size: 24))
+                .foregroundStyle(selection == .anomalies ? AppTheme.batteryGreen : AppTheme.textTertiary)
+            Text(selection == .anomalies
+                 ? dashboardText("p.system_no_anomaly", fallback: "本次快照没有命中已定义的异常规则")
+                 : dashboardText("p.system_no_results", fallback: "没有匹配的系统字段"))
+                .font(.system(size: 11))
+                .foregroundStyle(AppTheme.textSecondary)
+        }
+    }
+}

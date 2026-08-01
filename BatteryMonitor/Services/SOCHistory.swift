@@ -23,8 +23,8 @@ struct SOCHistory: Codable, Equatable {
 
     /// 只保留最近这么多天
     static let retentionDays = 90
-    /// 采样间隔 3s，满充插电连续 40 次采样 ≈ 2 分钟，累计到这个数算一次「满充存放」
-    static let fullHoldSamplesPerEvent = 600   // ≈30 分钟
+    /// 与电量计约 56 秒的真实刷新节奏一致：32 个满充插电样本约为 30 分钟。
+    static let fullHoldSamplesPerEvent = 32
 
     // MARK: - 派生指标
 

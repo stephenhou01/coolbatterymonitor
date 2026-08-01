@@ -159,6 +159,16 @@ for lc in LANGS:
 
 # 原型专属文案（app 里没有的叙事性内容）—— 只做 4 种主要语言，其余回落英文
 EXTRA = {
+"p.menu_preview":  {"zh-Hans":"菜单栏常驻预览","en":"Menu bar preview","ja":"メニューバー表示プレビュー","de":"Menüleisten-Vorschau"},
+"p.menu_time":     {"zh-Hans":"还能用多久","en":"Time until empty","ja":"残り使用時間","de":"Verbleibende Zeit"},
+"p.menu_unplug":   {"zh-Hans":"拔电后预计","en":"Estimated after unplugging","ja":"電源を外した場合の予測","de":"Prognose nach dem Abziehen"},
+"p.menu_unplug_short":{"zh-Hans":"拔电约","en":"unplug ≈","ja":"抜電 約","de":"ab ≈"},
+"p.menu_direct":   {"zh-Hans":"macOS 系统直接值 · 点击胶囊收起","en":"Direct macOS value · click the pill to collapse","ja":"macOS の直接値 · ピルをクリックして閉じる","de":"Direkter macOS-Wert · zum Einklappen klicken"},
+"p.menu_forecast": {"zh-Hans":"当前电脑状态下的拔电预计 · 不是系统历史","en":"Unplug estimate for the current Mac state · not system history","ja":"現在の状態に基づく抜電予測 · システム履歴ではありません","de":"Abzieh-Prognose für den aktuellen Zustand · kein Systemverlauf"},
+"p.menu_waiting":  {"zh-Hans":"等待 macOS 给出剩余时间","en":"Waiting for macOS time estimate","ja":"macOS の残り時間予測を待機中","de":"Warten auf die macOS-Zeitschätzung"},
+"p.menu_open":     {"zh-Hans":"打开完整看板","en":"Open full dashboard","ja":"完全なダッシュボードを開く","de":"Vollständiges Dashboard öffnen"},
+"p.menu_settings": {"zh-Hans":"设置","en":"Settings","ja":"設定","de":"Einstellungen"},
+"p.menu_close":    {"zh-Hans":"关闭菜单栏面板","en":"Close menu bar panel","ja":"メニューバーパネルを閉じる","de":"Menüleistenfenster schließen"},
 "p.seg_now":      {"zh-Hans":"现在还有","en":"In there now","ja":"現在の残量","de":"Aktuell drin"},
 "p.seg_used":     {"zh-Hans":"已用掉","en":"Used","ja":"使用済み","de":"Verbraucht"},
 "p.seg_now_d":    {"zh-Hans":"<strong>像水箱里此刻剩下的水。</strong>使用会减少，插上电就能重新补满。",

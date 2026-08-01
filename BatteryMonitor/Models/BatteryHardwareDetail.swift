@@ -14,13 +14,43 @@ import Foundation
 //   · MaxCapacity / CurrentCapacity 在 Apple Silicon 上是百分比而非 mAh，
 //     真实容量要读 AppleRawMaxCapacity / AppleRawCurrentCapacity
 
+struct BatteryCarrierModeDetail: Equatable, Sendable {
+    var highVoltage: Int?
+    var lowVoltage: Int?
+    var status: Int?
+}
+
+struct BatteryPortControllerDetail: Identifiable, Equatable, Sendable {
+    let index: Int
+    var attachCount: Int?
+    var detachCount: Int?
+    var capabilityMismatch: Int?
+    var electionFailReason: Int?
+
+    var id: Int { index }
+}
+
 struct BatteryHardwareDetail: Equatable {
+
+    /// Exact raw paths that were present in the latest IOKit snapshot.
+    ///
+    /// Several older model properties intentionally remain non-optional because
+    /// the consumer calculations use numeric fallbacks. The evidence table must
+    /// still distinguish a real hardware `0` from an absent field, so it checks
+    /// this set before rendering those raw values.
+    var presentRawFields: Set<String> = []
 
     // MARK: 电芯级
     var cellVoltages: [Int] = []          // mV，每节电芯
     var qmax: [Int] = []                  // mAh，各电芯库仑计最大容量
     var weightedRa: [Int] = []            // mΩ，各电芯加权内阻
     var presentDOD: [Int] = []            // %，各电芯当前放电深度
+    /// 本机只有两个 0，而电池是三芯；保留原值用于审计，不参与评分。
+    var cellWom: [Int]? = nil
+    /// Ra00...Ra14，电量计在不同放电深度下的15点内阻表。
+    var raCurve: [Int]? = nil
+    /// 0 在本机表示不可用；仍须和字段缺失区分开。
+    var chemicalWeightedRa: Int? = nil
 
     /// 电芯压差（mV）。最大最小之差，衡量电芯一致性。
     var cellVoltageDelta: Int? {
@@ -35,6 +65,12 @@ struct BatteryHardwareDetail: Equatable {
     var packReserve: Int = 0
     var designCapacity: Int = 0
     var designCycleCount: Int = 0          // DesignCycleCount9C，本机 = 1000
+    /// Apple Silicon 上通常是0–100百分比，Intel上也可能是mAh；保留原值。
+    var currentCapacityRaw: Int? = nil
+    var maxCapacityRaw: Int? = nil
+    /// 与 AppleRawMaxCapacity 重复的电量计补偿副本，用于交叉核验。
+    var fccComp1: Int? = nil
+    var fccComp2: Int? = nil
 
     /// 原始容量保持率（%）：实测满充容量 ÷ 设计容量，不做任何修正。
     /// **比系统「设置 → 电池 → 最大容量」显示的数低**，两者定义不同，见
@@ -63,6 +99,9 @@ struct BatteryHardwareDetail: Equatable {
              / Double(designCapacity - packReserve) * 100.0
     }
 
+    /// 产品统一健康度口径，单位为百分比。
+    var systemHealth: Double? { systemHealthPercent }
+
     /// 「化学上存在但取不出来」的电荷（mAh）。
     ///
     /// = min(Qmax) − FCC。**这是电量计自己算的数**，不是我们估的：Impedance Track
@@ -70,13 +109,35 @@ struct BatteryHardwareDetail: Equatable {
     /// 串联取 min，因为任何一节先到截止整组就得停。
     /// （早先我用自建物理模型估过 674 mAh，同量级，但这个 520 才是权威值。）
     var unusableCharge: Int? {
-        guard let q = qmax.min(), q > 0, appleRawMaxCapacity > 0, q > appleRawMaxCapacity else { return nil }
+        guard let q = learnedChemicalCapacity else { return nil }
         return q - appleRawMaxCapacity
     }
 
-    /// 累计被永久「扣押」的电荷（mAh）：出厂设计容量 − 当前可用满充。
-    /// 物理上对应副反应消耗掉的锂（SEI 膜等），这些电荷不流经采样电阻，
-    /// 库仑计数不到，只能靠重新学习 Qmax 才量得出来。
+    /// 本次从满充到当前已经使用的容量；充电后可恢复，不属于老化。
+    var usedSinceFullCapacity: Int? {
+        guard presentRawFields.contains("AppleRawCurrentCapacity"),
+              appleRawMaxCapacity > 0, appleRawCurrentCapacity >= 0,
+              appleRawCurrentCapacity <= appleRawMaxCapacity else { return nil }
+        return appleRawMaxCapacity - appleRawCurrentCapacity
+    }
+
+    /// 电量计学习到的整包化学容量，以串联电芯中最弱一节为边界。
+    var learnedChemicalCapacity: Int? {
+        guard let q = qmax.min(), designCapacity > 0, appleRawMaxCapacity > 0,
+              q >= appleRawMaxCapacity, q <= designCapacity else { return nil }
+        return q
+    }
+
+    /// 设计容量与已学习化学容量之间的差额。只有在 Qmax 有效且边界合理时
+    /// 才能把它单独称为“真正老化掉”的部分。
+    var permanentChemicalLoss: Int? {
+        guard let learnedChemicalCapacity else { return nil }
+        return designCapacity - learnedChemicalCapacity
+    }
+
+    /// 相对设计容量的当前满充总差额（mAh）：出厂设计容量 − 当前可用满充。
+    /// 它同时包含 Qmax 学到的化学容量下降，以及受阻抗/截止条件影响而暂时
+    /// 取不出来的部分，不能把整个差额都武断解释为永久化学老化。
     var chargeDeficitTotal: Int? {
         guard designCapacity > 0, appleRawMaxCapacity > 0,
               designCapacity > appleRawMaxCapacity else { return nil }
@@ -104,8 +165,18 @@ struct BatteryHardwareDetail: Equatable {
     }
     var cycleCount: Int = 0
 
+    // MARK: 系统续航原始值
+    var timeRemainingRaw: Int? = nil
+    var avgTimeToEmpty: Int? = nil
+    var avgTimeToFull: Int? = nil
+    var batteryInvalidWakeSeconds: Int? = nil
+
     // MARK: 电气
     var packVoltage: Int = 0               // mV
+    var voltageRaw: Int? = nil             // Voltage，mV
+    var appleRawBatteryVoltage: Int? = nil // AppleRawBatteryVoltage，mV
+    var temperatureRaw: Int? = nil         // 不同平台标度不同，转换见 decodeTemperature
+    var virtualTemperatureRaw: Int? = nil  // VirtualTemperature，保留电量计原始整数
     var instantAmperage: Int = 0           // mA，signed
     var smoothedAmperage: Int = 0          // mA，signed
     var virtualTemperature: Double = 0     // °C，含热模型补偿
@@ -130,6 +201,8 @@ struct BatteryHardwareDetail: Equatable {
     var chargingCurrentLimit: Int = 0      // mA
     var notChargingReason: Int = 0         // bitmask
     var chargerID: Int = 0
+    var carrierMode: BatteryCarrierModeDetail? = nil
+    var portControllers: [BatteryPortControllerDetail] = []
 
     // MARK: 功耗遥测
     var systemLoad: Int = 0                // mW，电池供电时也有值
@@ -139,6 +212,16 @@ struct BatteryHardwareDetail: Equatable {
     var systemCurrentIn: Int = 0           // mA，仅插电
     var adapterEfficiencyLoss: Int = 0     // mW，仅插电
     var accumulatedWallEnergy: Int = 0     // 累计，一直有值
+    var accumulatedSystemLoad: Int64? = nil
+    var systemLoadAccumulatorCount: Int64? = nil
+
+    /// 电量计累计遥测给出的本机长期平均功耗（W）。
+    var averageTelemetryPowerWatts: Double? {
+        guard let accumulatedSystemLoad,
+              let systemLoadAccumulatorCount,
+              systemLoadAccumulatorCount > 0 else { return nil }
+        return Double(accumulatedSystemLoad) / Double(systemLoadAccumulatorCount) / 1000.0
+    }
 
     /// 适配器效率（%）。**实测常为 nil**，不要指望它。
     ///
@@ -159,9 +242,15 @@ struct BatteryHardwareDetail: Equatable {
     var gaugeChip: String = ""             // DeviceName，如 "bq40z651"
     var gaugeFirmwareVersion: Int = 0
     var chemistryID: Int = 0
+    var algorithmChemistryID: Int? = nil
+    var manufactureDateRaw: Int? = nil
+    var dateOfFirstUseRaw: Int? = nil
     var dataFlashWriteCount: Int = 0
+    var qmaxDisqualificationReason: Int? = nil
     var permanentFailureStatus: Int = 0
     var cellDisconnectCount: Int = 0
+    var batteryInstalled: Bool? = nil
+    var isBuiltIn: Bool? = nil
 
     // MARK: 寿命统计（LifetimeData）
     var totalOperatingMinutes: Int = 0

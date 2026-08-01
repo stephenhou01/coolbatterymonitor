@@ -28,6 +28,44 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opac
 @keyframes breathe{to{opacity:.55;transform:scale(1.12)}}
 .wrap{max-width:1180px;margin:0 auto;position:relative;z-index:1}
 
+/* 菜单栏形态预览：正式 App 将用 MenuBarExtra 承载同一组信息。 */
+.menu-stage{max-width:1180px;margin:0 auto 18px;position:sticky;top:8px;z-index:50}
+.menu-shell{height:40px;padding:0 9px 0 14px;border:1px solid rgba(255,255,255,.12);border-radius:12px;
+  background:linear-gradient(180deg,rgba(42,50,54,.94),rgba(20,27,31,.94));box-shadow:0 10px 30px rgba(0,0,0,.32);
+  backdrop-filter:blur(24px) saturate(1.2);display:flex;align-items:center;justify-content:space-between;gap:16px}
+.menu-brand{display:flex;align-items:center;gap:8px;color:rgba(230,242,238,.72);font-family:var(--disp);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+.menu-brand i{width:7px;height:7px;border-radius:50%;background:var(--phos);box-shadow:0 0 10px var(--phosd)}
+.menu-tray{display:flex;align-items:center;gap:11px;min-width:0}
+.menu-pill{height:30px;padding:0 12px;border:1px solid transparent;border-radius:16px;background:rgba(255,255,255,.09);color:var(--txt);
+  display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;cursor:pointer;transition:.16s;white-space:nowrap}
+.menu-pill:hover,.menu-pill:focus-visible,.menu-pill[aria-expanded="true"]{background:rgba(230,242,238,.92);color:#101619;border-color:rgba(255,255,255,.5);outline:none;box-shadow:0 4px 14px rgba(0,0,0,.22)}
+.menu-pill strong{font-weight:600}.menu-pill .runtime{font-weight:500}.menu-pill .sep{opacity:.42}
+.menu-battery{width:22px;height:11px;border:1.4px solid currentColor;border-radius:3px;padding:1.5px;position:relative;display:inline-flex;opacity:.94}
+.menu-battery::after{content:'';position:absolute;right:-3.4px;top:2.5px;width:2px;height:4px;border-radius:0 2px 2px 0;background:currentColor}
+.menu-battery i{height:100%;width:0;min-width:1px;border-radius:1px;background:currentColor;transition:width .35s ease}
+.menu-mini-icon{width:14px;height:14px;color:rgba(230,242,238,.72)}
+.menu-clock{font-family:var(--mono);font-size:10px;color:rgba(230,242,238,.78);white-space:nowrap}
+.menu-popover{display:none;position:absolute;right:8px;top:48px;width:min(380px,calc(100vw - 52px));padding:18px;border:1px solid rgba(255,255,255,.11);border-radius:18px;
+  background:radial-gradient(circle at 12% 0,rgba(91,255,199,.09),transparent 46%),linear-gradient(165deg,rgba(27,37,42,.985),rgba(12,17,20,.985));
+  box-shadow:0 28px 70px rgba(0,0,0,.55);backdrop-filter:blur(26px) saturate(1.15);transform-origin:88% 0}
+.menu-popover.on{display:block;animation:menuIn .2s cubic-bezier(.2,.75,.25,1)}
+@keyframes menuIn{from{opacity:0;transform:translateY(-6px) scale(.98)}to{opacity:1;transform:none}}
+.mp-head{display:flex;align-items:center;gap:11px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,.07)}
+.mp-mark{width:38px;height:38px;border:1px solid rgba(91,255,199,.25);border-radius:11px;background:rgba(91,255,199,.07);color:var(--phos);display:grid;place-items:center}
+.mp-title{min-width:0}.mp-title b{display:block;font-family:var(--disp);font-size:15px;letter-spacing:.02em}.mp-title small{display:block;margin-top:2px;color:var(--t2);font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mp-close{margin-left:auto;width:28px;height:28px;border:0;border-radius:50%;background:rgba(255,255,255,.05);color:var(--t2);font-size:18px;line-height:1;cursor:pointer}
+.mp-close:hover,.mp-close:focus-visible{background:rgba(255,255,255,.11);color:var(--txt);outline:none}
+.mp-meter{margin-top:14px}.mp-meter-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;font-size:11px;color:var(--t2)}
+.mp-meter-head b{font-family:var(--mono);font-size:15px;color:var(--txt);font-weight:500}.mp-track{height:7px;margin-top:7px;border-radius:8px;background:rgba(255,255,255,.07);overflow:hidden}
+.mp-track i{display:block;height:100%;width:0;border-radius:inherit;background:linear-gradient(90deg,#27c977,var(--phos));box-shadow:0 0 12px rgba(91,255,199,.32);transition:width .35s ease}
+.mp-meter.health .mp-track i{background:linear-gradient(90deg,#36b6ff,var(--phos))}
+.mp-values{margin-top:15px;border-top:1px solid rgba(255,255,255,.07)}
+.mp-row{min-height:39px;display:flex;align-items:center;justify-content:space-between;gap:18px;border-bottom:1px solid rgba(255,255,255,.055);font-size:11px;color:var(--t2)}
+.mp-row b{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--txt);text-align:right}.mp-row.primary b{font-size:16px;color:var(--phos)}
+.mp-actions{display:flex;align-items:center;gap:8px;margin-top:14px}.mp-action{height:34px;border:1px solid rgba(255,255,255,.09);border-radius:9px;background:rgba(255,255,255,.035);color:var(--t2);font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px}
+.mp-action.icon{width:36px;padding:0}.mp-action.open{flex:1;color:var(--txt);border-color:rgba(91,255,199,.2);background:rgba(91,255,199,.055)}
+.mp-action:hover,.mp-action:focus-visible{color:var(--phos);border-color:rgba(91,255,199,.36);outline:none}
+
 /* 铭牌 */
 .plate{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;padding-bottom:13px;margin-bottom:22px;border-bottom:1px solid var(--line2)}
 .plate h1{font-family:var(--disp);font-size:18px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;display:flex;align-items:center;gap:10px}
@@ -407,16 +445,58 @@ body.help-open{overflow:hidden}
 }
 @media(max-width:640px){
   body{padding:20px 13px 60px}.plate{align-items:flex-start}.tools{flex-direction:column;align-items:flex-end}
+  .menu-stage{top:6px}.menu-shell{padding-left:10px}.menu-brand span,.menu-mini-icon{display:none}.menu-tray{gap:8px}.menu-popover{right:0;width:100%}
   .stats,.g2,.g3,.aha-grid,.hwgroups,.learning-note .learn-grid,.whleg{grid-template-columns:1fr}.bigt b{font-size:50px}
   .ra-head{align-items:flex-start;flex-direction:column}.ra-row{grid-template-columns:1fr 48px}.ra-label{grid-column:1 / -1}.ra-delta{margin-left:0}.ra-config,.ra-foot{grid-template-columns:1fr}
 }
+@media(prefers-reduced-motion:reduce){.menu-stage,.menu-battery i,.mp-track i{transition:none}.menu-popover.on{animation:none}}
 </style>
 </head>
 <body>
 <div class="orb" style="width:520px;height:520px;left:-200px;top:-160px;background:radial-gradient(circle,rgba(91,255,199,.14),transparent 70%)"></div>
 <div class="orb" style="width:460px;height:460px;right:-160px;top:380px;background:radial-gradient(circle,rgba(169,139,255,.13),transparent 70%);animation-delay:2s"></div>
 
-<div class="wrap">
+<div class="menu-stage is-open" id="menuStage">
+  <div class="menu-shell">
+    <div class="menu-brand"><i></i><span data-i="p.menu_preview"></span></div>
+    <div class="menu-tray">
+      <button class="menu-pill" id="menuPill" type="button" aria-expanded="true" aria-controls="menuPopover">
+        <span class="menu-battery" aria-hidden="true"><i id="menuBatteryFill"></i></span>
+        <strong id="menuCharge">—%</strong><span class="runtime" id="menuRuntime">—</span>
+      </button>
+      <svg class="menu-mini-icon" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2.2 6.2a8.4 8.4 0 0 1 11.6 0M4.4 8.5a5.2 5.2 0 0 1 7.2 0M6.7 10.8a2 2 0 0 1 2.6 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="13" r="1" fill="currentColor"/></svg>
+      <svg class="menu-mini-icon" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="6.8" cy="6.8" r="4" stroke="currentColor" stroke-width="1.5"/><path d="m10 10 3.2 3.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <time class="menu-clock" id="menuClock"></time>
+    </div>
+  </div>
+  <section class="menu-popover on" id="menuPopover" aria-hidden="false" aria-label="BatteryMonitor">
+    <div class="mp-head">
+      <div class="mp-mark" data-ic="batt" data-ic-c="var(--phos)" data-ic-size="22"></div>
+      <div class="mp-title"><b>BatteryMonitor</b><small id="menuSource"></small></div>
+      <button class="mp-close" id="menuClose" type="button" aria-label="Close">×</button>
+    </div>
+    <div class="mp-meter">
+      <div class="mp-meter-head"><span data-i="p.system_charge"></span><b id="menuChargeDetail">—%</b></div>
+      <div class="mp-track"><i id="menuChargeBar"></i></div>
+    </div>
+    <div class="mp-meter health">
+      <div class="mp-meter-head"><span data-i="p.priority_health"></span><b id="menuHealth">—%</b></div>
+      <div class="mp-track"><i id="menuHealthBar"></i></div>
+    </div>
+    <div class="mp-values">
+      <div class="mp-row primary"><span id="menuTimeLabel"></span><b id="menuTimeDetail">—</b></div>
+      <div class="mp-row"><span data-i="p.priority_power"></span><b id="menuPower">— W</b></div>
+      <div class="mp-row"><span data-i="stat.cycles"></span><b id="menuCycles">—</b></div>
+      <div class="mp-row"><span data-i="p.priority_temp"></span><b id="menuTemp">— °C</b></div>
+    </div>
+    <div class="mp-actions">
+      <button class="mp-action icon" id="menuSettings" type="button" data-i-title="p.menu_settings" aria-label="Settings"><span data-ic="chip" data-ic-c="currentColor" data-ic-size="14"></span></button>
+      <button class="mp-action open" id="menuOpenDashboard" type="button"><span data-ic="wave" data-ic-c="currentColor" data-ic-size="14"></span><span data-i="p.menu_open"></span></button>
+    </div>
+  </section>
+</div>
+
+<div class="wrap" id="fullDashboard">
   <div class="plate">
     <div>
       <h1><span class="b">⚡</span> <span data-i="p.tagline"></span></h1>
@@ -717,6 +797,53 @@ function closeMetricHelp(){ $('#metricHelpLayer').classList.remove('on'); $('#me
 document.addEventListener('click',e=>{const open=e.target.closest('[data-help]');if(open){e.preventDefault();e.stopPropagation();openMetricHelp(open.dataset.help);return;}if(e.target.closest('[data-help-close]'))closeMetricHelp();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMetricHelp();});
 
+/* 菜单栏常驻形态：胶囊只放“电量 + 剩余时间”，展开后再看健康、功率与温度。 */
+const menuStage=$('#menuStage'), menuPill=$('#menuPill'), menuPopover=$('#menuPopover');
+const setMenuOpen = open => {
+  menuStage.classList.toggle('is-open',open);
+  menuPopover.classList.toggle('on',open);
+  menuPopover.setAttribute('aria-hidden',String(!open));
+  menuPill.setAttribute('aria-expanded',String(open));
+};
+const compactDuration = minutes => {
+  if(!Number.isFinite(minutes) || minutes<=0) return '—';
+  const rounded=Math.max(1,Math.round(minutes));
+  return `${Math.floor(rounded/60)}h ${String(rounded%60).padStart(2,'0')}m`;
+};
+const updateMenuClock = () => { $('#menuClock').textContent=new Intl.DateTimeFormat(LC,{hour:'numeric',minute:'2-digit'}).format(new Date()); };
+function renderMenuBar(){
+  const direct=!D.onAC && D.ate>0 && D.ate<60000;
+  const forecast=D.onAC && Number.isFinite(D.unplugEstimate) && D.unplugEstimate>0;
+  const minutes=direct?D.ate:(forecast?D.unplugEstimate:0);
+  const duration=compactDuration(minutes);
+  const charge=Math.max(0,Math.min(100,D.socUI));
+  const health=Math.max(0,Math.min(100,D.healthSys));
+  $('#menuCharge').textContent=`${D.socUI}%`;
+  $('#menuChargeDetail').textContent=`${D.socUI}%`;
+  $('#menuBatteryFill').style.width=`${charge}%`;
+  $('#menuChargeBar').style.width=`${charge}%`;
+  $('#menuHealth').textContent=`${D.healthSys.toFixed(1)}%`;
+  $('#menuHealthBar').style.width=`${health}%`;
+  $('#menuRuntime').textContent=forecast?`(${T('p.menu_unplug_short')} ${duration})`:`(${duration})`;
+  $('#menuTimeLabel').textContent=T(forecast?'p.menu_unplug':'p.menu_time');
+  $('#menuTimeDetail').textContent=duration;
+  $('#menuSource').textContent=T(direct?'p.menu_direct':forecast?'p.menu_forecast':'p.menu_waiting');
+  $('#menuPower').textContent=`${D.watts.toFixed(1)} W`;
+  $('#menuCycles').textContent=D.cyc.toLocaleString(LC);
+  $('#menuTemp').textContent=`${D.temp.toFixed(1)} °C`;
+  menuPill.setAttribute('aria-label',`${D.socUI}%, ${$('#menuTimeLabel').textContent} ${duration}`);
+  $('#menuClose').setAttribute('aria-label',T('p.menu_close'));
+  $('#menuSettings').setAttribute('aria-label',T('p.menu_settings'));
+  $('#menuSettings').title=T('p.menu_settings');
+  updateMenuClock();
+}
+menuPill.addEventListener('click',()=>setMenuOpen(menuPill.getAttribute('aria-expanded')!=='true'));
+$('#menuClose').addEventListener('click',()=>{setMenuOpen(false);menuPill.focus();});
+$('#menuOpenDashboard').addEventListener('click',()=>{setMenuOpen(false);$('#fullDashboard').scrollIntoView({behavior:'smooth',block:'start'});});
+document.addEventListener('click',e=>{if(!menuStage.contains(e.target) && menuPill.getAttribute('aria-expanded')==='true')setMenuOpen(false);});
+document.addEventListener('keydown',e=>{if(e.key==='Escape' && menuPill.getAttribute('aria-expanded')==='true'){setMenuOpen(false);menuPill.focus();}});
+setInterval(updateMenuClock,30000);
+
 /* 语言下拉 */
 const sel = $('#lang');
 D.langs.forEach(l => { const o = el('option'); o.value = l; o.textContent = D.i18n[l]._name; sel.appendChild(o); });
@@ -906,7 +1033,9 @@ function drawScope() {
 /* ── 随语言重绘的文本 ── */
 function render() {
   document.querySelectorAll('[data-i]').forEach(e => e.textContent = T(e.dataset.i));
-  document.querySelectorAll('[data-ic]').forEach(e => e.innerHTML = icon(e.dataset.ic, e.dataset.icC, 13));
+  document.querySelectorAll('[data-i-title]').forEach(e => e.title = T(e.dataset.iTitle));
+  document.querySelectorAll('[data-ic]').forEach(e => e.innerHTML = icon(e.dataset.ic, e.dataset.icC, Number(e.dataset.icSize)||13));
+  renderMenuBar();
   $('#plateSub').textContent = `${D.model} · ${D.i18n[LC]._name} · bq40z651`;
   $('#snapshotChip').textContent = `${T('p.snapshot')} ${D.snapshotAt}`;
   $('#socPc').textContent = D.socUI + '%';

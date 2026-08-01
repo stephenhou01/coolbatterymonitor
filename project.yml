@@ -31,8 +31,8 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.stephen.BatteryMonitor
         PRODUCT_NAME: BatteryMonitor
-        MARKETING_VERSION: "1.1.0"
-        CURRENT_PROJECT_VERSION: "2"
+        MARKETING_VERSION: "1.2.0"
+        CURRENT_PROJECT_VERSION: "3"
         CODE_SIGN_ENTITLEMENTS: BatteryMonitor/BatteryMonitor.entitlements
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 6WLUSLD79F
@@ -42,6 +42,8 @@ targets:
         # Fallback for locales outside the 10 shipped .lproj bundles — must stay English
         INFOPLIST_KEY_CFBundleDisplayName: "Battery Monitor"
         INFOPLIST_KEY_NSHumanReadableCopyright: "Copyright © 2026 Stephen. All rights reserved."
+        # The app does not implement or ship non-exempt encryption.
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_LSUIElement: NO
     entitlements:

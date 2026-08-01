@@ -65,8 +65,78 @@ struct BatteryData: Equatable {
     var batteryModel: String = ""
     var firmwareVersion: String = ""
     var lastUpdated: Date = Date()
+    /// `hw.model`，例如 Mac16,12；用于匹配Apple公开的设计能量与续航规格。
+    var modelIdentifier: String = ""
     /// IOKit 原始硬件数据。有完整默认值，缺字段时各处按 0/空数组优雅降级。
     var hardwareDetail = BatteryHardwareDetail()
+
+    var modelSpecification: BatteryModelSpecification? {
+        BatteryModelSpecification.lookup(modelIdentifier: modelIdentifier)
+    }
+
+    /// 与主界面统一的系统口径健康度。无法取得预留容量时退回裸容量比例。
+    var systemHealthPercent: Double? {
+        hardwareDetail.systemHealthPercent
+    }
+
+    /// 产品统一健康度口径，单位为百分比。
+    var systemHealth: Double? { systemHealthPercent }
+
+    /// 这块电池目前充满时可提供的能量。统一用机型额定Wh缩放，避免用满电瞬时
+    /// 高电压乘mAh而高估整段放电能量。
+    var currentFullEnergyWh: Double? {
+        guard let spec = modelSpecification,
+              hardwareDetail.designCapacity > 0,
+              hardwareDetail.appleRawMaxCapacity > 0 else { return nil }
+        return spec.designEnergyWh
+            * Double(hardwareDetail.appleRawMaxCapacity)
+            / Double(hardwareDetail.designCapacity)
+    }
+
+    /// 当前真正剩余的能量；当前mAh最多按FCC封顶。
+    var remainingEnergyWh: Double? {
+        guard let spec = modelSpecification,
+              hardwareDetail.designCapacity > 0,
+              hardwareDetail.presentRawFields.contains("AppleRawCurrentCapacity"),
+              hardwareDetail.appleRawCurrentCapacity >= 0,
+              hardwareDetail.appleRawMaxCapacity > 0 else { return nil }
+        let current = min(hardwareDetail.appleRawCurrentCapacity,
+                          hardwareDetail.appleRawMaxCapacity)
+        return spec.designEnergyWh * Double(current) / Double(hardwareDetail.designCapacity)
+    }
+
+    /// 插电时也可展示的“按当前电脑状态拔电预计”；这是推导值，不是系统剩余时间。
+    var unplugEstimateMinutes: Int? {
+        guard let energy = remainingEnergyWh, currentPowerWatts > 0.5 else { return nil }
+        return max(0, Int((energy / currentPowerWatts * 60).rounded()))
+    }
+
+    /// Apple官方网页续航隐含的平均测试功耗。
+    var officialImpliedPowerWatts: Double? {
+        guard let spec = modelSpecification, spec.officialWebHours > 0 else { return nil }
+        return spec.designEnergyWh / spec.officialWebHours
+    }
+
+    /// 与产品指标命名一致；单位为 W。
+    var officialImpliedPower: Double? { officialImpliedPowerWatts }
+
+    /// 当前电池容量若回到Apple网页测试负载，大约可使用多久。
+    var sameLoadRuntimeHours: Double? {
+        guard let energy = currentFullEnergyWh,
+              let power = officialImpliedPowerWatts,
+              power > 0 else { return nil }
+        return energy / power
+    }
+
+    /// 与产品指标命名一致；单位为小时。
+    var sameLoadRuntime: Double? { sameLoadRuntimeHours }
+
+    var averageTelemetryPowerWatts: Double? {
+        hardwareDetail.averageTelemetryPowerWatts
+    }
+
+    /// 与产品指标命名一致；单位为 W。
+    var averageTelemetryPower: Double? { averageTelemetryPowerWatts }
 }
 
 struct ChargingSession: Identifiable, Equatable, Codable {

@@ -12,19 +12,31 @@
 		132C00799288C5840DEE1006 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0FECAA007FFBAB28F3E5CE72 /* Assets.xcassets */; };
 		2FDFD22A2582AF1C59FC4DDA /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EABEB94827ED7A54B1B808B /* ContentView.swift */; };
 		3458C7CEF71BEAD22079D450 /* BatteryMonitorApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77ECF2C63BE84926565C63E8 /* BatteryMonitorApp.swift */; };
+		34FC7AD20FDB3E63BD108066 /* SystemFieldCatalog.json in Resources */ = {isa = PBXBuildFile; fileRef = 644460A7915BB9FD1CC139A8 /* SystemFieldCatalog.json */; };
 		396C79D16D12DCDEC55CFF6D /* ProcessListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5AE99AEA5C62A1EAF379E65 /* ProcessListView.swift */; };
 		3ECEF69AE22A167C83F0C2ED /* BatteryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9663833CEC4F05BCC3FCB95 /* BatteryService.swift */; };
+		68AE7723FC298F860B100182 /* MetricHelpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BBE0E459066F94337164C23 /* MetricHelpView.swift */; };
+		68F7701B35ACE22089ED5BDC /* PowerCenterSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 403DF87590CB225CA41D78EB /* PowerCenterSection.swift */; };
 		6E339E93A5826EF2D229B343 /* HardwareDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6FADD04BA26C819376E00C3 /* HardwareDetailView.swift */; };
+		762F1D7D591324903800BD40 /* SystemDataWorkbenchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41D244C949B0DF17568C8E73 /* SystemDataWorkbenchView.swift */; };
 		7BDD13C6145AB47C51CBD27C /* SOCHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FC4CD06B46BD39E3065DFB3 /* SOCHistory.swift */; };
+		7C7916B54380C176CBB72E61 /* SystemDataCollector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76F0E8ED0F7524EDC4D2F54B /* SystemDataCollector.swift */; };
+		851480C3E9D84A0A1E714FE9 /* FinalDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 090252E442C7064318AD6FAE /* FinalDashboardView.swift */; };
+		890BEEA92A8ED31C8A9E7249 /* MenuBarDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4750C09BBEA559BF502861E /* MenuBarDashboardView.swift */; };
 		9A7BCC0000D9357B2CAFDB38 /* InsightEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC011E70494486FBFACC4106 /* InsightEngine.swift */; };
 		9BD60A87CA353A36045FED91 /* RealtimeMonitorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99CEEA72E68ACE637FB53D1C /* RealtimeMonitorView.swift */; };
 		A68E57F83036CDDDD4214B8D /* InsightCards.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90CF748C20D98621E7B95DFA /* InsightCards.swift */; };
+		B2EA97A806E23B9DA69B5032 /* FinalDashboardDetails.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59D694C8014EDB27FCC1FF86 /* FinalDashboardDetails.swift */; };
 		B53C54D9465EF44ABDD73A31 /* BatteryService+Hardware.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C5F77CB6C7A8E47CB6419B5 /* BatteryService+Hardware.swift */; };
 		B98FD1B7030F9FE9FB853AF2 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 11F06F7D5ADC891F4DB4C2D0 /* InfoPlist.strings */; };
 		BC49C7E590D773B4ADCDA86F /* BatteryHardwareDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0ADAEF7C09D535732D3BE3A8 /* BatteryHardwareDetail.swift */; };
+		C262764673F87AFB0903A620 /* RuntimeSample.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEFE6EAFDB9B2755B327C992 /* RuntimeSample.swift */; };
 		C503561F5BD1C5AD8022CCEE /* AppTheme+Cyber.swift in Sources */ = {isa = PBXBuildFile; fileRef = D36538E00B4AEB4EE5E13855 /* AppTheme+Cyber.swift */; };
+		CC2A0D360D221889210CB8FD /* CompleteHardwareDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 243CB0FB211EB32DB8512490 /* CompleteHardwareDetailView.swift */; };
+		D4AED56621DDC3CE7A8E6E0F /* BatteryModelSpecification.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0BEB288FD8AD51618CFA512 /* BatteryModelSpecification.swift */; };
 		D629E37A482698B5161F5F7C /* ProcessInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64D77D4CAFCF034D3CB95241 /* ProcessInfo.swift */; };
 		DCE839339B5ABDC23D65BF8F /* HistoryChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 735D2BF0200ADD9E1BA4B82D /* HistoryChartView.swift */; };
+		E4C1D2488081737694B3A8C2 /* SystemDataSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F141A2AB0CBA3A7C985B8E /* SystemDataSnapshot.swift */; };
 		E4EED2490DE5AA40EFF5E470 /* BatteryGaugeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7BB6E03A988E27E5AFD1810 /* BatteryGaugeView.swift */; };
 		EAEC121E21B60BBF5B9FD94E /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AD09F7420409ADF0F03F437 /* AppTheme.swift */; };
 		FD2338C5BBA024883B014E2D /* BatteryData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75FD297F53C1FA7E147CB23E /* BatteryData.swift */; };
@@ -32,19 +44,27 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		090252E442C7064318AD6FAE /* FinalDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinalDashboardView.swift; sourceTree = "<group>"; };
 		0ADAEF7C09D535732D3BE3A8 /* BatteryHardwareDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatteryHardwareDetail.swift; sourceTree = "<group>"; };
 		0C3559A910BA398A59842336 /* pt */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = pt; path = pt.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		0FECAA007FFBAB28F3E5CE72 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		1E574B68E2339270456F3C6C /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
 		2145F7213261647A34650A4D /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		243CB0FB211EB32DB8512490 /* CompleteHardwareDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompleteHardwareDetailView.swift; sourceTree = "<group>"; };
 		2C5F77CB6C7A8E47CB6419B5 /* BatteryService+Hardware.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BatteryService+Hardware.swift"; sourceTree = "<group>"; };
+		3BBE0E459066F94337164C23 /* MetricHelpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricHelpView.swift; sourceTree = "<group>"; };
 		3D166C5BEEFE5FD30D1BB0A1 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		403DF87590CB225CA41D78EB /* PowerCenterSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PowerCenterSection.swift; sourceTree = "<group>"; };
+		41D244C949B0DF17568C8E73 /* SystemDataWorkbenchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemDataWorkbenchView.swift; sourceTree = "<group>"; };
 		4268CDB18CE66B4FEEFB1C83 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		4D0E4832C92998CD6E9F5913 /* Languages */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Languages; path = Localization/Languages; sourceTree = SOURCE_ROOT; };
 		51EB1608188E2746B536945E /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = ko.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		59D694C8014EDB27FCC1FF86 /* FinalDashboardDetails.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinalDashboardDetails.swift; sourceTree = "<group>"; };
+		644460A7915BB9FD1CC139A8 /* SystemFieldCatalog.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = SystemFieldCatalog.json; sourceTree = "<group>"; };
 		64D77D4CAFCF034D3CB95241 /* ProcessInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessInfo.swift; sourceTree = "<group>"; };
 		735D2BF0200ADD9E1BA4B82D /* HistoryChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryChartView.swift; sourceTree = "<group>"; };
 		75FD297F53C1FA7E147CB23E /* BatteryData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatteryData.swift; sourceTree = "<group>"; };
+		76F0E8ED0F7524EDC4D2F54B /* SystemDataCollector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemDataCollector.swift; sourceTree = "<group>"; };
 		77ECF2C63BE84926565C63E8 /* BatteryMonitorApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatteryMonitorApp.swift; sourceTree = "<group>"; };
 		7C857FF7B57902C884285955 /* ProcessMonitorService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessMonitorService.swift; sourceTree = "<group>"; };
 		7EABEB94827ED7A54B1B808B /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -54,6 +74,7 @@
 		9045F497E3C694B58514F767 /* BatteryMonitor.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BatteryMonitor.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		90CF748C20D98621E7B95DFA /* InsightCards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsightCards.swift; sourceTree = "<group>"; };
 		9322D1C1A4AA9ADC191982C9 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		97F141A2AB0CBA3A7C985B8E /* SystemDataSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemDataSnapshot.swift; sourceTree = "<group>"; };
 		99CEEA72E68ACE637FB53D1C /* RealtimeMonitorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealtimeMonitorView.swift; sourceTree = "<group>"; };
 		B5AE99AEA5C62A1EAF379E65 /* ProcessListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessListView.swift; sourceTree = "<group>"; };
 		B9663833CEC4F05BCC3FCB95 /* BatteryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatteryService.swift; sourceTree = "<group>"; };
@@ -62,6 +83,9 @@
 		D36538E00B4AEB4EE5E13855 /* AppTheme+Cyber.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppTheme+Cyber.swift"; sourceTree = "<group>"; };
 		D6E46A3F0296A98788F4DF10 /* Localization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Localization.swift; sourceTree = "<group>"; };
 		D7BB6E03A988E27E5AFD1810 /* BatteryGaugeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatteryGaugeView.swift; sourceTree = "<group>"; };
+		E0BEB288FD8AD51618CFA512 /* BatteryModelSpecification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatteryModelSpecification.swift; sourceTree = "<group>"; };
+		E4750C09BBEA559BF502861E /* MenuBarDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarDashboardView.swift; sourceTree = "<group>"; };
+		EEFE6EAFDB9B2755B327C992 /* RuntimeSample.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuntimeSample.swift; sourceTree = "<group>"; };
 		F6EBB4602FB6FEF4A3CBA0F1 /* BatteryMonitor.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = BatteryMonitor.entitlements; sourceTree = "<group>"; };
 		FBAF3C5BBE3AC94A25D92771 /* zh-Hant */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hant"; path = "zh-Hant.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
 		FC011E70494486FBFACC4106 /* InsightEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsightEngine.swift; sourceTree = "<group>"; };
@@ -76,6 +100,14 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		25D40B11C1C964B1F3FE715B /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				644460A7915BB9FD1CC139A8 /* SystemFieldCatalog.json */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
 		364EA97754D07D277FBA25E1 /* Localization */ = {
 			isa = PBXGroup;
 			children = (
@@ -88,12 +120,19 @@
 			isa = PBXGroup;
 			children = (
 				D7BB6E03A988E27E5AFD1810 /* BatteryGaugeView.swift */,
+				243CB0FB211EB32DB8512490 /* CompleteHardwareDetailView.swift */,
 				7EABEB94827ED7A54B1B808B /* ContentView.swift */,
+				59D694C8014EDB27FCC1FF86 /* FinalDashboardDetails.swift */,
+				090252E442C7064318AD6FAE /* FinalDashboardView.swift */,
 				C6FADD04BA26C819376E00C3 /* HardwareDetailView.swift */,
 				735D2BF0200ADD9E1BA4B82D /* HistoryChartView.swift */,
 				90CF748C20D98621E7B95DFA /* InsightCards.swift */,
+				E4750C09BBEA559BF502861E /* MenuBarDashboardView.swift */,
+				3BBE0E459066F94337164C23 /* MetricHelpView.swift */,
+				403DF87590CB225CA41D78EB /* PowerCenterSection.swift */,
 				B5AE99AEA5C62A1EAF379E65 /* ProcessListView.swift */,
 				99CEEA72E68ACE637FB53D1C /* RealtimeMonitorView.swift */,
+				41D244C949B0DF17568C8E73 /* SystemDataWorkbenchView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -116,6 +155,7 @@
 				D6E46A3F0296A98788F4DF10 /* Localization.swift */,
 				7C857FF7B57902C884285955 /* ProcessMonitorService.swift */,
 				8FC4CD06B46BD39E3065DFB3 /* SOCHistory.swift */,
+				76F0E8ED0F7524EDC4D2F54B /* SystemDataCollector.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -128,6 +168,7 @@
 				77ECF2C63BE84926565C63E8 /* BatteryMonitorApp.swift */,
 				11F06F7D5ADC891F4DB4C2D0 /* InfoPlist.strings */,
 				E6DB9107B038E77676E28CF3 /* Models */,
+				25D40B11C1C964B1F3FE715B /* Resources */,
 				8957A084E4D54DE2C5CE4BA7 /* Services */,
 				8023F9283734B6D36D8F407C /* Theme */,
 				4851E47D8C995A282CB6F5A1 /* Views */,
@@ -140,7 +181,10 @@
 			children = (
 				75FD297F53C1FA7E147CB23E /* BatteryData.swift */,
 				0ADAEF7C09D535732D3BE3A8 /* BatteryHardwareDetail.swift */,
+				E0BEB288FD8AD51618CFA512 /* BatteryModelSpecification.swift */,
 				64D77D4CAFCF034D3CB95241 /* ProcessInfo.swift */,
+				EEFE6EAFDB9B2755B327C992 /* RuntimeSample.swift */,
+				97F141A2AB0CBA3A7C985B8E /* SystemDataSnapshot.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -226,6 +270,7 @@
 				132C00799288C5840DEE1006 /* Assets.xcassets in Resources */,
 				B98FD1B7030F9FE9FB853AF2 /* InfoPlist.strings in Resources */,
 				10557DC884ECFBEDBF45CDDF /* Languages in Resources */,
+				34FC7AD20FDB3E63BD108066 /* SystemFieldCatalog.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -241,20 +286,31 @@
 				FD2338C5BBA024883B014E2D /* BatteryData.swift in Sources */,
 				E4EED2490DE5AA40EFF5E470 /* BatteryGaugeView.swift in Sources */,
 				BC49C7E590D773B4ADCDA86F /* BatteryHardwareDetail.swift in Sources */,
+				D4AED56621DDC3CE7A8E6E0F /* BatteryModelSpecification.swift in Sources */,
 				3458C7CEF71BEAD22079D450 /* BatteryMonitorApp.swift in Sources */,
 				B53C54D9465EF44ABDD73A31 /* BatteryService+Hardware.swift in Sources */,
 				3ECEF69AE22A167C83F0C2ED /* BatteryService.swift in Sources */,
+				CC2A0D360D221889210CB8FD /* CompleteHardwareDetailView.swift in Sources */,
 				2FDFD22A2582AF1C59FC4DDA /* ContentView.swift in Sources */,
+				B2EA97A806E23B9DA69B5032 /* FinalDashboardDetails.swift in Sources */,
+				851480C3E9D84A0A1E714FE9 /* FinalDashboardView.swift in Sources */,
 				6E339E93A5826EF2D229B343 /* HardwareDetailView.swift in Sources */,
 				DCE839339B5ABDC23D65BF8F /* HistoryChartView.swift in Sources */,
 				A68E57F83036CDDDD4214B8D /* InsightCards.swift in Sources */,
 				9A7BCC0000D9357B2CAFDB38 /* InsightEngine.swift in Sources */,
 				0E3E335F00D0BAD150B99D20 /* Localization.swift in Sources */,
+				890BEEA92A8ED31C8A9E7249 /* MenuBarDashboardView.swift in Sources */,
+				68AE7723FC298F860B100182 /* MetricHelpView.swift in Sources */,
+				68F7701B35ACE22089ED5BDC /* PowerCenterSection.swift in Sources */,
 				D629E37A482698B5161F5F7C /* ProcessInfo.swift in Sources */,
 				396C79D16D12DCDEC55CFF6D /* ProcessListView.swift in Sources */,
 				FEFD986538387B22A274E60E /* ProcessMonitorService.swift in Sources */,
 				9BD60A87CA353A36045FED91 /* RealtimeMonitorView.swift in Sources */,
+				C262764673F87AFB0903A620 /* RuntimeSample.swift in Sources */,
 				7BDD13C6145AB47C51CBD27C /* SOCHistory.swift in Sources */,
+				7C7916B54380C176CBB72E61 /* SystemDataCollector.swift in Sources */,
+				E4C1D2488081737694B3A8C2 /* SystemDataSnapshot.swift in Sources */,
+				762F1D7D591324903800BD40 /* SystemDataWorkbenchView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -407,11 +463,12 @@
 				CODE_SIGN_ENTITLEMENTS = BatteryMonitor/BatteryMonitor.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = 6WLUSLD79F;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Battery Monitor";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_LSUIElement = NO;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Stephen. All rights reserved.";
@@ -419,7 +476,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.1.0;
+				MARKETING_VERSION = 1.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.stephen.BatteryMonitor;
 				PRODUCT_NAME = BatteryMonitor;
 				SDKROOT = macosx;
@@ -433,11 +490,12 @@
 				CODE_SIGN_ENTITLEMENTS = BatteryMonitor/BatteryMonitor.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = 6WLUSLD79F;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Battery Monitor";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_LSUIElement = NO;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Stephen. All rights reserved.";
@@ -445,7 +503,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.1.0;
+				MARKETING_VERSION = 1.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.stephen.BatteryMonitor;
 				PRODUCT_NAME = BatteryMonitor;
 				SDKROOT = macosx;

@@ -7,16 +7,26 @@ class BatteryService: ObservableObject {
     @Published var batteryData = BatteryData()
     @Published var chargingHistory: [ChargingSession] = []
     @Published var realtimeData: [RealtimeDataPoint] = []
+    /// Four-layer live evidence merged with the 464-row metadata catalog.
+    @Published private(set) var systemDataSnapshot = SystemDataSnapshot()
+    @Published private(set) var isLiveRefreshEnabled = true
+    /// 仅包含电池供电时由系统直接给出的有效剩余时间，约56秒一个持久化样本。
+    @Published private(set) var runtimeSamples: [RuntimeSample] = []
     @Published var isLoadingHistory = false
     @Published var lastHistoryUpdate: Date? = nil
     /// 消费者层洞察。nil = 首帧还没算出来。
     @Published var insight: BatteryInsight? = nil
 
     private var timer: Timer?
-    private let refreshInterval: TimeInterval = 3
+    /// Live power and process context refresh every ten seconds. Remaining-time
+    /// history still applies RuntimeSample's 56-second de-duplication gate, so a
+    /// faster UI poll never inflates the system-estimate sample count.
+    static let liveRefreshInterval: TimeInterval = 10
+    private let refreshInterval = BatteryService.liveRefreshInterval
     private var lastKnownPercent: Int? = nil
     private var lastKnownPercentTime: Date? = nil
-    private let maxRealtimePoints = 60
+    private let maxRealtimePoints = 180
+    private let maxRuntimeSamples = 10_000
 
     // Self-recording charging history
     private var currentSessionStart: Date? = nil
@@ -32,22 +42,31 @@ class BatteryService: ObservableObject {
     }()
     private var historyCacheURL: URL { cacheDir.appendingPathComponent("history_cache.json") }
     private var socHistoryURL: URL { cacheDir.appendingPathComponent("soc_history.json") }
+    private var runtimeHistoryURL: URL { cacheDir.appendingPathComponent("runtime_history.json") }
 
     /// 自记录的每日 SOC / 温度 / 满充存放快照。习惯评分、周报、循环速率都靠它。
     private var socHistory = SOCHistory()
     private var lastInsightRefresh: Date?
     /// 上次算 insight 时的语言，用来在切换语言后立即重算
     private var lastInsightLanguage: String?
-    /// 硬件参数变化慢，洞察不需要每 3 秒重算
+    /// 洞察使用更慢的独立节流，避免同一批硬件值反复重算。
     private let insightRefreshInterval: TimeInterval = 30
 
     /// 最近一次进程采样，供耗电分析用
     private var latestProcesses: [ProcessPowerInfo] = []
 
     func startMonitoring() {
+        timer?.invalidate()
         loadCachedHistory()
         loadSOCHistory()
+        loadRuntimeHistory()
         fetchData()
+        guard isLiveRefreshEnabled else { return }
+        scheduleTimer()
+    }
+
+    private func scheduleTimer() {
+        timer?.invalidate()
         let t = Timer(timeInterval: refreshInterval, repeats: true) { [weak self] _ in
             self?.fetchData()
         }
@@ -60,6 +79,20 @@ class BatteryService: ObservableObject {
         timer = nil
     }
 
+    func setLiveRefreshEnabled(_ enabled: Bool) {
+        guard enabled != isLiveRefreshEnabled else { return }
+        isLiveRefreshEnabled = enabled
+        if enabled {
+            fetchData()
+            scheduleTimer()
+        } else {
+            stopMonitoring()
+        }
+    }
+
+    /// Manual refresh remains available while automatic refresh is paused.
+    func refreshNow() { fetchData() }
+
     func refreshHistory() {
         // History is self-recorded; just reload from cache
         loadCachedHistory()
@@ -68,10 +101,44 @@ class BatteryService: ObservableObject {
 
     // MARK: - Native IOKit Data Fetching
 
+    /// 电量计用65535表示尚未就绪/不适用；插电状态也不把它当剩余续航。
+    static func preferredSystemTimeRemaining(
+        isOnAC: Bool,
+        timeRemaining: Int?,
+        avgTimeToEmpty: Int?
+    ) -> Int? {
+        guard !isOnAC else { return nil }
+        if let timeRemaining, RuntimeSample.isValid(minutes: timeRemaining) {
+            return timeRemaining
+        }
+        if let avgTimeToEmpty, RuntimeSample.isValid(minutes: avgTimeToEmpty) {
+            return avgTimeToEmpty
+        }
+        return nil
+    }
+
+    /// 功耗口径：BatteryData.SystemPower直读优先，SystemLoad次之，I×V只作回退。
+    static func preferredPowerWatts(
+        hardwareDetail: BatteryHardwareDetail,
+        amperage: Int,
+        voltage: Double
+    ) -> Double {
+        let direct = hardwareDetail.systemPowerWatts
+        if direct.isFinite, direct > 0 { return direct }
+
+        if hardwareDetail.systemLoad != 0 {
+            return Double(abs(hardwareDetail.systemLoad)) / 1000.0
+        }
+
+        guard amperage != 0, voltage.isFinite, voltage > 0 else { return 0 }
+        return Double(abs(amperage)) / 1000.0 * voltage
+    }
+
     private func fetchData() {
         var data = BatteryData()
         data.lastUpdated = Date()
         data.batteryModel = Host.current().localizedName ?? ""
+        data.modelIdentifier = Self.hardwareModel()
 
         // Get battery service from IOKit registry
         let batteryInfo = getBatteryProperties()
@@ -108,12 +175,6 @@ class BatteryService: ObservableObject {
                 data.maxCapacity = maxCapmAh
             }
 
-            // Time remaining
-            // -1 表示系统仍在测算；保持 nil 交给 View 显示「计算中」
-            if let timeRemaining = info["TimeRemaining"] as? Int, timeRemaining > 0 {
-                data.timeRemainingMinutes = timeRemaining
-            }
-
             // Charger wattage from AdapterDetails
             if let adapterDetails = info["AdapterDetails"] as? [String: Any] {
                 if let watts = adapterDetails["Watts"] as? Int {
@@ -123,15 +184,22 @@ class BatteryService: ObservableObject {
                 }
             }
 
-            // Battery health
-            if data.maxCapacity > 0 && data.designCapacity > 0 {
-                let health = Int(Double(data.maxCapacity) / Double(data.designCapacity) * 100.0)
-                if health > 0 && health <= 100 {
-                    data.maxCapacityPercent = health
-                }
+            data.hardwareDetail = Self.parseHardwareDetail(info, fallbackCycleCount: data.cycleCount)
+            data.timeRemainingMinutes = Self.preferredSystemTimeRemaining(
+                isOnAC: data.isOnAC,
+                timeRemaining: data.hardwareDetail.timeRemainingRaw,
+                avgTimeToEmpty: data.hardwareDetail.avgTimeToEmpty
+            )
+
+            // 主界面和洞察统一使用系统对齐口径；拿不到PackReserve才退回裸容量比例。
+            if let systemHealth = data.hardwareDetail.systemHealthPercent,
+               systemHealth.isFinite, systemHealth > 0 {
+                data.maxCapacityPercent = min(100, max(0, Int(systemHealth.rounded())))
+            } else if data.maxCapacity > 0 && data.designCapacity > 0 {
+                let rawHealth = Double(data.maxCapacity) / Double(data.designCapacity) * 100.0
+                data.maxCapacityPercent = min(100, max(0, Int(rawHealth.rounded())))
             }
 
-            // Condition based on health
             if data.maxCapacityPercent >= 80 {
                 data.condition = .normal
             } else if data.maxCapacityPercent >= 60 {
@@ -139,8 +207,6 @@ class BatteryService: ObservableObject {
             } else {
                 data.condition = .replaceNow
             }
-
-            data.hardwareDetail = Self.parseHardwareDetail(info, fallbackCycleCount: data.cycleCount)
         }
 
         // Fallback: use IOPowerSources for basic info if IOKit failed
@@ -148,10 +214,11 @@ class BatteryService: ObservableObject {
             fetchFromIOPowerSources(&data)
         }
 
-        // Power calculation: P = |I| × V
-        if data.amperage != 0 && data.voltage > 0 {
-            data.currentPowerWatts = Double(abs(data.amperage)) / 1000.0 * data.voltage
-        }
+        data.currentPowerWatts = Self.preferredPowerWatts(
+            hardwareDetail: data.hardwareDetail,
+            amperage: data.amperage,
+            voltage: data.voltage
+        )
 
         // Charge rate calculation
         calculateChargeRate(&data)
@@ -170,11 +237,13 @@ class BatteryService: ObservableObject {
         )
 
         self.batteryData = data
+        self.systemDataSnapshot = SystemDataCollector.collect(registry: batteryInfo)
         self.realtimeData.append(dataPoint)
         if self.realtimeData.count > self.maxRealtimePoints {
             self.realtimeData.removeFirst(self.realtimeData.count - self.maxRealtimePoints)
         }
 
+        recordRuntimeSample(data)
         recordSOCSnapshot(data)
         refreshInsightIfNeeded(data)
     }
@@ -192,8 +261,8 @@ class BatteryService: ObservableObject {
         if socHistory != before { saveSOCHistory() }
     }
 
-    /// 洞察是纯计算，但没必要每 3 秒跑一遍 —— 硬件参数变化慢。
-    /// 进程列表变化快，所以 ProcessMonitorService 刷新时会单独触发一次。
+    /// 洞察是纯计算，但没必要在同一批硬件值上反复运行。
+    /// 进程列表更新时，ProcessMonitorService 会单独触发一次。
     ///
     /// 语言变化也必须立即重算：InsightEngine 里的 headline / 各项 detail / note 是
     /// 在 body 之外算好存进结构体的本地化字符串，Observation 追踪不到它们。若不在
@@ -229,6 +298,39 @@ class BatteryService: ObservableObject {
     private func saveSOCHistory() {
         guard let d = try? JSONEncoder().encode(socHistory) else { return }
         try? d.write(to: socHistoryURL)
+    }
+
+    // MARK: - System Runtime History
+
+    private func recordRuntimeSample(_ data: BatteryData) {
+        guard !data.isOnAC, let minutes = data.timeRemainingMinutes else { return }
+        let sample = RuntimeSample(timestamp: data.lastUpdated,
+                                   minutesRemaining: minutes,
+                                   percent: data.percent)
+        guard RuntimeSample.shouldAppend(sample, after: runtimeSamples.last) else { return }
+
+        runtimeSamples.append(sample)
+        if runtimeSamples.count > maxRuntimeSamples {
+            runtimeSamples.removeFirst(runtimeSamples.count - maxRuntimeSamples)
+        }
+        saveRuntimeHistory()
+    }
+
+    private func loadRuntimeHistory() {
+        guard let data = try? Data(contentsOf: runtimeHistoryURL),
+              let decoded = try? JSONDecoder().decode([RuntimeSample].self, from: data) else {
+            runtimeSamples = []
+            return
+        }
+        runtimeSamples = Array(decoded
+            .filter { RuntimeSample.isValid(minutes: $0.minutesRemaining) }
+            .sorted { $0.timestamp < $1.timestamp }
+            .suffix(maxRuntimeSamples))
+    }
+
+    private func saveRuntimeHistory() {
+        guard let data = try? JSONEncoder().encode(runtimeSamples) else { return }
+        try? data.write(to: runtimeHistoryURL, options: .atomic)
     }
 
     // MARK: - IOKit Battery Properties

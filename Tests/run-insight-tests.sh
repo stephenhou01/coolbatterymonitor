@@ -9,8 +9,17 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 ROOT=$(pwd)
 
-BUILD=$(mktemp -d)
-trap 'rm -rf "$BUILD"' EXIT
+TEST_TMP_ROOT=${TMPDIR:-/tmp}
+BUILD=$(mktemp -d "$TEST_TMP_ROOT/BatteryMonitor-insight.XXXXXX")
+
+# 只清理由本脚本创建且路径完全确定的两个文件。禁止递归删除，避免临时变量
+# 异常时误伤工作区或用户目录；目录非空时 rmdir 会安全失败并留给系统清理。
+cleanup() {
+    rm -f "$BUILD/main.swift"
+    rm -f "$BUILD/t"
+    rmdir "$BUILD" 2>/dev/null || true
+}
+trap cleanup EXIT
 
 echo "▸ 编译…"
 cp "$ROOT/Tests/InsightTests.swift" "$BUILD/main.swift"

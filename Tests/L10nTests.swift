@@ -23,6 +23,13 @@ expect(l.string("app.title") == "Batterie-Monitor", "德语查询: \(l.string("a
 expect(l.string("nonexistent.key") == "nonexistent.key", "未知 key 回落 key 本身")
 l.select("zh-Hans")
 expect(l.string("app.title") == "电池监控中心", "中文查询: \(l.string("app.title"))")
+expect(l.string("p.menu_time") == "还能用多久"
+       && l.string("p.menu_open") == "打开完整看板"
+       && l.string("p.menu_quit") == "退出 BatteryMonitor",
+       "菜单栏核心文案已进入原生语言包")
+l.select("fr")
+expect(l.string("p.menu_time") == "Time until empty",
+       "原型未单独翻译的语言沿用明确的英文 fallback")
 
 print("── 3) 数字格式化带 locale")
 l.select("de")

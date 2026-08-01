@@ -3,52 +3,40 @@ import SwiftUI
 // MARK: - 赛博风格装饰
 //
 // 都做成可复用修饰器，避免在每张卡片里重复一堆 overlay。
-// 所有动画都尊重「减弱动态效果」辅助功能设置。
+// 持续背景装饰保持静态；短暂交互动画尊重「减弱动态效果」设置。
 
 extension AppTheme {
 
-    /// 动态网格背景。放在最底层的 ZStack 里。
+    /// 静态网格背景。放在最底层的 ZStack 里。
     struct GridBackground: View {
         var spacing: CGFloat = 34
         var lineWidth: CGFloat = 0.5
-        @Environment(\.accessibilityReduceMotion) private var reduceMotion
-        @State private var drift: CGFloat = 0
 
         var body: some View {
             Canvas { ctx, size in
                 var path = Path()
-                var x: CGFloat = drift
+                var x: CGFloat = 0
                 while x <= size.width { path.move(to: .init(x: x, y: 0)); path.addLine(to: .init(x: x, y: size.height)); x += spacing }
-                var y: CGFloat = drift
+                var y: CGFloat = 0
                 while y <= size.height { path.move(to: .init(x: 0, y: y)); path.addLine(to: .init(x: size.width, y: y)); y += spacing }
                 ctx.stroke(path, with: .color(AppTheme.chargingCyan.opacity(0.055)), lineWidth: lineWidth)
             }
             .allowsHitTesting(false)
-            .onAppear {
-                guard !reduceMotion else { return }
-                withAnimation(.linear(duration: 16).repeatForever(autoreverses: false)) { drift = spacing }
-            }
         }
     }
 
-    /// 呼吸光晕。用在背景做氛围。
+    /// 静态柔光。用在背景做氛围。
     struct AmbientOrb: View {
         let color: Color
         var diameter: CGFloat = 420
-        @Environment(\.accessibilityReduceMotion) private var reduceMotion
-        @State private var pulse = false
 
         var body: some View {
             Circle()
-                .fill(RadialGradient(colors: [color.opacity(pulse ? 0.16 : 0.07), .clear],
+                .fill(RadialGradient(colors: [color.opacity(0.09), .clear],
                                      center: .center, startRadius: 0, endRadius: diameter / 2))
                 .frame(width: diameter, height: diameter)
                 .blur(radius: 30)
                 .allowsHitTesting(false)
-                .onAppear {
-                    guard !reduceMotion else { return }
-                    withAnimation(.easeInOut(duration: 5).repeatForever(autoreverses: true)) { pulse = true }
-                }
         }
     }
 

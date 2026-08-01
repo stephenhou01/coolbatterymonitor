@@ -7,9 +7,13 @@ class ProcessMonitorService: ObservableObject {
     /// 是否已完成至少一次采样。View 靠它区分「还在加载」和「采过了但确实没有」——
     /// 之前只看 topProcesses.isEmpty，空闲机器上会一直显示「正在加载进程列表…」。
     @Published var hasSampled = false
+    @Published private(set) var isLiveRefreshEnabled = true
 
     private var timer: Timer?
-    private let refreshInterval: TimeInterval = 5
+    /// Process activity is context for the ten-second power chart. It is never
+    /// presented as a per-process watt allocation.
+    static let liveRefreshInterval: TimeInterval = 10
+    private let refreshInterval = ProcessMonitorService.liveRefreshInterval
     private let totalMemMB = Double(ProcessInfo.processInfo.physicalMemory) / 1024.0 / 1024.0
     private var cpuHistoryByPid: [Int32: [Double]] = [:]
     private let maxHistoryPoints = 24
@@ -36,12 +40,14 @@ class ProcessMonitorService: ObservableObject {
     }
 
     func startMonitoring() {
+        timer?.invalidate()
+        guard isLiveRefreshEnabled else { return }
         fetchProcesses()
-        // 首采只有生命周期平均值可用；1.5 秒后再采一次，让真正的瞬时差值尽快出来，
-        // 而不是等满一个 5 秒周期。
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
-            self?.fetchProcesses()
-        }
+        scheduleTimer()
+    }
+
+    private func scheduleTimer() {
+        timer?.invalidate()
         timer = Timer(timeInterval: refreshInterval, repeats: true) { [weak self] _ in
             self?.fetchProcesses()
         }
@@ -51,6 +57,17 @@ class ProcessMonitorService: ObservableObject {
     func stopMonitoring() {
         timer?.invalidate()
         timer = nil
+    }
+
+    func setLiveRefreshEnabled(_ enabled: Bool) {
+        guard enabled != isLiveRefreshEnabled else { return }
+        isLiveRefreshEnabled = enabled
+        if enabled {
+            fetchProcesses()
+            scheduleTimer()
+        } else {
+            stopMonitoring()
+        }
     }
 
     func fetchProcesses() {
