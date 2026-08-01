@@ -306,9 +306,24 @@ struct CapacityBreakdownSection: View {
 
     private var capacityAccessibilityLabel: String {
         if let inaccessible, let permanent {
-            return "\(current) mAh 此刻还剩，\(used) mAh 本次已用，\(inaccessible) mAh 暂时够不到，\(permanent) mAh 真正老化；FCC 边界 \(full) mAh"
+            return dashboardText(
+                "p.capacity_accessibility_four",
+                fallback: "{current} mAh 此刻还剩，{used} mAh 本次已用，{unusable} mAh 暂时够不到，{aged} mAh 真正老化；FCC 边界 {full} mAh",
+                replacements: [
+                    "current": formatted(current), "used": formatted(used),
+                    "unusable": formatted(inaccessible), "aged": formatted(permanent),
+                    "full": formatted(full),
+                ]
+            )
         }
-        return "\(current) mAh 此刻还剩，\(used) mAh 本次已用，\(gap) mAh 长期容量差额；FCC 边界 \(full) mAh"
+        return dashboardText(
+            "p.capacity_accessibility_gap",
+            fallback: "{current} mAh 此刻还剩，{used} mAh 本次已用，{gap} mAh 长期容量差额；FCC 边界 {full} mAh",
+            replacements: [
+                "current": formatted(current), "used": formatted(used),
+                "gap": formatted(gap), "full": formatted(full),
+            ]
+        )
     }
 
     private func ratio(_ value: Int) -> Double {

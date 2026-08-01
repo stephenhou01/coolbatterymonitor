@@ -21,7 +21,7 @@ OVERRIDE="$TEST_HOME/Library/Application Support/BatteryMonitor/Languages"
 APP="$BUILD/T.app"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 # 固定构建目录只覆盖已知单文件，不做递归删除。
-rm -f "$OVERRIDE/de.json" "$OVERRIDE/it.json"
+rm -f "$OVERRIDE/de.json" "$OVERRIDE/it.json" "$OVERRIDE/pt.json"
 rm -f "$APP/Contents/MacOS/T" "$APP/Contents/Info.plist"
 if [ -L "$APP/Contents/Resources/Languages" ]; then
     rm -f "$APP/Contents/Resources/Languages"
@@ -74,6 +74,11 @@ d = json.load(open(f"{src}/it.json", encoding="utf-8"))
 d["strings"]["status.charging"] = "ROTTO %d W · %d W"
 d["strings"]["app.title"] = "IT-OVERRIDE-OK"
 json.dump(d, open(f"{dst}/it.json", "w", encoding="utf-8"), ensure_ascii=False, indent=2)
+# 超大包：即使结构合法也不能被加载，防止外部语言包无限占用内存。
+d = json.load(open(f"{src}/pt.json", encoding="utf-8"))
+d["strings"]["app.title"] = "OVERSIZED-PT-SHOULD-NOT-LOAD"
+d["padding"] = "x" * (2 * 1024 * 1024)
+json.dump(d, open(f"{dst}/pt.json", "w", encoding="utf-8"), ensure_ascii=False)
 PY
 env HOME="$TEST_HOME" CFFIXED_USER_HOME="$TEST_HOME" PHASE=2 "$APP/Contents/MacOS/T"
 

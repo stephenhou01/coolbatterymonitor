@@ -51,6 +51,7 @@ plutil -lint ExportOptions.plist BatteryMonitor/BatteryMonitor.entitlements \
     BatteryMonitor/*.lproj/InfoPlist.strings >/dev/null
 python3 - <<'PY'
 import json
+import re
 from pathlib import Path
 
 paths = sorted(Path("Localization/Languages").glob("*.json"))
@@ -79,6 +80,21 @@ required_menu_keys = {
     "menu.metric.health", "menu.metric.cycles", "menu.metric.current",
     "menu.process.none", "menu.process.latest_real_sample",
 }
+required_audit_keys = {
+    "p.current_max_desc", "p.capacity_accessibility_four",
+    "p.capacity_accessibility_gap", "p.duration_accessibility",
+    "system.field.new.meaning", "system.field.new.recommendation",
+    "system.field.new.note", "system.reliability.public",
+    "system.reliability.legacy", "system.reliability.private",
+    "system.group.temperature", "system.group.capacity", "system.group.power",
+    "system.group.fault", "system.group.raw", "system.anomaly.permanent_failure",
+    "system.anomaly.health_not_normal", "system.anomaly.thermal_critical",
+    "system.anomaly.thermal_serious", "system.anomaly.battery_warning_final",
+    "system.anomaly.battery_warning_early", "system.anomaly.cell_spread_warning",
+    "system.anomaly.cell_spread_attention", "system.anomaly.temperature_high",
+    "system.anomaly.temperature_low", "system.anomaly.diagnostic_nonzero",
+}
+pack_strings = {}
 for path in paths:
     data = json.loads(path.read_text(encoding="utf-8"))
     assert data["_meta"]["code"] == path.stem, f"language code mismatch: {path}"
@@ -89,6 +105,47 @@ for path in paths:
     assert keys == reference_keys, f"language key mismatch: {path}"
     assert required_help_keys <= keys, f"missing native help translations: {path}"
     assert required_menu_keys <= keys, f"missing native menu-bar translations: {path}"
+    assert required_audit_keys <= keys, f"missing audit translations: {path}"
+    pack_strings[path.stem] = data["strings"]
+
+# Literal localization keys referenced by source code must exist in every pack.
+swift_source = "\n".join(
+    path.read_text(encoding="utf-8")
+    for path in sorted(Path("BatteryMonitor").rglob("*.swift"))
+)
+literal_patterns = (
+    r'\bL\(\s*"([^"]+)"',
+    r'\bdashboardText\(\s*"([^"]+)"',
+    r'\bhardwareText\(\s*"([^"]+)"',
+    r'\btext\(\s*"((?:p|hw|shell|menu|system|appearance|insight|stat|rt|hist|proc|condition)\.[^"]+)"',
+)
+source_keys = set()
+for pattern in literal_patterns:
+    source_keys.update(re.findall(pattern, swift_source))
+missing_source_keys = sorted(source_keys - reference_keys)
+assert not missing_source_keys, f"source localization keys missing from packs: {missing_source_keys}"
+
+# Format arguments are an ABI boundary: every translation must retain the English signature.
+format_pattern = re.compile(
+    r'%(?:\d+\$)?[-+ #0]*[\d.]*(?:hh|h|ll|l|L|z|j|t)?([diouxXeEfgGaAcspn@%])'
+)
+def format_signature(value):
+    return [match for match in format_pattern.findall(value) if match != "%"]
+
+english = pack_strings["en"]
+for code, strings in sorted(pack_strings.items()):
+    mismatches = [
+        key for key, value in strings.items()
+        if format_signature(value) != format_signature(english[key])
+    ]
+    assert not mismatches, f"format placeholder mismatch in {code}: {mismatches[:12]}"
+
+# These newly exposed user-facing strings must be native rather than silent English fallback.
+for code, strings in sorted(pack_strings.items()):
+    if code == "en":
+        continue
+    untranslated = sorted(key for key in required_audit_keys if strings[key] == english[key])
+    assert not untranslated, f"audit keys still use English fallback in {code}: {untranslated}"
 
 catalog = json.loads(Path("BatteryMonitor/Resources/SystemFieldCatalog.json").read_text(encoding="utf-8"))
 assert catalog["schemaVersion"] == 1

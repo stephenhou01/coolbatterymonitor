@@ -44,6 +44,10 @@ final class L10n {
 
     private static let prefKey = "app.language.override"
     private static let fallback = "en"
+    private static let maxPackBytes = 2 * 1_024 * 1_024
+    private static let maxStringCount = 5_000
+    private static let maxKeyLength = 200
+    private static let maxValueLength = 20_000
 
     // MARK: - Derived state
 
@@ -122,13 +126,19 @@ final class L10n {
 
         // 1) bundle 内置
         if let urls = Bundle.main.urls(forResourcesWithExtension: "json", subdirectory: "Languages") {
-            for url in urls { insert(url, into: &result) }
+            for url in urls.sorted(by: { $0.lastPathComponent < $1.lastPathComponent }) {
+                insert(url, into: &result)
+            }
         }
         // 2) 用户目录覆盖同 code 的包
         if let dir = userLanguagesDir,
            let urls = try? FileManager.default.contentsOfDirectory(at: dir,
                                                                    includingPropertiesForKeys: nil) {
-            for url in urls where url.pathExtension == "json" { insert(url, into: &result) }
+            for url in urls
+                .filter({ $0.pathExtension == "json" })
+                .sorted(by: { $0.lastPathComponent < $1.lastPathComponent }) {
+                insert(url, into: &result)
+            }
         }
 
         // 校验格式符签名。语言包是外部输入，而 String(format:) 是 C 变参 ——
@@ -149,18 +159,26 @@ final class L10n {
     }
 
     private static func insert(_ url: URL, into result: inout [String: LanguagePack]) {
-        guard let data = try? Data(contentsOf: url),
+        guard let fileSize = try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize,
+              fileSize <= maxPackBytes,
+              let data = try? Data(contentsOf: url, options: .mappedIfSafe),
+              data.count <= maxPackBytes,
               let pack = try? JSONDecoder().decode(LanguagePack.self, from: data),
-              pack.meta.code == url.deletingPathExtension().lastPathComponent
+              pack.meta.code == url.deletingPathExtension().lastPathComponent,
+              pack.strings.count <= maxStringCount,
+              pack.strings.allSatisfy({ key, value in
+                  !key.isEmpty && key.count <= maxKeyLength && value.count <= maxValueLength
+              })
         else { return }     // 解码失败或 code 与文件名不符 → 忽略该包，不影响其余
         result[pack.meta.code] = pack
     }
 
-    private static let specifier = try! NSRegularExpression(
+    private static let specifier = try? NSRegularExpression(
         pattern: #"%(?:\d+\$)?[-+ #0]*[\d.]*(?:hh|h|ll|l|L|z|j|t)?([diouxXeEfgGaAcspn@%])"#)
 
     /// 提取格式符序列，`%%` 是转义的百分号不计入。
     private static func formatSignature(_ s: String) -> [String] {
+        guard let specifier else { return [] }
         let ns = s as NSString
         return specifier.matches(in: s, range: NSRange(location: 0, length: ns.length))
             .map { ns.substring(with: $0.range(at: 1)) }

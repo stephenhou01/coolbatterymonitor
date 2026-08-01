@@ -55,6 +55,17 @@ let shellAndMenuKeys = [
     "p.help_summary_adapter_power", "p.help_source_adapter_power",
     "p.help_summary_charging_power", "p.help_source_charging_power",
     "p.help_summary_cycle_count", "p.help_source_cycle_count",
+    "p.current_max_desc", "p.capacity_accessibility_four", "p.capacity_accessibility_gap",
+    "p.duration_accessibility", "system.field.new.meaning",
+    "system.field.new.recommendation", "system.field.new.note",
+    "system.reliability.public", "system.reliability.legacy", "system.reliability.private",
+    "system.group.temperature", "system.group.capacity", "system.group.power",
+    "system.group.fault", "system.group.raw", "system.anomaly.permanent_failure",
+    "system.anomaly.health_not_normal", "system.anomaly.thermal_critical",
+    "system.anomaly.thermal_serious", "system.anomaly.battery_warning_final",
+    "system.anomaly.battery_warning_early", "system.anomaly.cell_spread_warning",
+    "system.anomaly.cell_spread_attention", "system.anomaly.temperature_high",
+    "system.anomaly.temperature_low", "system.anomaly.diagnostic_nonzero",
 ]
 let bundledPackURLs = Bundle.main.urls(forResourcesWithExtension: "json", subdirectory: "Languages") ?? []
 let bundledPacks = bundledPackURLs.compactMap { try? JSONDecoder().decode(LanguagePack.self, from: Data(contentsOf: $0)) }
@@ -72,6 +83,10 @@ l.select("fr")
 expect(l.string("menu.config.restore_defaults") == "Rétablir les réglages par défaut"
        && l.string("menu.metric.runtime") == "Autonomie restante",
        "新增菜单配置提供法语原生译文")
+l.select("ja")
+expect(l.string("system.group.temperature") == "温度／熱状態"
+       && l.string("p.duration_accessibility").contains("時間"),
+       "动态系统字段与辅助功能说明提供日语原生译文")
 
 print("── 3) 数字格式化带 locale")
 l.select("de")
@@ -132,6 +147,11 @@ if phase2 {
     // 真正的安全性验证：用 Double+Int 实参调用，若坏格式串没被拦会读错位模式
     let out = l.format("status.charging", [17.25, 65])
     expect(out.contains("17,2") && out.contains("65"), "带 Double 实参格式化安全，且数字仍按用户选的 it locale: \(out)")
+
+    print("── 8) 超大外部语言包护栏")
+    l.select("pt")
+    expect(l.string("app.title") == "Monitor de Bateria",
+           "超过大小限制的外部 pt.json 被拒绝并保留内置语言包")
 
     print(failures == 0 ? "\n✅ 第二阶段全部通过" : "\n❌ 第二阶段 \(failures) 项失败")
     exit(failures == 0 ? 0 : 1)

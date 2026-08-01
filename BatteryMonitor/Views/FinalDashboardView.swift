@@ -336,7 +336,11 @@ private struct RemainingTimeHeroSection: View {
             .lineLimit(1)
             .minimumScaleFactor(0.68)
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("\(minutes / 60) 小时 \(minutes % 60) 分钟")
+            .accessibilityLabel(dashboardText(
+                "p.duration_accessibility",
+                fallback: "{hours} 小时 {minutes} 分钟",
+                replacements: ["hours": "\(minutes / 60)", "minutes": "\(minutes % 60)"]
+            ))
         } else {
             VStack(alignment: .leading, spacing: 4) {
                 Text("—")

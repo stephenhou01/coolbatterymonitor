@@ -315,6 +315,11 @@ let mixedApps = idleApps + [
 ]
 expect(ProcessPowerInfo.rankedForDisplay(mixedApps, limit: 3).first?.displayName == "Google Chrome",
        "真实CPU较高的可识别应用排在首位")
+expect(ProcessMonitorService.sanitizedCPUPercent(.nan) == 0
+       && ProcessMonitorService.sanitizedCPUPercent(-12) == 0,
+       "进程采样遇到非有限值或负CPU时归零")
+expect(ProcessMonitorService.sanitizedCPUPercent(9_999, logicalCoreCount: 8) == 800,
+       "进程CPU按逻辑核心数限制异常上界")
 
 print("── 10b) 外观与菜单栏配置持久化")
 let preferenceSuiteName = "com.stephen.BatteryMonitor.tests.presentation"
@@ -368,6 +373,23 @@ expect(BatteryService.preferredSystemTimeRemaining(isOnAC: false,
 expect(BatteryService.preferredSystemTimeRemaining(isOnAC: true,
         timeRemaining: 148, avgTimeToEmpty: 150) == nil,
        "插电时不把电量计值作为系统剩余续航")
+
+let persistenceBase = Date(timeIntervalSince1970: 1_000)
+expect(!BatteryService.shouldPersistRuntimeHistory(
+    dirty: false, lastSaved: nil, now: persistenceBase),
+       "没有新续航样本时不落盘")
+expect(BatteryService.shouldPersistRuntimeHistory(
+    dirty: true, lastSaved: nil, now: persistenceBase),
+       "首次有效续航样本及时落盘")
+expect(!BatteryService.shouldPersistRuntimeHistory(
+    dirty: true, lastSaved: persistenceBase, now: persistenceBase.addingTimeInterval(299)),
+       "五分钟内的新样本只留在内存，避免频繁写盘")
+expect(BatteryService.shouldPersistRuntimeHistory(
+    dirty: true, lastSaved: persistenceBase, now: persistenceBase.addingTimeInterval(300)),
+       "累计五分钟后批量持久化续航历史")
+expect(BatteryService.shouldPersistRuntimeHistory(
+    dirty: true, lastSaved: persistenceBase, now: persistenceBase, force: true),
+       "暂停或退出时强制冲刷未保存续航历史")
 
 var powerDetail = BatteryHardwareDetail()
 powerDetail.systemPowerWatts = 15.67

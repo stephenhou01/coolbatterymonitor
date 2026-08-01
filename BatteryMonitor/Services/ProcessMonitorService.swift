@@ -27,6 +27,12 @@ class ProcessMonitorService: ObservableObject {
     /// 防止刷新按钮连点导致并发采样把 previousCPUTimes 写乱
     private var isSampling = false
 
+    deinit {
+        // The run loop retains scheduled timers. Invalidate explicitly so a
+        // discarded monitor cannot leave a ten-second no-op wake-up behind.
+        timer?.invalidate()
+    }
+
     /// 进程生命周期平均 CPU%。首次采样没有前值可比时用它兜底。
     /// 走 proc_pidinfo(PROC_PIDTBSDINFO) 取进程启动时间，纯只读、无需授权。
     private func lifetimeAverageCPU(pid: Int32, totalCPUTime: UInt64,
@@ -51,10 +57,15 @@ class ProcessMonitorService: ObservableObject {
 
     private func scheduleTimer() {
         timer?.invalidate()
-        timer = Timer(timeInterval: refreshInterval, repeats: true) { [weak self] _ in
+        let t = Timer(timeInterval: refreshInterval, repeats: true) { [weak self] _ in
             self?.fetchProcesses()
         }
-        RunLoop.main.add(timer!, forMode: .common)
+        // Align this wake-up with the battery refresh whenever macOS can do so.
+        // The panel still receives a sample every ten seconds, while idle wake
+        // pressure is lower than two rigid independent timers.
+        t.tolerance = min(1.5, refreshInterval * 0.15)
+        RunLoop.main.add(t, forMode: .common)
+        timer = t
     }
 
     func stopMonitoring() {
@@ -85,7 +96,7 @@ class ProcessMonitorService: ObservableObject {
         guard !isSampling else { return }   // 刷新连点时丢弃重入，避免并发写坏采样状态
         isSampling = true
         let candidates = applicationCandidates()
-        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+        DispatchQueue.global(qos: .utility).async { [weak self] in
             guard let self = self else { return }
             let processes = self.getTopProcesses(candidates: candidates)
 
@@ -219,7 +230,7 @@ class ProcessMonitorService: ObservableObject {
                 pid: Int(pid),
                 name: candidate.name,
                 groupIdentifier: candidate.groupIdentifier,
-                cpuPercent: max(cpuPercent, 0),
+                cpuPercent: Self.sanitizedCPUPercent(cpuPercent),
                 memoryMB: memoryMB,
                 isForeground: candidate.isForeground
             ))
@@ -250,5 +261,18 @@ class ProcessMonitorService: ObservableObject {
         previousCPUTimes = previousCPUTimes.filter { livePids.contains($0.key) }
 
         return Array(grouped.values)
+    }
+
+    /// proc counters are unsigned and normally monotonic, but process exits,
+    /// sleep/wake boundaries, or an unexpected clock sample must never leak a
+    /// NaN/Infinity into sorting and charts. Activity Monitor's convention can
+    /// exceed 100% for multi-threaded apps, capped here at all logical cores.
+    static func sanitizedCPUPercent(
+        _ value: Double,
+        logicalCoreCount: Int = ProcessInfo.processInfo.activeProcessorCount
+    ) -> Double {
+        guard value.isFinite else { return 0 }
+        let upperBound = Double(max(1, logicalCoreCount)) * 100
+        return min(upperBound, max(0, value))
     }
 }
