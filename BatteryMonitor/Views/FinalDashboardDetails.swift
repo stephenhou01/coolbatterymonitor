@@ -130,7 +130,7 @@ struct CapacityBreakdownSection: View {
                 .textSelection(.enabled)
                 .padding(11)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(RoundedRectangle(cornerRadius: 9).fill(Color.black.opacity(0.12)))
+                .background(RoundedRectangle(cornerRadius: 9).fill(AppTheme.surfaceSunken))
         }
         .padding(22)
         .finalDashboardCard(accent: AppTheme.batteryYellow)
@@ -166,12 +166,12 @@ struct CapacityBreakdownSection: View {
                 }
             }
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.white.opacity(0.09)))
+            .overlay(RoundedRectangle(cornerRadius: 12).stroke(AppTheme.contrastOverlay(0.09)))
             .overlay(alignment: .topLeading) {
                 let boundary = min(max(width * CGFloat(full) / CGFloat(total), 0), width)
                 let boundaryLabel = dashboardText("p.current_max", fallback: "目前最大容量")
                 Rectangle()
-                    .fill(Color.white.opacity(0.62))
+                    .fill(AppTheme.contrastOverlay(0.62))
                     .frame(width: 1, height: 78)
                     .offset(x: boundary)
                 Text("FCC · \(boundaryLabel) \(formatted(full))")
@@ -179,7 +179,7 @@ struct CapacityBreakdownSection: View {
                     .foregroundStyle(AppTheme.textPrimary)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 3)
-                    .background(Capsule().fill(Color.black.opacity(0.62)))
+                    .background(Capsule().fill(AppTheme.surfaceRaised.opacity(0.92)))
                     .offset(x: min(max(boundary - 64, 4), max(width - 132, 4)), y: 4)
             }
         }
@@ -201,7 +201,7 @@ struct CapacityBreakdownSection: View {
                     .minimumScaleFactor(0.55)
             }
         }
-        .foregroundStyle(Color.white.opacity(0.9))
+        .foregroundStyle(AppTheme.contrastOverlay(0.9))
         .frame(width: max(width - 1, 0))
         .frame(maxHeight: .infinity)
         .background(
@@ -361,7 +361,7 @@ private struct CapacityLegendCard: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .lineSpacing(2)
             GeometryReader { geo in
-                Capsule().fill(Color.white.opacity(0.04))
+                Capsule().fill(AppTheme.contrastOverlay(0.04))
                     .overlay(alignment: .leading) {
                         Capsule().fill(color.opacity(0.68))
                             .frame(width: geo.size.width * CGFloat(min(max(percentage, 0), 100)) / 100)
@@ -371,8 +371,8 @@ private struct CapacityLegendCard: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, minHeight: 158, alignment: .topLeading)
-        .background(RoundedRectangle(cornerRadius: 12).fill(Color.white.opacity(0.018)))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.white.opacity(0.06)))
+        .background(RoundedRectangle(cornerRadius: 12).fill(AppTheme.contrastOverlay(0.018)))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(AppTheme.contrastOverlay(0.06)))
     }
 }
 
@@ -403,8 +403,8 @@ private struct CapacityEquation: View {
             }
         }
         .padding(13)
-        .background(RoundedRectangle(cornerRadius: 11).fill(Color.black.opacity(0.12)))
-        .overlay(RoundedRectangle(cornerRadius: 11).stroke(Color.white.opacity(0.055)))
+        .background(RoundedRectangle(cornerRadius: 11).fill(AppTheme.surfaceSunken))
+        .overlay(RoundedRectangle(cornerRadius: 11).stroke(AppTheme.contrastOverlay(0.055)))
     }
 
     private var equationTitle: some View {
@@ -544,7 +544,7 @@ struct MetricReferenceSection: View {
                 .foregroundStyle(AppTheme.textTertiary)
                 .padding(10)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(RoundedRectangle(cornerRadius: 8).fill(Color.white.opacity(0.018)))
+                .background(RoundedRectangle(cornerRadius: 8).fill(AppTheme.contrastOverlay(0.018)))
         }
         .padding(22)
         .finalDashboardCard(accent: AppTheme.accentPurple)
@@ -570,7 +570,7 @@ struct MetricReferenceSection: View {
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: 12))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.white.opacity(0.06)))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(AppTheme.contrastOverlay(0.06)))
     }
 
     @ViewBuilder
@@ -615,7 +615,7 @@ private struct ReferenceTableRow: View {
         }
         .frame(height: isHeader ? 34 : 76)
         .padding(.vertical, isHeader ? 8 : 10)
-        .background(isHeader ? Color.white.opacity(0.032) : Color.white.opacity(0.012))
+        .background(isHeader ? AppTheme.contrastOverlay(0.032) : AppTheme.contrastOverlay(0.012))
     }
 }
 
@@ -648,8 +648,8 @@ private struct ReferenceMetricRow: View {
         .frame(height: 94)
         .padding(.horizontal, 8)
         .padding(.vertical, 12)
-        .background(Color.white.opacity(0.012))
-        .overlay(alignment: .top) { Rectangle().fill(Color.white.opacity(0.05)).frame(height: 1) }
+        .background(AppTheme.contrastOverlay(0.012))
+        .overlay(alignment: .top) { Rectangle().fill(AppTheme.contrastOverlay(0.05)).frame(height: 1) }
     }
 
     private var metricLabel: some View {
@@ -707,8 +707,8 @@ private struct ReferenceMetricCard: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity, minHeight: 235, alignment: .topLeading)
-        .background(RoundedRectangle(cornerRadius: 12).fill(Color.white.opacity(0.018)))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.white.opacity(0.06)))
+        .background(RoundedRectangle(cornerRadius: 12).fill(AppTheme.contrastOverlay(0.018)))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(AppTheme.contrastOverlay(0.06)))
     }
 
     private func labeledText(_ label: String, _ text: String) -> some View {

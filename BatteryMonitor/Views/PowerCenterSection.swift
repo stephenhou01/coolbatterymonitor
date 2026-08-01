@@ -120,7 +120,7 @@ struct PowerCenterSection: View {
                     .foregroundStyle(AppTheme.textTertiary)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 5)
-                    .background(Capsule().fill(Color.white.opacity(0.035)))
+                    .background(Capsule().fill(AppTheme.contrastOverlay(0.035)))
             }
 
             if chartPoints.count >= 2 {
@@ -157,21 +157,21 @@ struct PowerCenterSection: View {
                                 }
                                 .font(.system(size: 9.5, weight: .semibold, design: .monospaced))
                                 .padding(7)
-                                .background(RoundedRectangle(cornerRadius: 7).fill(Color.black.opacity(0.78)))
+                                .background(RoundedRectangle(cornerRadius: 7).fill(AppTheme.surfaceRaised.opacity(0.96)))
                             }
                     }
                 }
                 .chartXSelection(value: $selectedDate)
                 .chartXAxis {
                     AxisMarks(values: .automatic(desiredCount: 5)) { _ in
-                        AxisGridLine().foregroundStyle(Color.white.opacity(0.035))
+                        AxisGridLine().foregroundStyle(AppTheme.contrastOverlay(0.035))
                         AxisValueLabel(format: .dateTime.hour().minute())
                             .foregroundStyle(AppTheme.textTertiary)
                     }
                 }
                 .chartYAxis {
                     AxisMarks(position: .leading, values: .automatic(desiredCount: 4)) { value in
-                        AxisGridLine().foregroundStyle(Color.white.opacity(0.05))
+                        AxisGridLine().foregroundStyle(AppTheme.contrastOverlay(0.05))
                         AxisValueLabel {
                             if let watts = value.as(Double.self) {
                                 Text(LNum("%.0f W", watts))
@@ -201,8 +201,8 @@ struct PowerCenterSection: View {
             .foregroundStyle(AppTheme.textTertiary)
         }
         .padding(14)
-        .background(RoundedRectangle(cornerRadius: 13).fill(Color.black.opacity(0.18)))
-        .overlay(RoundedRectangle(cornerRadius: 13).stroke(Color.white.opacity(0.055), lineWidth: 1))
+        .background(RoundedRectangle(cornerRadius: 13).fill(AppTheme.surfaceSunken))
+        .overlay(RoundedRectangle(cornerRadius: 13).stroke(AppTheme.contrastOverlay(0.055), lineWidth: 1))
     }
 
     private var processPanel: some View {
@@ -241,8 +241,8 @@ struct PowerCenterSection: View {
             .background(RoundedRectangle(cornerRadius: 9).fill(AppTheme.batteryYellow.opacity(0.035)))
         }
         .padding(14)
-        .background(RoundedRectangle(cornerRadius: 13).fill(Color.black.opacity(0.15)))
-        .overlay(RoundedRectangle(cornerRadius: 13).stroke(Color.white.opacity(0.055), lineWidth: 1))
+        .background(RoundedRectangle(cornerRadius: 13).fill(AppTheme.surfaceSunken))
+        .overlay(RoundedRectangle(cornerRadius: 13).stroke(AppTheme.contrastOverlay(0.055), lineWidth: 1))
     }
 
     private var powerSourceLabel: String {

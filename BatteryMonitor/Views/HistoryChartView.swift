@@ -153,7 +153,7 @@ struct SessionRow: View {
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .fill(Color.white.opacity(0.06))
+                        .fill(AppTheme.contrastOverlay(0.06))
                         .frame(height: 24)
 
                     let startFrac = CGFloat(min(max(session.startPercent, 0), 100)) / 100.0

@@ -4,7 +4,7 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-for tool in xcodebuild swiftc python3 plutil rg lipo; do
+for tool in xcodebuild swiftc python3 plutil rg lipo sips; do
     if ! command -v "$tool" >/dev/null 2>&1; then
         echo "缺少工具：$tool" >&2
         exit 1
@@ -29,6 +29,20 @@ marketing_version=$(awk -F '"' '/MARKETING_VERSION:/ {print $2; exit}' project.y
 build_number=$(awk -F '"' '/CURRENT_PROJECT_VERSION:/ {print $2; exit}' project.yml)
 test -n "$marketing_version"
 test -n "$build_number"
+test "$marketing_version" = "1.2.0"
+test "$build_number" = "4"
+
+echo "▸ 检查 AppIcon 母版与完整尺寸集"
+for size in 16 32 64 128 256 512 1024; do
+    icon="BatteryMonitor/Assets.xcassets/AppIcon.appiconset/icon_${size}.png"
+    test -f "$icon"
+    width=$(sips -g pixelWidth "$icon" | awk '/pixelWidth:/ {print $2}')
+    height=$(sips -g pixelHeight "$icon" | awk '/pixelHeight:/ {print $2}')
+    alpha=$(sips -g hasAlpha "$icon" | awk '/hasAlpha:/ {print $2}')
+    test "$width" = "$size"
+    test "$height" = "$size"
+    test "$alpha" = "yes"
+done
 
 echo "▸ 检查 plist 与语言包"
 plutil -lint ExportOptions.plist BatteryMonitor/BatteryMonitor.entitlements \
@@ -51,6 +65,13 @@ required_menu_keys = {
     "p.menu_direct", "p.menu_forecast", "p.menu_waiting",
     "p.menu_open", "p.menu_settings", "p.menu_close",
     "p.menu_language", "p.menu_quit",
+    "appearance.system", "appearance.light", "appearance.dark",
+    "menu.config.title", "menu.config.second_metric", "menu.config.customize",
+    "menu.config.show", "menu.config.hide", "menu.config.move_up",
+    "menu.config.move_down", "menu.config.restore_defaults", "menu.config.empty",
+    "menu.metric.runtime", "menu.metric.power", "menu.metric.temperature",
+    "menu.metric.health", "menu.metric.cycles", "menu.metric.current",
+    "menu.process.none", "menu.process.latest_real_sample",
 }
 for path in paths:
     data = json.loads(path.read_text(encoding="utf-8"))
@@ -102,6 +123,7 @@ xcodebuild -quiet -project BatteryMonitor.xcodeproj -scheme BatteryMonitor \
 built_products=$(awk -F ' = ' '/^[[:space:]]*BUILT_PRODUCTS_DIR = / {print $2; exit}' <<<"$settings")
 app="$built_products/BatteryMonitor.app"
 test -x "$app/Contents/MacOS/BatteryMonitor"
+test -f "$app/Contents/Resources/AppIcon.icns"
 test "$(plutil -extract ITSAppUsesNonExemptEncryption raw "$app/Contents/Info.plist")" = "false"
 test "$(plutil -extract CFBundleShortVersionString raw "$app/Contents/Info.plist")" = "$marketing_version"
 test "$(plutil -extract CFBundleVersion raw "$app/Contents/Info.plist")" = "$build_number"

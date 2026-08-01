@@ -168,7 +168,7 @@ EXTRA = {
 "p.menu_waiting":  {"zh-Hans":"等待 macOS 给出剩余时间","en":"Waiting for macOS time estimate","ja":"macOS の残り時間予測を待機中","de":"Warten auf die macOS-Zeitschätzung"},
 "p.menu_open":     {"zh-Hans":"打开完整看板","en":"Open full dashboard","ja":"完全なダッシュボードを開く","de":"Vollständiges Dashboard öffnen"},
 "p.menu_settings": {"zh-Hans":"设置","en":"Settings","ja":"設定","de":"Einstellungen"},
-"p.menu_close":    {"zh-Hans":"关闭菜单栏面板","en":"Close menu bar panel","ja":"メニューバーパネルを閉じる","de":"Menüleistenfenster schließen"},
+"p.menu_close":    {"zh-Hans":"收起菜单栏面板","zh-Hant":"收起選單列面板","en":"Collapse menu bar panel","ja":"メニューバーパネルを閉じる","de":"Menüleistenfenster einklappen"},
 "p.seg_now":      {"zh-Hans":"现在还有","en":"In there now","ja":"現在の残量","de":"Aktuell drin"},
 "p.seg_used":     {"zh-Hans":"已用掉","en":"Used","ja":"使用済み","de":"Verbraucht"},
 "p.seg_now_d":    {"zh-Hans":"<strong>像水箱里此刻剩下的水。</strong>使用会减少，插上电就能重新补满。",

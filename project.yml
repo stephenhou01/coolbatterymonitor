@@ -32,7 +32,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.stephen.BatteryMonitor
         PRODUCT_NAME: BatteryMonitor
         MARKETING_VERSION: "1.2.0"
-        CURRENT_PROJECT_VERSION: "3"
+        CURRENT_PROJECT_VERSION: "4"
         CODE_SIGN_ENTITLEMENTS: BatteryMonitor/BatteryMonitor.entitlements
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 6WLUSLD79F

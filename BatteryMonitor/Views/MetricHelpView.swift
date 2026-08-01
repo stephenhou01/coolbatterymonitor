@@ -35,8 +35,8 @@ struct MetricHelpButton: View {
                 .font(.system(size: 10, weight: .bold, design: .rounded))
                 .foregroundStyle(AppTheme.textSecondary)
                 .frame(width: 20, height: 20)
-                .background(Circle().fill(Color.white.opacity(0.055)))
-                .overlay(Circle().stroke(Color.white.opacity(0.10), lineWidth: 1))
+                .background(Circle().fill(AppTheme.contrastOverlay(0.055)))
+                .overlay(Circle().stroke(AppTheme.contrastOverlay(0.10), lineWidth: 1))
         }
         .buttonStyle(.plain)
         .pointerOnHover()
@@ -87,8 +87,7 @@ struct MetricHelpDrawer: View {
             .frame(width: 470)
             .background(
                 LinearGradient(
-                    colors: [Color(red: 0.065, green: 0.085, blue: 0.095),
-                             Color(red: 0.04, green: 0.055, blue: 0.065)],
+                    colors: [AppTheme.surfaceRaised, AppTheme.cardBackground],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
@@ -120,7 +119,7 @@ struct MetricHelpDrawer: View {
                     .foregroundStyle(AppTheme.textSecondary)
                     .padding(.horizontal, 9)
                     .padding(.vertical, 6)
-                    .background(RoundedRectangle(cornerRadius: 7).fill(Color.white.opacity(0.05)))
+                    .background(RoundedRectangle(cornerRadius: 7).fill(AppTheme.contrastOverlay(0.05)))
             }
             .buttonStyle(.plain)
             .keyboardShortcut(.cancelAction)
@@ -129,7 +128,7 @@ struct MetricHelpDrawer: View {
         }
         .padding(.bottom, 14)
         .overlay(alignment: .bottom) {
-            Rectangle().fill(Color.white.opacity(0.07)).frame(height: 1)
+            Rectangle().fill(AppTheme.contrastOverlay(0.07)).frame(height: 1)
         }
     }
 
@@ -167,8 +166,8 @@ struct MetricHelpDrawer: View {
                             .textSelection(.enabled)
                     }
                     .padding(11)
-                    .background(RoundedRectangle(cornerRadius: 8).fill(Color.white.opacity(0.025)))
-                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.white.opacity(0.065), lineWidth: 1))
+                    .background(RoundedRectangle(cornerRadius: 8).fill(AppTheme.contrastOverlay(0.025)))
+                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(AppTheme.contrastOverlay(0.065), lineWidth: 1))
                 }
             }
         }

@@ -25,8 +25,299 @@ LANGUAGE_DIR = ROOT / "Localization" / "Languages"
 APP_EXTRA = {
     "p.menu_language": {"zh-Hans": "语言", "en": "Language", "ja": "言語", "de": "Sprache"},
     "p.menu_quit": {
-        "zh-Hans": "退出 BatteryMonitor", "en": "Quit BatteryMonitor",
-        "ja": "BatteryMonitor を終了", "de": "BatteryMonitor beenden"
+        "zh-Hans": "完全退出 BatteryMonitor", "zh-Hant": "完全結束 BatteryMonitor",
+        "en": "Quit BatteryMonitor completely",
+        "ja": "BatteryMonitor を完全に終了", "de": "BatteryMonitor vollständig beenden"
+    },
+    "appearance.system": {
+        "zh-Hans": "跟随系统", "zh-Hant": "跟隨系統", "en": "System",
+        "ja": "システム設定に従う", "de": "Systemeinstellung"
+    },
+    "appearance.light": {
+        "zh-Hans": "浅色", "zh-Hant": "淺色", "en": "Light",
+        "ja": "ライト", "de": "Hell"
+    },
+    "appearance.dark": {
+        "zh-Hans": "深色", "zh-Hant": "深色", "en": "Dark",
+        "ja": "ダーク", "de": "Dunkel"
+    },
+    "shell.overview": {
+        "zh-Hans": "总览", "zh-Hant": "總覽", "en": "Overview",
+        "ja": "概要", "de": "Übersicht"
+    },
+    "shell.technical": {
+        "zh-Hans": "技术参数", "zh-Hant": "技術參數", "en": "Technical details",
+        "ja": "技術情報", "de": "Technische Daten"
+    },
+    "shell.trends": {
+        "zh-Hans": "趋势", "zh-Hant": "趨勢", "en": "Trends",
+        "ja": "トレンド", "de": "Trends"
+    },
+    "shell.diagnostics": {
+        "zh-Hans": "诊断", "zh-Hant": "診斷", "en": "Diagnostics",
+        "ja": "診断", "de": "Diagnose"
+    },
+    "shell.settings": {
+        "zh-Hans": "设置", "zh-Hant": "設定", "en": "Settings",
+        "ja": "設定", "de": "Einstellungen"
+    },
+    "shell.sidebar_subtitle": {
+        "zh-Hans": "你的 Mac 电池仪表盘", "zh-Hant": "你的 Mac 電池儀表板",
+        "en": "Your Mac battery dashboard", "ja": "Mac のバッテリーダッシュボード",
+        "de": "Dein Mac-Batterie-Dashboard"
+    },
+    "shell.local_only": {
+        "zh-Hans": "数据仅保存在这台 Mac", "zh-Hant": "資料僅儲存在這台 Mac",
+        "en": "Data stays on this Mac", "ja": "データはこの Mac 内にのみ保存されます",
+        "de": "Daten bleiben nur auf diesem Mac"
+    },
+    "shell.power_connected": {
+        "zh-Hans": "已连接电源", "zh-Hant": "已連接電源", "en": "Connected to power",
+        "ja": "電源に接続済み", "de": "Mit Stromquelle verbunden"
+    },
+    "shell.on_battery": {
+        "zh-Hans": "正在使用电池", "zh-Hant": "正在使用電池", "en": "Running on battery",
+        "ja": "バッテリー使用中", "de": "Batteriebetrieb"
+    },
+    "shell.power_hint": {
+        "zh-Hans": "整机实时功率", "zh-Hant": "整機即時功率", "en": "Whole-Mac live power",
+        "ja": "Mac 全体のリアルタイム電力", "de": "Echtzeitleistung des gesamten Macs"
+    },
+    "shell.adapter": {
+        "zh-Hans": "适配器功率", "zh-Hant": "電源轉接器功率", "en": "Adapter power",
+        "ja": "アダプタ電力", "de": "Netzteilleistung"
+    },
+    "shell.adapter_connected": {
+        "zh-Hans": "当前额定功率", "zh-Hant": "目前額定功率", "en": "Current rated power",
+        "ja": "現在の定格電力", "de": "Aktuelle Nennleistung"
+    },
+    "shell.not_connected": {
+        "zh-Hans": "未连接", "zh-Hant": "未連接", "en": "Not connected",
+        "ja": "未接続", "de": "Nicht verbunden"
+    },
+    "shell.charge_power": {
+        "zh-Hans": "充电功率", "zh-Hant": "充電功率", "en": "Charging power",
+        "ja": "充電電力", "de": "Ladeleistung"
+    },
+    "shell.charging": {
+        "zh-Hans": "正在充电", "zh-Hant": "正在充電", "en": "Charging",
+        "ja": "充電中", "de": "Wird geladen"
+    },
+    "shell.not_charging": {
+        "zh-Hans": "当前未充电", "zh-Hant": "目前未充電", "en": "Not charging",
+        "ja": "現在は充電していません", "de": "Wird derzeit nicht geladen"
+    },
+    "shell.temp_range": {
+        "zh-Hans": "建议 20–35℃", "zh-Hant": "建議 20–35℃", "en": "Recommended: 20–35°C",
+        "ja": "推奨 20〜35℃", "de": "Empfohlen: 20–35 °C"
+    },
+    "shell.cycle_reference": {
+        "zh-Hans": "参考额定 1000 次", "zh-Hant": "參考額定 1000 次", "en": "Rated reference: 1,000 cycles",
+        "ja": "定格 1,000 回を目安", "de": "Nennwert: 1.000 Zyklen"
+    },
+    "shell.health_good": {
+        "zh-Hans": "状态良好", "zh-Hant": "狀態良好", "en": "Good condition",
+        "ja": "良好", "de": "Guter Zustand"
+    },
+    "shell.health_fair": {
+        "zh-Hans": "正常使用", "zh-Hant": "正常使用", "en": "Normal use",
+        "ja": "通常使用", "de": "Normal nutzbar"
+    },
+    "shell.health_attention": {
+        "zh-Hans": "建议关注", "zh-Hant": "建議關注", "en": "Needs attention",
+        "ja": "要確認", "de": "Prüfung empfohlen"
+    },
+    "shell.status_attention": {
+        "zh-Hans": "有一项指标需要关注", "zh-Hant": "有一項指標需要關注",
+        "en": "One metric needs attention", "ja": "確認が必要な指標が 1 つあります",
+        "de": "Ein Wert sollte geprüft werden"
+    },
+    "shell.status_good": {
+        "zh-Hans": "状态良好 · 各项指标处于可接受范围", "zh-Hant": "狀態良好 · 各項指標處於可接受範圍",
+        "en": "Good condition · All metrics are within an acceptable range",
+        "ja": "良好・各指標は許容範囲内です", "de": "Guter Zustand · Alle Werte liegen im akzeptablen Bereich"
+    },
+    "shell.status_subtitle": {
+        "zh-Hans": "续航以系统读数为准；详细来源和公式可在技术参数中核验。",
+        "zh-Hant": "續航時間以系統讀數為準；詳細來源與公式可在技術參數中核對。",
+        "en": "Runtime follows the system reading; verify sources and formulas in Technical details.",
+        "ja": "バッテリー残量時間はシステムの値を基準とします。詳しい出典と計算式は技術情報で確認できます。",
+        "de": "Für die Restlaufzeit gilt der Systemwert; Quellen und Formeln lassen sich unter „Technische Daten“ prüfen."
+    },
+    "shell.technical_subtitle": {
+        "zh-Hans": "完整保留所有指标、公式、来源和系统原始字段",
+        "zh-Hant": "完整保留所有指標、公式、來源和系統原始欄位",
+        "en": "All metrics, formulas, sources, and raw system fields remain available",
+        "ja": "すべての指標、計算式、出典、システムの生データを保持",
+        "de": "Alle Kennzahlen, Formeln, Quellen und Rohdaten des Systems bleiben vollständig erhalten"
+    },
+    "shell.trends_subtitle": {
+        "zh-Hans": "把实时波动与长期记录分开看", "zh-Hant": "將即時波動與長期記錄分開查看",
+        "en": "Separate live fluctuations from long-term history",
+        "ja": "リアルタイムの変動と長期記録を分けて確認",
+        "de": "Echtzeitschwankungen und Langzeitverlauf getrennt betrachten"
+    },
+    "shell.diagnostics_subtitle": {
+        "zh-Hans": "先给结论，再展开证据", "zh-Hant": "先給結論，再展開依據",
+        "en": "Conclusions first, then supporting evidence",
+        "ja": "先に結論を示し、その後に根拠を展開",
+        "de": "Zuerst das Ergebnis, dann die Belege"
+    },
+    "shell.diagnosing": {
+        "zh-Hans": "正在读取电池并生成诊断…", "zh-Hant": "正在讀取電池並產生診斷…",
+        "en": "Reading battery data and generating diagnostics…",
+        "ja": "バッテリーを読み取り、診断を生成しています…",
+        "de": "Batteriedaten werden gelesen und die Diagnose wird erstellt …"
+    },
+    "shell.system_anomalies": {
+        "zh-Hans": "系统字段异常筛查", "zh-Hant": "系統欄位異常篩選",
+        "en": "System field anomaly check", "ja": "システムフィールドの異常チェック",
+        "de": "Auffällige Systemfelder"
+    },
+    "shell.settings_subtitle": {
+        "zh-Hans": "语言、外观和实时采样", "zh-Hant": "語言、外觀和即時取樣",
+        "en": "Language, appearance, and live sampling", "ja": "言語、外観、リアルタイムサンプリング",
+        "de": "Sprache, Darstellung und Echtzeitmessung"
+    },
+    "shell.appearance": {
+        "zh-Hans": "外观", "zh-Hant": "外觀", "en": "Appearance",
+        "ja": "外観", "de": "Darstellung"
+    },
+    "shell.live_refresh": {
+        "zh-Hans": "实时更新", "zh-Hant": "即時更新", "en": "Live updates",
+        "ja": "リアルタイム更新", "de": "Live-Aktualisierung"
+    },
+    "shell.privacy_note": {
+        "zh-Hans": "所有采样和历史数据都只保存在这台 Mac，不上传服务器。",
+        "zh-Hant": "所有取樣和歷史資料都只儲存在這台 Mac，不會上傳至伺服器。",
+        "en": "All samples and history stay on this Mac and are never uploaded to a server.",
+        "ja": "すべてのサンプルと履歴データはこの Mac 内にのみ保存され、サーバーにはアップロードされません。",
+        "de": "Alle Mess- und Verlaufsdaten werden nur auf diesem Mac gespeichert und nicht auf einen Server hochgeladen."
+    },
+    "shell.dynamic_trends": {
+        "zh-Hans": "动态趋势", "zh-Hant": "動態趨勢", "en": "Live trends",
+        "ja": "リアルタイムトレンド", "de": "Dynamische Trends"
+    },
+    "shell.last_minutes": {
+        "zh-Hans": "最近采样", "zh-Hant": "最近取樣", "en": "Recent samples",
+        "ja": "直近のサンプル", "de": "Letzte Messwerte"
+    },
+    "shell.instant_power": {
+        "zh-Hans": "瞬时功率", "zh-Hant": "即時功率", "en": "Instantaneous power",
+        "ja": "瞬時電力", "de": "Momentanleistung"
+    },
+    "shell.current": {
+        "zh-Hans": "电流", "zh-Hant": "電流", "en": "Current",
+        "ja": "電流", "de": "Stromstärke"
+    },
+    "shell.top_processes": {
+        "zh-Hans": "耗电相关应用 Top 3", "zh-Hant": "耗電相關 App Top 3", "en": "Active apps Top 3",
+        "ja": "アクティブなアプリ Top 3", "de": "Aktive Apps – Top 3"
+    },
+    "shell.cpu_context": {
+        "zh-Hans": "CPU 活动参考", "zh-Hant": "CPU 活動參考", "en": "CPU activity context",
+        "ja": "CPU アクティビティの参考", "de": "CPU-Aktivität als Kontext"
+    },
+    "menu.config.title": {
+        "zh-Hans": "显示指标", "zh-Hant": "顯示指標", "en": "Displayed metrics",
+        "ja": "メニューバーの表示", "ko": "메뉴 막대 표시", "de": "Menüleistenanzeige",
+        "es": "Visualización en la barra de menús", "fr": "Affichage dans la barre des menus",
+        "it": "Visualizzazione barra menu", "pt": "Exibição na barra de menus"
+    },
+    "menu.config.second_metric": {
+        "zh-Hans": "顶部第二项", "zh-Hant": "頂部第二項", "en": "Menu-bar second item",
+        "ja": "2つ目の指標", "ko": "두 번째 지표", "de": "Zweiter Messwert",
+        "es": "Indicador secundario", "fr": "Indicateur secondaire",
+        "it": "Indicatore secondario", "pt": "Indicador secundário"
+    },
+    "menu.metric.runtime": {
+        "zh-Hans": "剩余时间", "zh-Hant": "剩餘時間", "en": "Time remaining",
+        "ja": "残り時間", "ko": "남은 시간", "de": "Verbleibende Laufzeit",
+        "es": "Tiempo restante", "fr": "Autonomie restante",
+        "it": "Autonomia residua", "pt": "Tempo restante"
+    },
+    "menu.metric.power": {
+        "zh-Hans": "当前功率", "zh-Hant": "目前功率", "en": "Current power",
+        "ja": "現在の電力", "ko": "현재 전력", "de": "Aktuelle Leistung",
+        "es": "Potencia actual", "fr": "Puissance actuelle",
+        "it": "Potenza attuale", "pt": "Potência atual"
+    },
+    "menu.metric.temperature": {
+        "zh-Hans": "电池温度", "zh-Hant": "電池溫度", "en": "Battery temperature",
+        "ja": "バッテリー温度", "ko": "배터리 온도", "de": "Batterietemperatur",
+        "es": "Temperatura de la batería", "fr": "Température de la batterie",
+        "it": "Temperatura batteria", "pt": "Temperatura da bateria"
+    },
+    "menu.metric.health": {
+        "zh-Hans": "健康度", "zh-Hant": "健康度", "en": "Battery health",
+        "ja": "バッテリーの状態", "ko": "배터리 상태", "de": "Batteriezustand",
+        "es": "Salud de la batería", "fr": "État de la batterie",
+        "it": "Stato batteria", "pt": "Saúde da bateria"
+    },
+    "menu.metric.cycles": {
+        "zh-Hans": "循环次数", "zh-Hant": "循環次數", "en": "Cycle count",
+        "ja": "サイクル回数", "ko": "사이클 수", "de": "Zyklenzahl",
+        "es": "Número de ciclos", "fr": "Nombre de cycles",
+        "it": "Numero di cicli", "pt": "Número de ciclos"
+    },
+    "menu.metric.current": {
+        "zh-Hans": "当前电流", "zh-Hant": "目前電流", "en": "Current draw",
+        "ja": "現在の電流", "ko": "현재 전류", "de": "Aktueller Strom",
+        "es": "Corriente actual", "fr": "Courant actuel",
+        "it": "Corrente attuale", "pt": "Corrente atual"
+    },
+    "menu.config.customize": {
+        "zh-Hans": "编辑", "zh-Hant": "編輯", "en": "Edit",
+        "ja": "パネルをカスタマイズ", "ko": "패널 사용자화", "de": "Panel anpassen",
+        "es": "Personalizar panel", "fr": "Personnaliser le panneau",
+        "it": "Personalizza pannello", "pt": "Personalizar painel"
+    },
+    "menu.config.empty": {
+        "zh-Hans": "没有显示指标，可点“编辑”添加",
+        "zh-Hant": "目前沒有顯示指標，可點「編輯」加入",
+        "en": "No metrics shown. Choose Edit to add some.",
+        "ja": "表示中の指標はありません。「編集」から追加できます。",
+        "ko": "표시 중인 지표가 없습니다. 편집에서 추가하세요.",
+        "de": "Keine Messwerte sichtbar. Über „Bearbeiten“ hinzufügen.",
+        "es": "No se muestran indicadores. Añádelos desde Editar.",
+        "fr": "Aucun indicateur affiché. Ajoutez-en via Modifier.",
+        "it": "Nessun indicatore visibile. Aggiungilo da Modifica.",
+        "pt": "Nenhum indicador visível. Adicione em Editar."
+    },
+    "menu.config.show": {
+        "zh-Hans": "显示", "zh-Hant": "顯示", "en": "Show", "ja": "表示", "ko": "표시",
+        "de": "Anzeigen", "es": "Mostrar", "fr": "Afficher", "it": "Mostra", "pt": "Mostrar"
+    },
+    "menu.config.hide": {
+        "zh-Hans": "隐藏", "zh-Hant": "隱藏", "en": "Hide", "ja": "非表示", "ko": "숨기기",
+        "de": "Ausblenden", "es": "Ocultar", "fr": "Masquer", "it": "Nascondi", "pt": "Ocultar"
+    },
+    "menu.config.move_up": {
+        "zh-Hans": "上移", "zh-Hant": "上移", "en": "Move up", "ja": "上へ移動", "ko": "위로 이동",
+        "de": "Nach oben", "es": "Subir", "fr": "Monter", "it": "Sposta su", "pt": "Mover para cima"
+    },
+    "menu.config.move_down": {
+        "zh-Hans": "下移", "zh-Hant": "下移", "en": "Move down", "ja": "下へ移動", "ko": "아래로 이동",
+        "de": "Nach unten", "es": "Bajar", "fr": "Descendre", "it": "Sposta giù", "pt": "Mover para baixo"
+    },
+    "menu.config.restore_defaults": {
+        "zh-Hans": "恢复默认", "zh-Hant": "回復預設", "en": "Restore defaults",
+        "ja": "初期設定に戻す", "ko": "기본값 복원", "de": "Standard wiederherstellen",
+        "es": "Restaurar valores predeterminados", "fr": "Rétablir les réglages par défaut",
+        "it": "Ripristina predefiniti", "pt": "Repor predefinições"
+    },
+    "menu.process.none": {
+        "zh-Hans": "暂无活跃程序", "zh-Hant": "暫無活躍程式", "en": "No active apps right now",
+        "ja": "アクティブなアプリはありません", "ko": "활성 앱 없음", "de": "Keine aktiven Apps",
+        "es": "No hay apps activas", "fr": "Aucune app active",
+        "it": "Nessuna app attiva", "pt": "Nenhum app ativo"
+    },
+    "menu.process.latest_real_sample": {
+        "zh-Hans": "使用最近一次真实采样", "zh-Hant": "使用最近一次真實取樣",
+        "en": "Use latest real sample", "ja": "直近の実測サンプルを使用",
+        "ko": "최근 실제 샘플 사용", "de": "Letzte echte Messung verwenden",
+        "es": "Usar la última muestra real", "fr": "Utiliser la dernière mesure réelle",
+        "it": "Usa l’ultimo campione reale", "pt": "Usar a última amostra real"
     },
     "p.power_center_title": {"zh-Hans": "当前功耗与程序活动", "en": "Live power and app activity"},
     "p.power_center_subtitle": {

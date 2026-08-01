@@ -217,8 +217,8 @@ struct CompleteHardwareDetailView: View {
         }
         .padding(.horizontal, 12)
         .frame(height: 36)
-        .background(RoundedRectangle(cornerRadius: 9).fill(Color.black.opacity(0.18)))
-        .overlay(RoundedRectangle(cornerRadius: 9).stroke(Color.white.opacity(0.07), lineWidth: 1))
+        .background(RoundedRectangle(cornerRadius: 9).fill(AppTheme.surfaceSunken))
+        .overlay(RoundedRectangle(cornerRadius: 9).stroke(AppTheme.contrastOverlay(0.07), lineWidth: 1))
     }
 
     private var wideHeader: some View {
@@ -235,7 +235,7 @@ struct CompleteHardwareDetailView: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 7)
-        .background(RoundedRectangle(cornerRadius: 7).fill(Color.white.opacity(0.025)))
+        .background(RoundedRectangle(cornerRadius: 7).fill(AppTheme.contrastOverlay(0.025)))
     }
 
     private func headerCell(_ text: String, width: CGFloat?) -> some View {
@@ -336,9 +336,9 @@ struct CompleteHardwareDetailView: View {
         .frame(minWidth: 1080)
         .background(
             RoundedRectangle(cornerRadius: 7)
-                .fill(alternating ? Color.white.opacity(0.024) : Color.white.opacity(0.012))
+                .fill(alternating ? AppTheme.contrastOverlay(0.024) : AppTheme.contrastOverlay(0.012))
         )
-        .overlay(RoundedRectangle(cornerRadius: 7).stroke(Color.white.opacity(0.035), lineWidth: 1))
+        .overlay(RoundedRectangle(cornerRadius: 7).stroke(AppTheme.contrastOverlay(0.035), lineWidth: 1))
     }
 
     private func compactMetricRow(_ metric: CompleteHardwareMetric) -> some View {
@@ -378,7 +378,7 @@ struct CompleteHardwareDetailView: View {
             .minimumScaleFactor(0.7)
             .padding(.horizontal, 6)
             .padding(.vertical, 3)
-            .background(Capsule().fill(Color.white.opacity(0.045)))
+            .background(Capsule().fill(AppTheme.contrastOverlay(0.045)))
     }
 
     private func reliabilityColor(_ reliability: FieldReliability) -> Color {

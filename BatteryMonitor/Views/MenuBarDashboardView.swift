@@ -27,15 +27,6 @@ struct MenuBarPresentation {
         Self.durationText(runtimeMinutes)
     }
 
-    var menuBarText: String {
-        guard runtimeMinutes != nil else { return percentText }
-        if isForecast {
-            let prefix = dashboardText("p.menu_unplug_short", fallback: "拔电约")
-            return "\(percentText) (\(prefix) \(runtimeText))"
-        }
-        return "\(percentText) (\(runtimeText))"
-    }
-
     var timeTitle: String {
         dashboardText(isForecast ? "p.menu_unplug" : "p.menu_time",
                       fallback: isForecast ? "拔电后预计" : "还能用多久")
@@ -63,6 +54,47 @@ struct MenuBarPresentation {
     var powerText: String { LNum("%.1f W", max(0, data.currentPowerWatts)) }
     var temperatureText: String { LNum("%.1f °C", data.temperatureCelsius) }
 
+    func title(for metric: MenuBarMetric) -> String {
+        metric == .runtime ? timeTitle : metric.title
+    }
+
+    func value(for metric: MenuBarMetric) -> String {
+        switch metric {
+        case .runtime: return runtimeText
+        case .power: return powerText
+        case .temperature: return temperatureText
+        case .cycles: return data.cycleCount.formatted()
+        case .health: return healthText
+        case .current: return LNum("%.2f A", Double(data.amperage) / 1000)
+        }
+    }
+
+    func statusValue(for metric: MenuBarMetric) -> String? {
+        switch metric {
+        case .runtime:
+            guard runtimeMinutes != nil else { return nil }
+            if isForecast {
+                return "\(dashboardText("p.menu_unplug_short", fallback: "拔电约")) \(runtimeText)"
+            }
+            return runtimeText
+        case .power:
+            return isLoaded ? LNum("%.1fW", max(0, data.currentPowerWatts)) : nil
+        case .temperature:
+            return isLoaded ? LNum("%.1f°C", data.temperatureCelsius) : nil
+        case .cycles:
+            return isLoaded ? "\(data.cycleCount)×" : nil
+        case .health:
+            return isLoaded ? LNum("%.0f%%", healthPercent) : nil
+        case .current:
+            return isLoaded ? LNum("%.2fA", Double(data.amperage) / 1000) : nil
+        }
+    }
+
+    func menuBarText(secondaryMetric: MenuBarMetric) -> String {
+        guard let secondary = statusValue(for: secondaryMetric) else { return percentText }
+        return "\(percentText) (\(secondary))"
+    }
+
     static func durationText(_ minutes: Int?) -> String {
         guard let minutes, minutes > 0 else { return "—" }
         return String(format: "%dh %02dm", minutes / 60, minutes % 60)
@@ -71,16 +103,17 @@ struct MenuBarPresentation {
 
 struct MenuBarStatusLabel: View {
     let data: BatteryData
+    let secondaryMetric: MenuBarMetric
 
     private var presentation: MenuBarPresentation { .init(data: data) }
 
     var body: some View {
         HStack(spacing: 5) {
             MenuBarBatteryGlyph(percent: data.percent, isCharging: data.isCharging || data.isOnAC)
-            Text(presentation.menuBarText)
+            Text(presentation.menuBarText(secondaryMetric: secondaryMetric))
                 .monospacedDigit()
         }
-        .accessibilityLabel("\(presentation.percentText), \(presentation.timeTitle) \(presentation.runtimeText)")
+        .accessibilityLabel("\(presentation.percentText), \(presentation.title(for: secondaryMetric)) \(presentation.value(for: secondaryMetric))")
     }
 }
 
@@ -122,8 +155,15 @@ private struct MenuBarBatteryGlyph: View {
 struct MenuBarDashboardView: View {
     @EnvironmentObject private var batteryService: BatteryService
     @EnvironmentObject private var processService: ProcessMonitorService
+    @Environment(AppearanceSettings.self) private var appearance
+    @Environment(MenuBarSettings.self) private var menuSettings
     @Environment(\.openWindow) private var openWindow
     @Environment(\.dismiss) private var dismiss
+    @State private var isCustomizing = false
+
+    init(initiallyCustomizing: Bool = false) {
+        _isCustomizing = State(initialValue: initiallyCustomizing)
+    }
 
     private var data: BatteryData { batteryService.batteryData }
     private var presentation: MenuBarPresentation { .init(data: data) }
@@ -142,70 +182,132 @@ struct MenuBarDashboardView: View {
                 Divider().overlay(AppTheme.cardBorder)
                 meters
                 values
+                if isCustomizing {
+                    customizationPanel
+                } else {
+                    trendSection
+                    processSection
+                }
                 footer
             }
-            .padding(16)
+            .padding(17)
         }
-        .frame(width: 380)
+        .frame(width: 440)
         .fixedSize(horizontal: true, vertical: true)
+        .background(AppearanceWindowBridge(mode: appearance.mode).frame(width: 0, height: 0))
     }
 
     private var header: some View {
-        HStack(spacing: 11) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 11, style: .continuous)
-                    .fill(AppTheme.chargingCyan.opacity(0.09))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 11, style: .continuous)
-                            .stroke(AppTheme.chargingCyan.opacity(0.28), lineWidth: 1)
-                    )
-                Image(systemName: "battery.100")
-                    .font(.system(size: 20, weight: .medium))
-                    .foregroundStyle(AppTheme.chargingCyan)
-            }
-            .frame(width: 40, height: 40)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 7) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(AppTheme.chargingCyan.opacity(0.09))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .stroke(AppTheme.chargingCyan.opacity(0.28), lineWidth: 1)
+                        )
+                    Image(systemName: "battery.100")
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundStyle(AppTheme.chargingCyan)
+                }
+                .frame(width: 36, height: 36)
 
-            VStack(alignment: .leading, spacing: 3) {
-                Text("BatteryMonitor")
-                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                Text(L("app.title"))
+                    .font(.system(size: 14, weight: .bold, design: .rounded))
                     .foregroundStyle(AppTheme.textPrimary)
-                Text(presentation.sourceText)
-                    .font(.system(size: 9.5))
-                    .foregroundStyle(AppTheme.textTertiary)
-                    .lineLimit(2)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
+
+                Spacer(minLength: 4)
+
+                compactAppearanceToggle
+                settingsMenu
+                LanguageSelectionMenu(iconOnly: true)
+                headerIconButton(
+                    symbol: "minus",
+                    help: dashboardText("p.menu_close", fallback: "收起菜单栏面板"),
+                    action: dismiss.callAsFunction
+                )
+                headerIconButton(
+                    symbol: "power",
+                    help: dashboardText("p.menu_quit", fallback: "完全退出 BatteryMonitor"),
+                    tint: AppTheme.batteryRed
+                ) {
+                    NSApplication.shared.terminate(nil)
+                }
             }
 
-            Spacer(minLength: 8)
-
-            Button(action: dismiss.callAsFunction) {
-                Image(systemName: "xmark")
-                    .font(.system(size: 10, weight: .bold))
-                    .frame(width: 28, height: 28)
-                    .background(Circle().fill(Color.white.opacity(0.05)))
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(AppTheme.textTertiary)
-            .help(dashboardText("p.menu_close", fallback: "关闭菜单栏面板"))
-            .pointerOnHover()
+            Text(presentation.sourceText)
+                .font(.system(size: 9.5))
+                .foregroundStyle(AppTheme.textTertiary)
+                .lineLimit(1)
+                .padding(.leading, 43)
         }
-        .padding(.bottom, 14)
+        .padding(.bottom, 13)
+    }
+
+    private var compactAppearanceToggle: some View {
+        HStack(spacing: 2) {
+            ForEach([AppearanceMode.light, AppearanceMode.dark]) { mode in
+                Button {
+                    withAnimation(.easeInOut(duration: 0.16)) { appearance.select(mode) }
+                } label: {
+                    Image(systemName: mode.symbol)
+                        .font(.system(size: 10.5, weight: .semibold))
+                        .foregroundStyle(resolvedAppearanceMode == mode ? AppTheme.selectionText : AppTheme.textSecondary)
+                        .frame(width: 27, height: 27)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(resolvedAppearanceMode == mode ? AppTheme.chargingBlue : .clear)
+                        )
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(mode.title)
+                .accessibilityValue(resolvedAppearanceMode == mode ? mode.title : "")
+                .accessibilityAddTraits(resolvedAppearanceMode == mode ? .isSelected : [])
+                .help(mode.title)
+                .pointerOnHover()
+            }
+        }
+        .padding(2)
+        .background(RoundedRectangle(cornerRadius: 8).fill(AppTheme.contrastOverlay(0.045)))
+        .overlay(RoundedRectangle(cornerRadius: 8).stroke(AppTheme.cardBorder))
+    }
+
+    private var resolvedAppearanceMode: AppearanceMode {
+        guard appearance.mode == .system else { return appearance.mode }
+        let match = NSApplication.shared.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua])
+        return match == .darkAqua ? .dark : .light
+    }
+
+    private func headerIconButton(
+        symbol: String,
+        help: String,
+        tint: Color = AppTheme.textSecondary,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.system(size: 10.5, weight: .bold))
+                .foregroundStyle(tint)
+                .frame(width: 30, height: 30)
+                .background(RoundedRectangle(cornerRadius: 8).fill(AppTheme.contrastOverlay(0.045)))
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(AppTheme.cardBorder))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(help)
+        .help(help)
+        .pointerOnHover()
     }
 
     private var meters: some View {
-        VStack(spacing: 14) {
-            meter(
-                title: dashboardText("p.system_charge", fallback: "macOS 电量"),
-                value: presentation.percentText,
-                fraction: presentation.chargeFraction,
-                colors: [AppTheme.batteryGreen, AppTheme.chargingCyan]
-            )
-            meter(
-                title: dashboardText("p.priority_health", fallback: "整块电池的健康状况"),
-                value: presentation.healthText,
-                fraction: presentation.healthPercent / 100,
-                colors: [AppTheme.chargingBlue, AppTheme.chargingCyan]
-            )
-        }
+        meter(
+            title: dashboardText("p.system_charge", fallback: "macOS 电量"),
+            value: presentation.percentText,
+            fraction: presentation.chargeFraction,
+            colors: [AppTheme.batteryGreen, AppTheme.chargingCyan]
+        )
         .padding(.vertical, 15)
     }
 
@@ -222,7 +324,7 @@ struct MenuBarDashboardView: View {
             }
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
-                    Capsule().fill(Color.white.opacity(0.07))
+                    Capsule().fill(AppTheme.contrastOverlay(0.07))
                     Capsule()
                         .fill(LinearGradient(colors: colors, startPoint: .leading, endPoint: .trailing))
                         .frame(width: max(0, geometry.size.width * min(1, max(0, fraction))))
@@ -234,63 +336,349 @@ struct MenuBarDashboardView: View {
 
     private var values: some View {
         VStack(spacing: 0) {
-            valueRow(presentation.timeTitle, presentation.runtimeText,
-                     valueColor: AppTheme.chargingCyan, prominent: true)
-            valueRow(dashboardText("p.priority_power", fallback: "目前电脑的使用功率"),
-                     presentation.powerText)
-            valueRow(L("stat.cycles"), data.cycleCount.formatted())
-            valueRow(dashboardText("p.priority_temp", fallback: "目前电池温度"),
-                     presentation.temperatureText)
+            HStack {
+                Text(dashboardText("menu.config.title", fallback: "已显示指标"))
+                    .font(.system(size: 10.5, weight: .semibold))
+                    .foregroundStyle(AppTheme.textPrimary)
+                Spacer()
+                Button {
+                    withAnimation(.easeInOut(duration: 0.18)) { isCustomizing.toggle() }
+                } label: {
+                    Label(
+                        dashboardText("menu.config.customize", fallback: "自定义"),
+                        systemImage: isCustomizing ? "checkmark" : "slider.horizontal.3"
+                    )
+                    .font(.system(size: 9.5, weight: .medium))
+                    .foregroundStyle(isCustomizing ? AppTheme.batteryGreen : AppTheme.chargingBlue)
+                }
+                .buttonStyle(.plain)
+                .pointerOnHover()
+            }
+            .frame(height: 34)
+
+            if menuSettings.visibleMetrics.isEmpty {
+                Text(dashboardText("menu.config.empty", fallback: "没有显示指标，可点“自定义”添加"))
+                    .font(.system(size: 10))
+                    .foregroundStyle(AppTheme.textTertiary)
+                    .frame(maxWidth: .infinity, minHeight: 42)
+            } else {
+                ForEach(menuSettings.visibleMetrics) { metric in
+                    metricValueRow(metric)
+                }
+            }
         }
         .overlay(alignment: .top) { Divider().overlay(AppTheme.cardBorder) }
     }
 
-    private func valueRow(
-        _ title: String,
-        _ value: String,
-        valueColor: Color = AppTheme.textPrimary,
-        prominent: Bool = false
-    ) -> some View {
-        HStack {
-            Text(title)
+    private func metricValueRow(_ metric: MenuBarMetric) -> some View {
+        HStack(spacing: 9) {
+            Image(systemName: metric.symbol)
+                .font(.system(size: 10.5, weight: .semibold))
+                .foregroundStyle(metricColor(metric))
+                .frame(width: 17)
+            Text(presentation.title(for: metric))
                 .font(.system(size: 11))
                 .foregroundStyle(AppTheme.textSecondary)
             Spacer(minLength: 20)
-            Text(value)
-                .font(.system(size: prominent ? 16 : 12,
-                              weight: prominent ? .semibold : .medium,
+            Text(presentation.value(for: metric))
+                .font(.system(size: metric == .runtime ? 15 : 12,
+                              weight: metric == .runtime ? .semibold : .medium,
                               design: .monospaced))
-                .foregroundStyle(valueColor)
+                .foregroundStyle(metric == .runtime ? AppTheme.chargingCyan : AppTheme.textPrimary)
                 .monospacedDigit()
         }
-        .frame(minHeight: 40)
+        .frame(minHeight: 38)
         .overlay(alignment: .bottom) { Divider().overlay(AppTheme.cardBorder) }
     }
 
-    private var footer: some View {
-        HStack(spacing: 8) {
-            settingsMenu
-
-            Button(action: showDashboard) {
-                HStack(spacing: 7) {
-                    Image(systemName: "waveform.path.ecg")
-                    Text(dashboardText("p.menu_open", fallback: "打开完整看板"))
+    private var customizationPanel: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 10) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(dashboardText("menu.config.second_metric", fallback: "顶部第二指标"))
+                        .font(.system(size: 10.5, weight: .semibold))
+                        .foregroundStyle(AppTheme.textPrimary)
+                    Text("\(presentation.percentText) + \(presentation.value(for: menuSettings.secondaryMetric))")
+                        .font(.system(size: 9, design: .monospaced))
+                        .foregroundStyle(AppTheme.textTertiary)
                 }
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(AppTheme.textPrimary)
-                .frame(maxWidth: .infinity, minHeight: 34)
-                .background(
-                    RoundedRectangle(cornerRadius: 9, style: .continuous)
-                        .fill(AppTheme.chargingCyan.opacity(0.06))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 9, style: .continuous)
-                                .stroke(AppTheme.chargingCyan.opacity(0.24), lineWidth: 1)
-                        )
-                )
+                Spacer()
+                Menu {
+                    ForEach(MenuBarMetric.allCases) { metric in
+                        Button {
+                            menuSettings.selectSecondaryMetric(metric)
+                        } label: {
+                            if menuSettings.secondaryMetric == metric {
+                                Label(metric.title, systemImage: "checkmark")
+                            } else {
+                                Text(metric.title)
+                            }
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: menuSettings.secondaryMetric.symbol)
+                        Text(menuSettings.secondaryMetric.title)
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.system(size: 7, weight: .bold))
+                    }
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(AppTheme.chargingBlue)
+                    .padding(.horizontal, 9)
+                    .frame(height: 29)
+                    .background(RoundedRectangle(cornerRadius: 7).fill(AppTheme.contrastOverlay(0.05)))
+                    .overlay(RoundedRectangle(cornerRadius: 7).stroke(AppTheme.cardBorder))
+                }
+                .menuStyle(.borderlessButton)
+                .menuIndicator(.hidden)
+                .fixedSize()
+            }
+
+            VStack(spacing: 5) {
+                ForEach(Array(menuSettings.visibleMetrics.enumerated()), id: \.element.id) { index, metric in
+                    customizationRow(metric, index: index)
+                }
+
+                ForEach(hiddenMetrics) { metric in
+                    HStack(spacing: 8) {
+                        Image(systemName: metric.symbol)
+                            .foregroundStyle(AppTheme.textTertiary)
+                            .frame(width: 18)
+                        Text(metric.title)
+                            .font(.system(size: 10.5))
+                            .foregroundStyle(AppTheme.textTertiary)
+                        Spacer()
+                        Button {
+                            withAnimation(.easeOut(duration: 0.15)) {
+                                menuSettings.setVisible(metric, visible: true)
+                            }
+                        } label: {
+                            Label(dashboardText("menu.config.show", fallback: "显示"), systemImage: "plus")
+                                .font(.system(size: 9.5, weight: .medium))
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(AppTheme.batteryGreen)
+                        .pointerOnHover()
+                    }
+                    .padding(.horizontal, 9)
+                    .frame(height: 33)
+                    .background(RoundedRectangle(cornerRadius: 7).fill(AppTheme.contrastOverlay(0.025)))
+                }
+            }
+
+            Button {
+                withAnimation(.easeOut(duration: 0.18)) { menuSettings.reset() }
+            } label: {
+                Label(dashboardText("menu.config.restore_defaults", fallback: "恢复默认"),
+                      systemImage: "arrow.counterclockwise")
+                    .font(.system(size: 9.5, weight: .medium))
+                    .foregroundStyle(AppTheme.textSecondary)
             }
             .buttonStyle(.plain)
             .pointerOnHover()
         }
+        .padding(.vertical, 12)
+        .overlay(alignment: .top) { Divider().overlay(AppTheme.cardBorder) }
+    }
+
+    private func customizationRow(_ metric: MenuBarMetric, index: Int) -> some View {
+        HStack(spacing: 7) {
+            Image(systemName: metric.symbol)
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(metricColor(metric))
+                .frame(width: 18)
+            Text(metric.title)
+                .font(.system(size: 10.5, weight: .medium))
+                .foregroundStyle(AppTheme.textPrimary)
+            Spacer()
+            smallControl("chevron.up", helpKey: "menu.config.move_up", fallback: "上移",
+                         subject: metric.title, disabled: index == 0) {
+                menuSettings.move(metric, by: -1)
+            }
+            smallControl("chevron.down", helpKey: "menu.config.move_down", fallback: "下移",
+                         subject: metric.title, disabled: index == menuSettings.visibleMetrics.count - 1) {
+                menuSettings.move(metric, by: 1)
+            }
+            smallControl("minus.circle", helpKey: "menu.config.hide", fallback: "隐藏",
+                         subject: metric.title, tint: AppTheme.batteryRed) {
+                withAnimation(.easeOut(duration: 0.15)) {
+                    menuSettings.setVisible(metric, visible: false)
+                }
+            }
+        }
+        .padding(.horizontal, 9)
+        .frame(height: 34)
+        .background(RoundedRectangle(cornerRadius: 7).fill(AppTheme.contrastOverlay(0.04)))
+        .overlay(RoundedRectangle(cornerRadius: 7).stroke(AppTheme.cardBorder))
+    }
+
+    private func smallControl(
+        _ symbol: String,
+        helpKey: String,
+        fallback: String,
+        subject: String,
+        tint: Color = AppTheme.textSecondary,
+        disabled: Bool = false,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.system(size: 8.5, weight: .bold))
+                .foregroundStyle(disabled ? AppTheme.textTertiary.opacity(0.35) : tint)
+                .frame(width: 23, height: 23)
+                .background(Circle().fill(AppTheme.contrastOverlay(disabled ? 0.015 : 0.045)))
+        }
+        .buttonStyle(.plain)
+        .disabled(disabled)
+        .accessibilityLabel("\(dashboardText(helpKey, fallback: fallback)) \(subject)")
+        .help(dashboardText(helpKey, fallback: fallback))
+        .pointerOnHover()
+    }
+
+    private var hiddenMetrics: [MenuBarMetric] {
+        MenuBarMetric.allCases.filter { !menuSettings.visibleMetrics.contains($0) }
+    }
+
+    private func metricColor(_ metric: MenuBarMetric) -> Color {
+        switch metric {
+        case .runtime: return AppTheme.chargingCyan
+        case .power: return AppTheme.chargingBlue
+        case .temperature: return AppTheme.batteryGreen
+        case .cycles: return AppTheme.accentPurple
+        case .health: return AppTheme.batteryGreen
+        case .current: return AppTheme.batteryYellow
+        }
+    }
+
+    private var trendSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(dashboardText("shell.dynamic_trends", fallback: "动态趋势"))
+                    .font(.system(size: 11.5, weight: .semibold))
+                    .foregroundStyle(AppTheme.textPrimary)
+                Spacer()
+                Text(dashboardText("shell.last_minutes", fallback: "最近采样"))
+                    .font(.system(size: 9))
+                    .foregroundStyle(AppTheme.textTertiary)
+            }
+
+            trendRow(
+                icon: "waveform.path.ecg",
+                title: dashboardText("shell.instant_power", fallback: "瞬时功率"),
+                values: batteryService.realtimeData.suffix(32).map(\.power),
+                value: presentation.powerText,
+                color: AppTheme.chargingCyan
+            )
+            trendRow(
+                icon: "clock",
+                title: dashboardText("p.menu_time", fallback: "预计续航"),
+                values: batteryService.runtimeSamples.suffix(32).map { Double($0.minutesRemaining) },
+                value: presentation.runtimeText,
+                color: AppTheme.chargingBlue
+            )
+            trendRow(
+                icon: "bolt.horizontal",
+                title: dashboardText("shell.current", fallback: "电流"),
+                values: batteryService.realtimeData.suffix(32).map(\.amperage),
+                value: LNum("%.2f A", Double(data.amperage) / 1000),
+                color: AppTheme.batteryGreen
+            )
+        }
+        .padding(.vertical, 13)
+        .overlay(alignment: .top) { Divider().overlay(AppTheme.cardBorder) }
+    }
+
+    private func trendRow(icon: String, title: String, values: [Double], value: String, color: Color) -> some View {
+        HStack(spacing: 9) {
+            Image(systemName: icon)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(color)
+                .frame(width: 15)
+            Text(title)
+                .font(.system(size: 10.5))
+                .foregroundStyle(AppTheme.textSecondary)
+                .frame(width: 76, alignment: .leading)
+            MenuSparkline(values: values, color: color)
+                .frame(maxWidth: .infinity)
+                .frame(height: 27)
+            Text(value)
+                .font(.system(size: 10.5, weight: .medium, design: .monospaced))
+                .foregroundStyle(AppTheme.textSecondary)
+                .frame(width: 72, alignment: .trailing)
+        }
+        .frame(height: 32)
+    }
+
+    private var processSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(dashboardText("shell.top_processes", fallback: "活跃耗电应用 Top 3"))
+                    .font(.system(size: 11.5, weight: .semibold))
+                    .foregroundStyle(AppTheme.textPrimary)
+                Spacer()
+                Text(dashboardText("shell.cpu_context", fallback: "CPU 活动参考"))
+                    .font(.system(size: 8.5))
+                    .foregroundStyle(AppTheme.textTertiary)
+            }
+
+            if processService.topProcesses.isEmpty {
+                HStack {
+                    Text(processService.hasSampled
+                         ? dashboardText("menu.process.none", fallback: "暂未读到活跃应用，点此重新采样")
+                         : dashboardText("p.process_collecting", fallback: "正在读取进程活动…"))
+                        .font(.system(size: 10))
+                        .foregroundStyle(AppTheme.textTertiary)
+                    Spacer()
+                    Button(action: processService.fetchProcesses) {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.system(size: 10, weight: .semibold))
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(AppTheme.chargingBlue)
+                    .pointerOnHover()
+                }
+                .frame(maxWidth: .infinity, minHeight: 48)
+            } else {
+                ForEach(Array(processService.topProcesses.prefix(3).enumerated()), id: \.element.id) { index, process in
+                    HStack(spacing: 9) {
+                        menuProcessIconView(process)
+                        Text(process.displayName)
+                            .font(.system(size: 10.5, weight: .medium))
+                            .foregroundStyle(AppTheme.textPrimary)
+                            .lineLimit(1)
+                        Spacer()
+                        Text(LNum("%.1f%% CPU", process.cpuPercent))
+                            .font(.system(size: 9.5, weight: index == 0 ? .semibold : .regular, design: .monospaced))
+                            .foregroundStyle(AppTheme.energyColor(process.energyImpact))
+                    }
+                    .frame(height: 28)
+                }
+            }
+        }
+        .padding(.vertical, 13)
+        .overlay(alignment: .top) { Divider().overlay(AppTheme.cardBorder) }
+    }
+
+    private var footer: some View {
+        Button(action: showDashboard) {
+            HStack(spacing: 7) {
+                Image(systemName: "waveform.path.ecg")
+                Text(dashboardText("p.menu_open", fallback: "打开完整看板"))
+            }
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundStyle(AppTheme.textPrimary)
+            .frame(maxWidth: .infinity, minHeight: 34)
+            .background(
+                RoundedRectangle(cornerRadius: 9, style: .continuous)
+                    .fill(AppTheme.chargingCyan.opacity(0.06))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 9, style: .continuous)
+                            .stroke(AppTheme.chargingCyan.opacity(0.24), lineWidth: 1)
+                    )
+            )
+        }
+        .buttonStyle(.plain)
+        .pointerOnHover()
         .padding(.top, 14)
     }
 
@@ -308,26 +696,16 @@ struct MenuBarDashboardView: View {
                 )
             }
 
-            Divider()
-            languageMenu
-            Divider()
-
-            Button {
-                NSApplication.shared.terminate(nil)
-            } label: {
-                Label(dashboardText("p.menu_quit", fallback: "退出 BatteryMonitor"),
-                      systemImage: "power")
-            }
         } label: {
             Image(systemName: "gearshape.fill")
-                .font(.system(size: 13))
+                .font(.system(size: 11))
                 .foregroundStyle(AppTheme.textSecondary)
-                .frame(width: 36, height: 34)
+                .frame(width: 30, height: 30)
                 .background(
-                    RoundedRectangle(cornerRadius: 9, style: .continuous)
-                        .fill(Color.white.opacity(0.035))
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(AppTheme.contrastOverlay(0.035))
                         .overlay(
-                            RoundedRectangle(cornerRadius: 9, style: .continuous)
+                            RoundedRectangle(cornerRadius: 8, style: .continuous)
                                 .stroke(AppTheme.cardBorder, lineWidth: 1)
                         )
                 )
@@ -336,38 +714,9 @@ struct MenuBarDashboardView: View {
         .menuIndicator(.hidden)
         .tint(AppTheme.textSecondary)
         .fixedSize()
+        .accessibilityLabel(dashboardText("p.menu_settings", fallback: "设置"))
         .help(dashboardText("p.menu_settings", fallback: "设置"))
         .pointerOnHover()
-    }
-
-    private var languageMenu: some View {
-        let localization = L10n.shared
-        return Menu {
-            Button {
-                localization.select(nil)
-            } label: {
-                if localization.isFollowingSystem {
-                    Label(L("lang.system"), systemImage: "checkmark")
-                } else {
-                    Text(L("lang.system"))
-                }
-            }
-            Divider()
-            ForEach(localization.languages, id: \.code) { language in
-                Button {
-                    localization.select(language.code)
-                } label: {
-                    if !localization.isFollowingSystem,
-                       localization.effectiveCode == language.code {
-                        Label(language.name, systemImage: "checkmark")
-                    } else {
-                        Text(language.name)
-                    }
-                }
-            }
-        } label: {
-            Label(dashboardText("p.menu_language", fallback: "语言"), systemImage: "globe")
-        }
     }
 
     private func refreshNow() {
@@ -385,5 +734,73 @@ struct MenuBarDashboardView: View {
         openWindow(id: "dashboard")
         NSApplication.shared.activate(ignoringOtherApps: true)
         dismiss()
+    }
+
+    private func menuProcessIcon(_ name: String) -> String {
+        let lower = name.lowercased()
+        if lower.contains("terminal") || lower.contains("iterm") { return "terminal" }
+        if lower.contains("xcode") || lower.contains("code") { return "hammer" }
+        if lower.contains("safari") || lower.contains("chrome") { return "globe" }
+        if lower.contains("window") || lower.contains("system") { return "macwindow" }
+        return "app"
+    }
+
+    @ViewBuilder
+    private func menuProcessIconView(_ process: ProcessPowerInfo) -> some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 6)
+                .fill(AppTheme.energyColor(process.energyImpact).opacity(0.13))
+            if let image = applicationIcon(for: process.name) {
+                Image(nsImage: image)
+                    .resizable()
+                    .scaledToFit()
+                    .padding(2)
+            } else {
+                Image(systemName: menuProcessIcon(process.displayName))
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(AppTheme.energyColor(process.energyImpact))
+            }
+        }
+        .frame(width: 24, height: 24)
+    }
+
+    private func applicationIcon(for executablePath: String) -> NSImage? {
+        var url = URL(fileURLWithPath: executablePath)
+        while url.path != "/" {
+            if url.pathExtension.lowercased() == "app" {
+                return NSWorkspace.shared.icon(forFile: url.path)
+            }
+            url.deleteLastPathComponent()
+        }
+        return nil
+    }
+}
+
+private struct MenuSparkline: View {
+    let values: [Double]
+    let color: Color
+
+    var body: some View {
+        GeometryReader { geometry in
+            if values.count >= 2 {
+                let minValue = values.min() ?? 0
+                let maxValue = values.max() ?? 1
+                let span = max(maxValue - minValue, 0.0001)
+                let step = geometry.size.width / CGFloat(values.count - 1)
+                Path { path in
+                    for (index, value) in values.enumerated() {
+                        let point = CGPoint(
+                            x: CGFloat(index) * step,
+                            y: geometry.size.height - CGFloat((value - minValue) / span) * geometry.size.height
+                        )
+                        if index == 0 { path.move(to: point) } else { path.addLine(to: point) }
+                    }
+                }
+                .stroke(color, style: StrokeStyle(lineWidth: 1.35, lineCap: .round, lineJoin: .round))
+            } else {
+                Capsule().fill(color.opacity(0.22)).frame(height: 1).frame(maxHeight: .infinity)
+            }
+        }
+        .accessibilityHidden(true)
     }
 }

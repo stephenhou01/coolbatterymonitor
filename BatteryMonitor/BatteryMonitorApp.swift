@@ -4,6 +4,8 @@ import SwiftUI
 struct BatteryMonitorApp: App {
     @StateObject private var batteryService = BatteryService()
     @StateObject private var processService = ProcessMonitorService()
+    @State private var appearance = AppearanceSettings.shared
+    @State private var menuBarSettings = MenuBarSettings.shared
     @State private var didStartMonitoring = false
 
     var body: some Scene {
@@ -11,7 +13,9 @@ struct BatteryMonitorApp: App {
             ContentView()
                 .environmentObject(batteryService)
                 .environmentObject(processService)
-                .preferredColorScheme(.dark)
+                .environment(appearance)
+                .environment(menuBarSettings)
+                .preferredColorScheme(appearance.mode.colorScheme)
                 .frame(minWidth: 900, minHeight: 680)
                 .onAppear(perform: startMonitoringIfNeeded)
         }
@@ -22,10 +26,13 @@ struct BatteryMonitorApp: App {
             MenuBarDashboardView()
                 .environmentObject(batteryService)
                 .environmentObject(processService)
-                .preferredColorScheme(.dark)
+                .environment(appearance)
+                .environment(menuBarSettings)
+                .preferredColorScheme(appearance.mode.colorScheme)
                 .onAppear(perform: startMonitoringIfNeeded)
         } label: {
-            MenuBarStatusLabel(data: batteryService.batteryData)
+            MenuBarStatusLabel(data: batteryService.batteryData,
+                               secondaryMetric: menuBarSettings.secondaryMetric)
                 .onAppear(perform: startMonitoringIfNeeded)
         }
         .menuBarExtraStyle(.window)
@@ -34,6 +41,7 @@ struct BatteryMonitorApp: App {
     /// The service belongs to the app, not the dashboard window. Closing the
     /// window must leave the menu-bar estimate and its ten-second refresh alive.
     private func startMonitoringIfNeeded() {
+        appearance.applyToApplication()
         guard !didStartMonitoring else { return }
         didStartMonitoring = true
         batteryService.startMonitoring()

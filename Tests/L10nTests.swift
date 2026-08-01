@@ -25,11 +25,49 @@ l.select("zh-Hans")
 expect(l.string("app.title") == "电池监控中心", "中文查询: \(l.string("app.title"))")
 expect(l.string("p.menu_time") == "还能用多久"
        && l.string("p.menu_open") == "打开完整看板"
-       && l.string("p.menu_quit") == "退出 BatteryMonitor",
+       && l.string("p.menu_close") == "收起菜单栏面板"
+       && l.string("p.menu_quit") == "完全退出 BatteryMonitor",
        "菜单栏核心文案已进入原生语言包")
 l.select("fr")
 expect(l.string("p.menu_time") == "Time until empty",
        "原型未单独翻译的语言沿用明确的英文 fallback")
+
+print("── 2b) 外观、主壳与菜单栏配置文案覆盖全部语言包")
+let shellAndMenuKeys = [
+    "appearance.system", "appearance.light", "appearance.dark",
+    "shell.overview", "shell.technical", "shell.trends", "shell.diagnostics", "shell.settings",
+    "shell.sidebar_subtitle", "shell.local_only", "shell.power_connected", "shell.on_battery",
+    "shell.power_hint", "shell.adapter", "shell.adapter_connected", "shell.not_connected",
+    "shell.charge_power", "shell.charging", "shell.not_charging", "shell.temp_range",
+    "shell.cycle_reference", "shell.health_good", "shell.health_fair", "shell.health_attention",
+    "shell.status_attention", "shell.status_good", "shell.status_subtitle",
+    "shell.technical_subtitle", "shell.trends_subtitle", "shell.diagnostics_subtitle",
+    "shell.diagnosing", "shell.system_anomalies", "shell.settings_subtitle", "shell.appearance",
+    "shell.live_refresh", "shell.privacy_note", "shell.dynamic_trends", "shell.last_minutes",
+    "shell.instant_power", "shell.current", "shell.top_processes", "shell.cpu_context",
+    "menu.config.title", "menu.config.second_metric", "menu.config.customize", "menu.config.empty",
+    "menu.config.show", "menu.config.hide", "menu.config.move_up", "menu.config.move_down",
+    "menu.config.restore_defaults", "menu.metric.runtime", "menu.metric.power",
+    "menu.metric.temperature", "menu.metric.health", "menu.metric.cycles", "menu.metric.current",
+    "menu.process.none", "menu.process.latest_real_sample", "p.menu_settings",
+    "p.menu_close", "p.menu_language", "p.menu_quit",
+]
+let bundledPackURLs = Bundle.main.urls(forResourcesWithExtension: "json", subdirectory: "Languages") ?? []
+let bundledPacks = bundledPackURLs.compactMap { try? JSONDecoder().decode(LanguagePack.self, from: Data(contentsOf: $0)) }
+expect(bundledPacks.count == 10, "直接读取 10 个 bundle JSON 包验证 key 完整性")
+for pack in bundledPacks.sorted(by: { $0.meta.order < $1.meta.order }) {
+    let missing = shellAndMenuKeys.filter { pack.strings[$0]?.isEmpty != false }
+    expect(missing.isEmpty, "\(pack.meta.code): 外观/主壳/菜单栏配置 key 齐全\(missing.isEmpty ? "" : "，缺少 \(missing)")")
+}
+l.select("zh-Hans")
+expect(l.string("menu.config.title") == "显示指标"
+       && l.string("menu.config.second_metric") == "顶部第二项"
+       && l.string("menu.process.latest_real_sample") == "使用最近一次真实采样",
+       "简体中文菜单栏配置文案准确")
+l.select("fr")
+expect(l.string("menu.config.restore_defaults") == "Rétablir les réglages par défaut"
+       && l.string("menu.metric.runtime") == "Autonomie restante",
+       "新增菜单配置提供法语原生译文")
 
 print("── 3) 数字格式化带 locale")
 l.select("de")

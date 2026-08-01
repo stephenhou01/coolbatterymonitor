@@ -1,6 +1,7 @@
 import Foundation
 import Combine
 import Darwin
+import AppKit
 
 class ProcessMonitorService: ObservableObject {
     @Published var topProcesses: [ProcessPowerInfo] = []
@@ -29,14 +30,16 @@ class ProcessMonitorService: ObservableObject {
     /// 进程生命周期平均 CPU%。首次采样没有前值可比时用它兜底。
     /// 走 proc_pidinfo(PROC_PIDTBSDINFO) 取进程启动时间，纯只读、无需授权。
     private func lifetimeAverageCPU(pid: Int32, totalCPUTime: UInt64,
-                                    cpuCount: Int, now: TimeInterval) -> Double {
+                                    now: TimeInterval) -> Double {
         var bsd = proc_bsdinfo()
         let size = Int32(MemoryLayout<proc_bsdinfo>.size)
         guard proc_pidinfo(pid, PROC_PIDTBSDINFO, 0, &bsd, size) == size else { return 0 }
         let started = TimeInterval(bsd.pbi_start_tvsec) + TimeInterval(bsd.pbi_start_tvusec) / 1_000_000
         let age = now - started
         guard age > 1 else { return 0 }   // 刚起来的进程平均值没意义
-        return Double(totalCPUTime) / (age * 1_000_000_000.0) / Double(cpuCount) * 100.0
+        // Match Activity Monitor's process CPU convention: 100% is one fully
+        // occupied core, so a multi-threaded application may exceed 100%.
+        return Double(totalCPUTime) / (age * 1_000_000_000.0) * 100.0
     }
 
     func startMonitoring() {
@@ -71,11 +74,20 @@ class ProcessMonitorService: ObservableObject {
     }
 
     func fetchProcesses() {
+        // NSWorkspace is an AppKit API. Snapshot the visible applications on the
+        // main thread, then do the comparatively expensive proc_pidinfo reads in
+        // the background. Timer and UI refreshes normally arrive on main, while
+        // this hop also makes direct/test callers safe.
+        guard Thread.isMainThread else {
+            DispatchQueue.main.async { [weak self] in self?.fetchProcesses() }
+            return
+        }
         guard !isSampling else { return }   // 刷新连点时丢弃重入，避免并发写坏采样状态
         isSampling = true
+        let candidates = applicationCandidates()
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             guard let self = self else { return }
-            let processes = self.getTopProcesses()
+            let processes = self.getTopProcesses(candidates: candidates)
 
             DispatchQueue.main.async {
                 defer { self.isSampling = false }
@@ -95,10 +107,11 @@ class ProcessMonitorService: ObservableObject {
                         name: proc.name,
                         cpuPercent: proc.cpuPercent,
                         memoryMB: proc.memoryMB,
-                        cpuHistory: history
+                        cpuHistory: history,
+                        isForeground: proc.isForeground
                     )
                 }
-                self.topProcesses = withHistory
+                self.topProcesses = ProcessPowerInfo.rankedForDisplay(withHistory, limit: 12)
                 self.hasSampled = true
             }
         }
@@ -106,32 +119,62 @@ class ProcessMonitorService: ObservableObject {
 
     // MARK: - Native Process Enumeration via sysctl + proc_pidinfo
 
+    private struct ApplicationCandidate: Sendable {
+        let pid: Int32
+        let name: String
+        let groupIdentifier: String
+        let isForeground: Bool
+    }
+
     private struct RawProcess {
         let pid: Int
         let name: String
+        let groupIdentifier: String
         let cpuPercent: Double
         let memoryMB: Double
+        let isForeground: Bool
     }
 
-    private func getTopProcesses() -> [RawProcess] {
+    /// App Sandbox deliberately returns 0 for `proc_listpids(..., nil, 0)` even
+    /// though `proc_pidinfo` remains available for many user applications whose
+    /// PID is already known. Enumerating user-visible applications through
+    /// NSWorkspace gives us those real PIDs without requesting an entitlement or
+    /// inventing per-process power attribution.
+    private func applicationCandidates() -> [ApplicationCandidate] {
+        let ownPID = getpid()
+        let ownBundleIdentifier = Bundle.main.bundleIdentifier
+        var seenPIDs = Set<Int32>()
+
+        return NSWorkspace.shared.runningApplications.compactMap { app in
+            let pid = app.processIdentifier
+            guard pid > 0, pid != ownPID, !app.isTerminated,
+                  app.bundleIdentifier != ownBundleIdentifier,
+                  app.activationPolicy == .regular || app.activationPolicy == .accessory,
+                  seenPIDs.insert(pid).inserted else { return nil }
+
+            let fallback = app.bundleURL?.deletingPathExtension().lastPathComponent
+                ?? app.executableURL?.lastPathComponent
+            guard let displayName = (app.localizedName ?? fallback)?.trimmingCharacters(in: .whitespacesAndNewlines),
+                  !displayName.isEmpty else { return nil }
+            // Preserve a bundle/executable path when available. ProcessPowerInfo
+            // still derives the friendly name, while the menu can now render the
+            // application's real icon instead of a generic placeholder.
+            let name = app.bundleURL?.path ?? app.executableURL?.path ?? displayName
+
+            return ApplicationCandidate(
+                pid: pid,
+                name: name,
+                groupIdentifier: app.bundleIdentifier ?? displayName.lowercased(),
+                isForeground: app.isActive
+            )
+        }
+    }
+
+    private func getTopProcesses(candidates: [ApplicationCandidate]) -> [RawProcess] {
         var processes: [RawProcess] = []
         let now = Date().timeIntervalSince1970
-
-        // Get all PIDs via proc_listpids
-        let bufferSize = proc_listpids(UInt32(PROC_ALL_PIDS), 0, nil, 0)
-        guard bufferSize > 0 else { return [] }
-
-        let count = Int(bufferSize) / MemoryLayout<Int32>.size
-        var pids = [Int32](repeating: 0, count: count)
-        let actualSize = proc_listpids(UInt32(PROC_ALL_PIDS), 0, &pids, bufferSize)
-        let actualCount = Int(actualSize) / MemoryLayout<Int32>.size
-
-        let myPid = getpid()
-        let cpuCount = ProcessInfo.processInfo.processorCount
-
-        for i in 0..<actualCount {
-            let pid = pids[i]
-            guard pid > 0, pid != myPid else { continue }
+        for candidate in candidates {
+            let pid = candidate.pid
 
             // Get task info (CPU time + memory)
             var taskInfo = proc_taskinfo()
@@ -151,7 +194,7 @@ class ProcessMonitorService: ObservableObject {
                 let timeDelta = now - prev.timestamp
                 // 间隔太短（连点刷新）时差值没有意义，保留上一次的读数而不是显示 0
                 if timeDelta >= Self.minSampleInterval {
-                    cpuPercent = Double(delta) / (timeDelta * 1_000_000_000.0) / Double(cpuCount) * 100.0
+                    cpuPercent = Double(delta) / (timeDelta * 1_000_000_000.0) * 100.0
                 } else {
                     cpuPercent = prev.lastPercent
                 }
@@ -159,48 +202,53 @@ class ProcessMonitorService: ObservableObject {
                 // 兜底：用进程生命周期平均 CPU%（总 CPU 时间 ÷ 进程已存活时长）。
                 // 单次采样就能算，是真实值而非估算，只是反映的是历史平均而非瞬时。
                 cpuPercent = lifetimeAverageCPU(pid: pid, totalCPUTime: totalCPUTime,
-                                                cpuCount: cpuCount, now: now)
+                                                now: now)
             }
             previousCPUTimes[pid] = (user: taskInfo.pti_total_user,
                                      system: taskInfo.pti_total_system,
                                      timestamp: now,
                                      lastPercent: cpuPercent)
 
-            // 只排除完全没有 CPU 活动的。原来的 0.1% 阈值在空闲机器上会把几乎所有
-            // 进程滤掉 —— 实测空闲时只剩 1 个，而 View 把空列表当成「加载中」，
-            // 于是永远转圈。排序后取 top N 就够了，不需要在这里设业务阈值。
-            guard cpuPercent > 0 else { continue }
-
             // Memory in MB (resident size)
             let memoryMB = Double(taskInfo.pti_resident_size) / 1024.0 / 1024.0
 
-            // Get process name
-            let maxPathSize: UInt32 = 4096 // MAXPATHLEN
-            var nameBuffer = [CChar](repeating: 0, count: Int(maxPathSize))
-            let nameResult = proc_pidpath(pid, &nameBuffer, maxPathSize)
-            let name: String
-            if nameResult > 0 {
-                name = String(cString: nameBuffer)
-            } else {
-                // Fallback: get short name via proc_name
-                var shortNameBuffer = [CChar](repeating: 0, count: 256)
-                proc_name(pid, &shortNameBuffer, 256)
-                name = String(cString: shortNameBuffer)
-            }
-
-            // Skip system/irrelevant processes
-            let cmdLower = name.lowercased()
-            let skipPatterns = ["kernel_task", "launchd", "syslogd", "configd", "notifyd",
-                               "mdworker", "cfprefsd", "diskimages", "batterymonitor"]
-            if skipPatterns.contains(where: { cmdLower.contains($0) }) { continue }
-
-            processes.append(RawProcess(pid: Int(pid), name: name, cpuPercent: cpuPercent, memoryMB: memoryMB))
+            // A zero delta is a valid observation: the app is running but idle.
+            // Keeping it avoids turning an idle ten-second window into a false
+            // "no applications" state.
+            processes.append(RawProcess(
+                pid: Int(pid),
+                name: candidate.name,
+                groupIdentifier: candidate.groupIdentifier,
+                cpuPercent: max(cpuPercent, 0),
+                memoryMB: memoryMB,
+                isForeground: candidate.isForeground
+            ))
         }
 
-        // Clean up stale entries
-        let livePids = Set(pids.prefix(actualCount).filter { $0 > 0 })
+        // The workspace can expose more than one regular instance of an app.
+        // Combine those real main-process readings so the menu does not show the
+        // same recognizable app multiple times. This is CPU activity context,
+        // never a fabricated watt allocation.
+        var grouped: [String: RawProcess] = [:]
+        for process in processes {
+            guard let current = grouped[process.groupIdentifier] else {
+                grouped[process.groupIdentifier] = process
+                continue
+            }
+            grouped[process.groupIdentifier] = RawProcess(
+                pid: min(current.pid, process.pid),
+                name: current.name,
+                groupIdentifier: current.groupIdentifier,
+                cpuPercent: current.cpuPercent + process.cpuPercent,
+                memoryMB: current.memoryMB + process.memoryMB,
+                isForeground: current.isForeground || process.isForeground
+            )
+        }
+
+        // Clean up samples for applications that have exited.
+        let livePids = Set(candidates.map(\.pid))
         previousCPUTimes = previousCPUTimes.filter { livePids.contains($0.key) }
 
-        return processes.sorted { $0.cpuPercent > $1.cpuPercent }.prefix(12).map { $0 }
+        return Array(grouped.values)
     }
 }

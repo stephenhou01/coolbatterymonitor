@@ -135,8 +135,8 @@ struct SystemDataWorkbenchView: View {
                         .foregroundStyle(selection == tab ? Color.black : AppTheme.textSecondary)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 7)
-                        .background(Capsule().fill(selection == tab ? tabColor(tab) : Color.white.opacity(0.035)))
-                        .overlay(Capsule().stroke(selection == tab ? tabColor(tab) : Color.white.opacity(0.06), lineWidth: 1))
+                        .background(Capsule().fill(selection == tab ? tabColor(tab) : AppTheme.contrastOverlay(0.035)))
+                        .overlay(Capsule().stroke(selection == tab ? tabColor(tab) : AppTheme.contrastOverlay(0.06), lineWidth: 1))
                     }
                     .buttonStyle(.plain)
                     .pointerOnHover()
@@ -167,8 +167,8 @@ struct SystemDataWorkbenchView: View {
         }
         .padding(.horizontal, 11)
         .frame(height: 34)
-        .background(RoundedRectangle(cornerRadius: 8).fill(Color.black.opacity(0.18)))
-        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.white.opacity(0.06), lineWidth: 1))
+        .background(RoundedRectangle(cornerRadius: 8).fill(AppTheme.surfaceSunken))
+        .overlay(RoundedRectangle(cornerRadius: 8).stroke(AppTheme.contrastOverlay(0.06), lineWidth: 1))
     }
 
     private var table: some View {
@@ -187,8 +187,8 @@ struct SystemDataWorkbenchView: View {
             .frame(minWidth: 1450, alignment: .leading)
         }
         .frame(height: min(610, max(260, CGFloat(visibleFields.count) * 41 + 44)))
-        .background(RoundedRectangle(cornerRadius: 11).fill(Color.black.opacity(0.16)))
-        .overlay(RoundedRectangle(cornerRadius: 11).stroke(Color.white.opacity(0.05), lineWidth: 1))
+        .background(RoundedRectangle(cornerRadius: 11).fill(AppTheme.surfaceSunken))
+        .overlay(RoundedRectangle(cornerRadius: 11).stroke(AppTheme.contrastOverlay(0.05), lineWidth: 1))
     }
 
     private var tableHeader: some View {
@@ -204,7 +204,7 @@ struct SystemDataWorkbenchView: View {
             Color.clear.frame(width: 22)
         }
         .padding(.horizontal, 10).padding(.vertical, 9)
-        .background(Color(red: 0.07, green: 0.09, blue: 0.105))
+        .background(AppTheme.surfaceRaised)
     }
 
     private func fieldRow(_ field: SystemFieldReading) -> some View {
@@ -377,7 +377,7 @@ struct SystemDataWorkbenchView: View {
         switch field.anomalyLevel {
         case .critical: return AppTheme.batteryRed.opacity(0.055)
         case .warning, .attention: return AppTheme.batteryYellow.opacity(0.045)
-        case .none: return Color.white.opacity(field.isAvailable ? 0.017 : 0.008)
+        case .none: return AppTheme.contrastOverlay(field.isAvailable ? 0.017 : 0.008)
         }
     }
 
@@ -385,7 +385,7 @@ struct SystemDataWorkbenchView: View {
         switch field.anomalyLevel {
         case .critical: return AppTheme.batteryRed.opacity(0.20)
         case .warning, .attention: return AppTheme.batteryYellow.opacity(0.16)
-        case .none: return Color.white.opacity(0.035)
+        case .none: return AppTheme.contrastOverlay(0.035)
         }
     }
 

@@ -277,7 +277,7 @@ private struct RemainingTimeHeroSection: View {
                 .foregroundStyle(AppTheme.textTertiary)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Divider().overlay(Color.white.opacity(0.06))
+            Divider().overlay(AppTheme.contrastOverlay(0.06))
 
             VStack(alignment: .leading, spacing: 8) {
                 HStack(alignment: .firstTextBaseline) {
@@ -295,7 +295,7 @@ private struct RemainingTimeHeroSection: View {
                 }
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
-                        Capsule().fill(Color.white.opacity(0.06))
+                        Capsule().fill(AppTheme.contrastOverlay(0.06))
                         Capsule()
                             .fill(AppTheme.chargingGradient)
                             .frame(width: geo.size.width * CGFloat(min(max(snapshot.data.percent, 0), 100)) / 100)
@@ -440,7 +440,7 @@ private struct PriorityMetricCard: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.72)
 
-            Divider().overlay(Color.white.opacity(0.055))
+            Divider().overlay(AppTheme.contrastOverlay(0.055))
 
             HStack(alignment: .firstTextBaseline) {
                 Text(dashboardText("p.good_range", fallback: "合理范围"))
@@ -464,8 +464,8 @@ private struct PriorityMetricCard: View {
         }
         .padding(13)
         .frame(maxWidth: .infinity, minHeight: 205, alignment: .topLeading)
-        .background(RoundedRectangle(cornerRadius: 12).fill(Color.white.opacity(0.022)))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.white.opacity(0.06), lineWidth: 1))
+        .background(RoundedRectangle(cornerRadius: 12).fill(AppTheme.contrastOverlay(0.022)))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(AppTheme.contrastOverlay(0.06), lineWidth: 1))
     }
 
     private func impact(text: String, arrow: String, tint: Color) -> some View {
@@ -481,7 +481,7 @@ private struct PriorityMetricCard: View {
         }
         .padding(6)
         .frame(maxWidth: .infinity, alignment: .topLeading)
-        .background(RoundedRectangle(cornerRadius: 7).fill(Color.white.opacity(0.018)))
+        .background(RoundedRectangle(cornerRadius: 7).fill(AppTheme.contrastOverlay(0.018)))
     }
 }
 
@@ -578,8 +578,8 @@ private struct RuntimeBenchmarkSection: View {
                 )
             }
             .padding(15)
-            .background(RoundedRectangle(cornerRadius: 12).fill(Color.black.opacity(0.12)))
-            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.white.opacity(0.055), lineWidth: 1))
+            .background(RoundedRectangle(cornerRadius: 12).fill(AppTheme.surfaceSunken))
+            .overlay(RoundedRectangle(cornerRadius: 12).stroke(AppTheme.contrastOverlay(0.055), lineWidth: 1))
 
             ViewThatFits(in: .horizontal) {
                 HStack(spacing: 9) { officialConfiguration; currentConfiguration }
@@ -646,8 +646,8 @@ private struct RuntimeBenchmarkSection: View {
         }
         .padding(10)
         .frame(maxWidth: .infinity, minHeight: 55, alignment: .topLeading)
-        .background(RoundedRectangle(cornerRadius: 8).fill(Color.white.opacity(0.018)))
-        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.white.opacity(0.05)))
+        .background(RoundedRectangle(cornerRadius: 8).fill(AppTheme.contrastOverlay(0.018)))
+        .overlay(RoundedRectangle(cornerRadius: 8).stroke(AppTheme.contrastOverlay(0.05)))
     }
 
     private func deltaText(_ format: String, value: Double, color: Color) -> some View {
@@ -706,7 +706,7 @@ private struct RuntimeAuditRow: View {
     private var bar: some View {
         GeometryReader { geo in
             ZStack(alignment: .leading) {
-                RoundedRectangle(cornerRadius: 5).fill(Color.white.opacity(0.04))
+                RoundedRectangle(cornerRadius: 5).fill(AppTheme.contrastOverlay(0.04))
                 RoundedRectangle(cornerRadius: 5)
                     .fill(LinearGradient(colors: [color.opacity(0.35), color], startPoint: .leading, endPoint: .trailing))
                     .frame(width: geo.size.width * CGFloat(min(1, max(0.03, hours / max(maximum, 0.1)))))
@@ -806,8 +806,8 @@ private struct RemainingTimeHistorySection: View {
             }
             .tint(AppTheme.accentPurple)
             .padding(12)
-            .background(RoundedRectangle(cornerRadius: 10).fill(Color.white.opacity(0.018)))
-            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.white.opacity(0.055)))
+            .background(RoundedRectangle(cornerRadius: 10).fill(AppTheme.contrastOverlay(0.018)))
+            .overlay(RoundedRectangle(cornerRadius: 10).stroke(AppTheme.contrastOverlay(0.055)))
         }
         .padding(22)
         .finalDashboardCard(accent: isForecast ? AppTheme.batteryYellow : AppTheme.chargingCyan)
@@ -817,7 +817,7 @@ private struct RemainingTimeHistorySection: View {
     private var chart: some View {
         if points.isEmpty {
             ZStack {
-                RoundedRectangle(cornerRadius: 13).fill(Color.black.opacity(0.18))
+                RoundedRectangle(cornerRadius: 13).fill(AppTheme.surfaceSunken)
                 VStack(spacing: 9) {
                     Image(systemName: "waveform.path.ecg")
                         .font(.system(size: 25, weight: .light))
@@ -827,7 +827,7 @@ private struct RemainingTimeHistorySection: View {
                         .foregroundStyle(AppTheme.textTertiary)
                 }
             }
-            .overlay(RoundedRectangle(cornerRadius: 13).stroke(Color.white.opacity(0.055)))
+            .overlay(RoundedRectangle(cornerRadius: 13).stroke(AppTheme.contrastOverlay(0.055)))
         } else {
             Chart {
                 ForEach(points) { point in
@@ -855,7 +855,7 @@ private struct RemainingTimeHistorySection: View {
 
                 if let selectedPoint {
                     RuleMark(x: .value("selected", selectedPoint.date))
-                        .foregroundStyle(Color.white.opacity(0.35))
+                        .foregroundStyle(AppTheme.contrastOverlay(0.35))
                         .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 3]))
                     PointMark(
                         x: .value("selected-time", selectedPoint.date),
@@ -871,7 +871,7 @@ private struct RemainingTimeHistorySection: View {
                         }
                         .font(.system(size: 10, weight: .medium, design: .monospaced))
                         .padding(9)
-                        .background(RoundedRectangle(cornerRadius: 8).fill(Color(red: 0.045, green: 0.065, blue: 0.075)))
+                        .background(RoundedRectangle(cornerRadius: 8).fill(AppTheme.surfaceRaised))
                         .overlay(RoundedRectangle(cornerRadius: 8).stroke(AppTheme.chargingCyan.opacity(0.18)))
                     }
                 }
@@ -902,8 +902,8 @@ private struct RemainingTimeHistorySection: View {
             }
             .chartXSelection(value: $selectedDate)
             .padding(12)
-            .background(RoundedRectangle(cornerRadius: 13).fill(Color.black.opacity(0.18)))
-            .overlay(RoundedRectangle(cornerRadius: 13).stroke(Color.white.opacity(0.055)))
+            .background(RoundedRectangle(cornerRadius: 13).fill(AppTheme.surfaceSunken))
+            .overlay(RoundedRectangle(cornerRadius: 13).stroke(AppTheme.contrastOverlay(0.055)))
         }
     }
 
@@ -926,7 +926,7 @@ private struct RemainingTimeHistorySection: View {
             .foregroundStyle(AppTheme.textTertiary)
             .padding(.horizontal, 9)
             .padding(.vertical, 5)
-            .background(Capsule().fill(Color.white.opacity(0.025)))
+            .background(Capsule().fill(AppTheme.contrastOverlay(0.025)))
     }
 
     private func legend(color: Color, text: String) -> some View {
@@ -990,8 +990,7 @@ private struct FinalDashboardCardModifier: ViewModifier {
         content
             .background(
                 LinearGradient(
-                    colors: [Color(red: 0.09, green: 0.115, blue: 0.13),
-                             Color(red: 0.065, green: 0.08, blue: 0.095)],
+                    colors: [AppTheme.surfaceRaised, AppTheme.cardBackground],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
@@ -999,7 +998,7 @@ private struct FinalDashboardCardModifier: ViewModifier {
             .clipShape(RoundedRectangle(cornerRadius: 17, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 17, style: .continuous)
-                    .stroke(hovering ? accent.opacity(0.26) : Color.white.opacity(0.065), lineWidth: 1)
+                    .stroke(hovering ? accent.opacity(0.26) : AppTheme.contrastOverlay(0.065), lineWidth: 1)
             )
             .shadow(color: .black.opacity(0.30), radius: hovering ? 26 : 18, y: 8)
             .onHover { hovering = $0 }

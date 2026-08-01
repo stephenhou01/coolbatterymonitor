@@ -2,13 +2,51 @@ import SwiftUI
 import AppKit
 
 enum AppTheme {
+    private static func adaptive(light: NSColor, dark: NSColor) -> Color {
+        Color(nsColor: NSColor(name: nil) { appearance in
+            appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? dark : light
+        })
+    }
+
     // MARK: - Colors
-    static let background = Color(red: 0.07, green: 0.07, blue: 0.10)
-    static let cardBackground = Color(red: 0.12, green: 0.12, blue: 0.16)
-    static let cardBorder = Color.white.opacity(0.08)
-    static let textPrimary = Color.white
-    static let textSecondary = Color.white.opacity(0.7)
-    static let textTertiary = Color.white.opacity(0.6)  // WCAG-friendlier on dark cards
+    static let background = adaptive(
+        light: NSColor(srgbRed: 0.955, green: 0.968, blue: 0.989, alpha: 1),
+        dark: NSColor(srgbRed: 0.040, green: 0.064, blue: 0.094, alpha: 1)
+    )
+    static let sidebarBackground = adaptive(
+        light: NSColor(srgbRed: 0.925, green: 0.944, blue: 0.976, alpha: 0.96),
+        dark: NSColor(srgbRed: 0.050, green: 0.078, blue: 0.112, alpha: 0.98)
+    )
+    static let cardBackground = adaptive(
+        light: NSColor(srgbRed: 1, green: 1, blue: 1, alpha: 0.82),
+        dark: NSColor(srgbRed: 0.065, green: 0.096, blue: 0.132, alpha: 0.90)
+    )
+    static let surfaceRaised = adaptive(
+        light: NSColor(srgbRed: 1, green: 1, blue: 1, alpha: 0.96),
+        dark: NSColor(srgbRed: 0.085, green: 0.120, blue: 0.160, alpha: 0.96)
+    )
+    static let surfaceSunken = adaptive(
+        light: NSColor(srgbRed: 0.900, green: 0.922, blue: 0.955, alpha: 0.70),
+        dark: NSColor(srgbRed: 0.015, green: 0.033, blue: 0.052, alpha: 0.70)
+    )
+    static let cardBorder = adaptive(
+        light: NSColor(srgbRed: 0.18, green: 0.25, blue: 0.34, alpha: 0.14),
+        dark: NSColor(srgbRed: 0.72, green: 0.82, blue: 0.92, alpha: 0.13)
+    )
+    static let divider = adaptive(
+        light: NSColor(srgbRed: 0.12, green: 0.18, blue: 0.25, alpha: 0.12),
+        dark: NSColor(srgbRed: 0.78, green: 0.86, blue: 0.94, alpha: 0.11)
+    )
+    static let textPrimary = Color(nsColor: .labelColor)
+    static let textSecondary = Color(nsColor: .secondaryLabelColor)
+    static let textTertiary = Color(nsColor: .tertiaryLabelColor)
+    static let selectionText = Color.white
+
+    /// A subtle surface/row tint that is white in dark mode and black in light
+    /// mode. It replaces hard-coded white overlays without changing hierarchy.
+    static func contrastOverlay(_ opacity: Double) -> Color {
+        Color(nsColor: .labelColor).opacity(opacity)
+    }
 
     // MARK: - Design Tokens (集中管理，提升迁移性)
     enum Spacing {
@@ -61,7 +99,7 @@ enum AppTheme {
     )
 
     static let gaugeBackgroundGradient = LinearGradient(
-        colors: [Color(red: 0.08, green: 0.08, blue: 0.12), Color(red: 0.14, green: 0.14, blue: 0.20)],
+        colors: [surfaceSunken, cardBackground],
         startPoint: .topLeading, endPoint: .bottomTrailing
     )
 
@@ -92,6 +130,7 @@ enum AppTheme {
                     RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                         .stroke(cardBorder, lineWidth: 1)
                 )
+                .shadow(color: Color.black.opacity(0.08), radius: 14, y: 5)
         }
     }
 

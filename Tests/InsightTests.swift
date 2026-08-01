@@ -298,6 +298,54 @@ expect(BatteryService.liveRefreshInterval == 10
        && ProcessMonitorService.liveRefreshInterval == 10,
        "功率、字段与进程上下文统一每10秒刷新")
 
+let idleApps = [
+    ProcessPowerInfo(pid: 101, name: "Notes", cpuPercent: 0, memoryMB: 80),
+    ProcessPowerInfo(pid: 102, name: "Safari", cpuPercent: 0, memoryMB: 420,
+                     isForeground: true),
+    ProcessPowerInfo(pid: 103, name: "Preview", cpuPercent: 0, memoryMB: 110),
+]
+let rankedIdleApps = ProcessPowerInfo.rankedForDisplay(idleApps, limit: 3)
+expect(rankedIdleApps.count == 3,
+       "空闲应用的真实0% CPU样本仍保留，不能被阈值清空")
+expect(rankedIdleApps.first?.displayName == "Safari",
+       "CPU相同时当前前台应用优先展示")
+let mixedApps = idleApps + [
+    ProcessPowerInfo(pid: 104, name: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+                     cpuPercent: 8.4, memoryMB: 650)
+]
+expect(ProcessPowerInfo.rankedForDisplay(mixedApps, limit: 3).first?.displayName == "Google Chrome",
+       "真实CPU较高的可识别应用排在首位")
+
+print("── 10b) 外观与菜单栏配置持久化")
+let preferenceSuiteName = "com.stephen.BatteryMonitor.tests.presentation"
+let preferenceDefaults = UserDefaults(suiteName: preferenceSuiteName)!
+preferenceDefaults.removePersistentDomain(forName: preferenceSuiteName)
+
+let appearancePreferences = AppearanceSettings(defaults: preferenceDefaults)
+expect(appearancePreferences.mode == .system, "外观默认跟随系统")
+appearancePreferences.select(.dark)
+expect(AppearanceSettings(defaults: preferenceDefaults).mode == .dark,
+       "深色外观选择可持久化并由新实例恢复")
+appearancePreferences.select(.light)
+expect(AppearanceSettings(defaults: preferenceDefaults).mode == .light,
+       "浅色外观选择可覆盖深色并持久化")
+
+let menuPreferences = MenuBarSettings(defaults: preferenceDefaults)
+expect(menuPreferences.secondaryMetric == .runtime,
+       "顶部状态栏默认显示电量 + 剩余时间")
+expect(menuPreferences.visibleMetrics == MenuBarSettings.defaultVisibleMetrics,
+       "菜单栏弹层默认指标顺序稳定")
+menuPreferences.selectSecondaryMetric(.power)
+menuPreferences.setVisible(.runtime, visible: false)
+menuPreferences.move(.health, by: -2)
+let restoredMenuPreferences = MenuBarSettings(defaults: preferenceDefaults)
+expect(restoredMenuPreferences.secondaryMetric == .power,
+       "顶部第二指标可切换为当前功率并持久化")
+expect(!restoredMenuPreferences.visibleMetrics.contains(.runtime)
+       && restoredMenuPreferences.visibleMetrics.firstIndex(of: .health) == 1,
+       "弹层指标可隐藏、移动并保持用户顺序")
+preferenceDefaults.removePersistentDomain(forName: preferenceSuiteName)
+
 // MARK: - 11) 系统时间与功耗口径
 
 print("── 11) 系统时间与功耗口径")

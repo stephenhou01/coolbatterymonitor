@@ -8,5 +8,7 @@
 	<string>6WLUSLD79F</string>
 	<key>destination</key>
 	<string>upload</string>
+	<key>manageAppVersionAndBuildNumber</key>
+	<false/>
 </dict>
 </plist>

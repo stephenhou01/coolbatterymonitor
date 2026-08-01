@@ -111,7 +111,7 @@ struct RealtimeMonitorView: View {
                             .background(
                                 Capsule().fill(selectedRange == range
                                     ? AppTheme.chargingCyan.opacity(0.15)
-                                    : Color.white.opacity(0.03))
+                                    : AppTheme.contrastOverlay(0.03))
                             )
                     }
                     .buttonStyle(.plain)

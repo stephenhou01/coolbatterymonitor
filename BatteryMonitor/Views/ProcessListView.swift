@@ -84,8 +84,11 @@ struct ProcessRow: View {
     @State private var isExpanded = false
 
     var body: some View {
-        VStack(spacing: 0) {
-        HStack(spacing: 12) {
+        Button {
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { isExpanded.toggle() }
+        } label: {
+            VStack(spacing: 0) {
+            HStack(spacing: 12) {
             ZStack {
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
                     .fill(AppTheme.energyColor(proc.energyImpact).opacity(0.15))
@@ -109,7 +112,7 @@ struct ProcessRow: View {
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     RoundedRectangle(cornerRadius: 4, style: .continuous)
-                        .fill(Color.white.opacity(0.04))
+                        .fill(AppTheme.contrastOverlay(0.04))
                         .frame(height: 18)
 
                     let fraction = min(max(proc.cpuPercent / maxCpu, 0), 1.0)
@@ -136,22 +139,24 @@ struct ProcessRow: View {
                     .rotationEffect(.degrees(isExpanded ? 90 : 0))
             }
             .frame(width: 62, alignment: .trailing)
-        }
+            }
 
-        if isExpanded {
-            CPUSparkline(history: proc.cpuHistory, color: AppTheme.energyColor(proc.energyImpact))
-                .padding(.top, 8)
-                .padding(.horizontal, 6)
-                .transition(.opacity.combined(with: .move(edge: .top)))
+            if isExpanded {
+                CPUSparkline(history: proc.cpuHistory, color: AppTheme.energyColor(proc.energyImpact))
+                    .padding(.top, 8)
+                    .padding(.horizontal, 6)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+            }
         }
-        }
+        .buttonStyle(.plain)
         .contentShape(Rectangle())
-        .onTapGesture {
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { isExpanded.toggle() }
-        }
+        .accessibilityLabel(proc.displayName)
+        .accessibilityValue(LNum("%.1f%% CPU", proc.cpuPercent))
+        .accessibilityHint(L("proc.cpu_trend"))
         .padding(.vertical, 4)
         .padding(.horizontal, 6)
-        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Color.white.opacity(isHovering ? 0.06 : (appeared ? 0.02 : 0))))
+        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(AppTheme.contrastOverlay(isHovering ? 0.06 : (appeared ? 0.02 : 0))))
         .opacity(appeared ? 1 : 0)
         .offset(y: appeared ? 0 : 10)
         .onHover { isHovering = $0 }
@@ -243,7 +248,7 @@ struct CPUSparkline: View {
             }
         }
         .padding(8)
-        .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.white.opacity(0.03)))
+        .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(AppTheme.contrastOverlay(0.03)))
     }
 
     private func statLabel(_ label: String, _ value: String) -> some View {

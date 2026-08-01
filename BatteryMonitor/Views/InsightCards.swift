@@ -171,7 +171,7 @@ struct FactorRow: View {
         .padding(.horizontal, 9)
         .padding(.vertical, 6)
         .background(RoundedRectangle(cornerRadius: 7, style: .continuous)
-            .fill(Color.white.opacity(0.025)))
+            .fill(AppTheme.contrastOverlay(0.025)))
     }
 }
 
@@ -419,7 +419,7 @@ struct ProgressBar: View {
     var body: some View {
         GeometryReader { geo in
             ZStack(alignment: .leading) {
-                Capsule().fill(Color.white.opacity(0.06))
+                Capsule().fill(AppTheme.contrastOverlay(0.06))
                 Capsule()
                     .fill(LinearGradient(colors: [color.opacity(0.55), color],
                                          startPoint: .leading, endPoint: .trailing))

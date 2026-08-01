@@ -70,7 +70,7 @@ struct HardwareDetailView: View {
                         .font(.system(size: 9.5, weight: .medium, design: .monospaced))
                         .foregroundStyle(AppTheme.textTertiary)
                         .padding(.horizontal, 6).padding(.vertical, 2)
-                        .background(Capsule().fill(Color.white.opacity(0.05)))
+                        .background(Capsule().fill(AppTheme.contrastOverlay(0.05)))
                     Spacer()
                     Text(detail.architecture.rawValue)
                         .font(.system(size: 9.5, weight: .bold, design: .monospaced))
@@ -132,7 +132,7 @@ struct HardwareDetailView: View {
                                 .padding(.vertical, 2.5)
                                 .padding(.horizontal, 6)
                                 .background(RoundedRectangle(cornerRadius: 5)
-                                    .fill(Color.white.opacity(0.02)))
+                                    .fill(AppTheme.contrastOverlay(0.02)))
                             }
                         }
                     }
