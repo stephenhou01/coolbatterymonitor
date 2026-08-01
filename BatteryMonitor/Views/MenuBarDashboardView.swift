@@ -159,6 +159,7 @@ struct MenuBarDashboardView: View {
     @Environment(MenuBarSettings.self) private var menuSettings
     @Environment(\.openWindow) private var openWindow
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
     @State private var isCustomizing = false
 
     init(initiallyCustomizing: Bool = false) {
@@ -170,11 +171,21 @@ struct MenuBarDashboardView: View {
 
     var body: some View {
         ZStack {
-            AppTheme.background
+            Rectangle()
+                .fill(.ultraThinMaterial)
+                .ignoresSafeArea()
+
             LinearGradient(
-                colors: [AppTheme.chargingCyan.opacity(0.07), .clear],
+                colors: glassTintColors,
                 startPoint: .topLeading,
-                endPoint: .center
+                endPoint: .bottomTrailing
+            )
+
+            RadialGradient(
+                colors: [Color.white.opacity(colorScheme == .dark ? 0.07 : 0.24), .clear],
+                center: .topLeading,
+                startRadius: 12,
+                endRadius: 360
             )
 
             VStack(spacing: 0) {
@@ -194,7 +205,37 @@ struct MenuBarDashboardView: View {
         }
         .frame(width: 440)
         .fixedSize(horizontal: true, vertical: true)
-        .background(AppearanceWindowBridge(mode: appearance.mode).frame(width: 0, height: 0))
+        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .stroke(glassBorder, lineWidth: 0.8)
+        }
+        .shadow(color: Color.black.opacity(colorScheme == .dark ? 0.34 : 0.18), radius: 24, y: 10)
+        .background(
+            AppearanceWindowBridge(mode: appearance.mode, usesTransparentBackground: true)
+                .frame(width: 0, height: 0)
+        )
+    }
+
+    private var glassTintColors: [Color] {
+        if colorScheme == .dark {
+            return [
+                Color(red: 0.02, green: 0.17, blue: 0.27).opacity(0.36),
+                Color(red: 0.02, green: 0.10, blue: 0.18).opacity(0.28),
+                AppTheme.chargingCyan.opacity(0.10),
+            ]
+        }
+        return [
+            Color.white.opacity(0.30),
+            Color(red: 0.43, green: 0.75, blue: 0.91).opacity(0.18),
+            AppTheme.chargingCyan.opacity(0.08),
+        ]
+    }
+
+    private var glassBorder: Color {
+        colorScheme == .dark
+            ? Color.white.opacity(0.26)
+            : Color.white.opacity(0.72)
     }
 
     private var header: some View {

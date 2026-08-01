@@ -91,6 +91,7 @@ final class AppearanceSettings {
 /// that exact hosting window whenever the selected mode changes.
 struct AppearanceWindowBridge: NSViewRepresentable {
     let mode: AppearanceMode
+    var usesTransparentBackground = false
 
     func makeNSView(context: Context) -> NSView {
         let view = NSView(frame: .zero)
@@ -105,7 +106,13 @@ struct AppearanceWindowBridge: NSViewRepresentable {
     private func apply(to view: NSView) {
         let selectedAppearance = mode.appKitAppearance
         DispatchQueue.main.async {
-            view.window?.appearance = selectedAppearance
+            guard let window = view.window else { return }
+            window.appearance = selectedAppearance
+            if usesTransparentBackground {
+                window.isOpaque = false
+                window.backgroundColor = .clear
+                window.hasShadow = true
+            }
         }
     }
 }

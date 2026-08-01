@@ -10,7 +10,7 @@ struct MenuBarSnapshotHarness {
     static func main() throws {
         let arguments = CommandLine.arguments
         guard arguments.count >= 3 else {
-            fputs("usage: MenuBarSnapshotHarness <light|dark> <output.png> [customize]\n", stderr)
+            fputs("usage: MenuBarSnapshotHarness <light|dark> <output.png> [customize] [--background=/path/image.png]\n", stderr)
             exit(2)
         }
 
@@ -52,12 +52,31 @@ struct MenuBarSnapshotHarness {
         ]
         processService.hasSampled = true
 
-        let root = MenuBarDashboardView(initiallyCustomizing: arguments.dropFirst(3).first == "customize")
+        let options = Array(arguments.dropFirst(3))
+        let panel = MenuBarDashboardView(initiallyCustomizing: options.contains("customize"))
             .environmentObject(batteryService)
             .environmentObject(processService)
             .environment(appearance)
             .environment(menuSettings)
             .environment(\.colorScheme, mode == .light ? .light : .dark)
+
+        let root: AnyView
+        if let option = options.first(where: { $0.hasPrefix("--background=") }),
+           let image = NSImage(contentsOfFile: String(option.dropFirst("--background=".count))) {
+            root = AnyView(
+                ZStack {
+                    Image(nsImage: image)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 440, height: 745)
+                        .clipped()
+                    panel
+                }
+                .frame(width: 440, height: 745)
+            )
+        } else {
+            root = AnyView(panel)
+        }
 
         let renderer = ImageRenderer(content: root)
         renderer.scale = 2
