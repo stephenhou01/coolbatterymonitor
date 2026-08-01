@@ -286,6 +286,8 @@ struct DashboardOverviewPage: View {
                         .font(.system(size: 37, weight: .medium, design: .rounded))
                         .foregroundStyle(AppTheme.chargingBlue)
                         .monospacedDigit()
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.72)
                     MetricHelpButton(content: DashboardHelp.runtime(snapshot),
                                      selection: $selectedHelp)
                 }
