@@ -222,7 +222,7 @@ private struct RemainingTimeHeroSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 17) {
             DashboardSectionHeader(
-                icon: "clock",
+                icon: BatteryMetricIcon.runtime.symbol,
                 title: dashboardText("p.remaining", fallback: "还能用多久"),
                 color: AppTheme.chargingCyan,
                 help: DashboardHelp.runtime(snapshot),
@@ -357,7 +357,7 @@ private struct RemainingTimeHeroSection: View {
         let gridItems = Array(repeating: GridItem(.flexible(), spacing: 10), count: columns)
         return LazyVGrid(columns: gridItems, alignment: .leading, spacing: 10) {
             PriorityMetricCard(
-                icon: "heart",
+                icon: .health,
                 title: dashboardText("p.priority_health", fallback: "整块电池的健康状况"),
                 value: LNum("%.0f", snapshot.healthPercent), unit: "%",
                 status: snapshot.healthPercent >= 90 ? L("stat.health_excellent") : L("stat.health_good"),
@@ -370,7 +370,7 @@ private struct RemainingTimeHeroSection: View {
                 selection: $selectedHelp
             )
             PriorityMetricCard(
-                icon: "bolt.fill",
+                icon: .power,
                 title: dashboardText("p.priority_power", fallback: "当前电脑的使用功率"),
                 value: LNum("%.1f", snapshot.currentPowerWatts), unit: "W",
                 status: LNum("%.0f%% %@", snapshot.currentPowerWatts / max(snapshot.usualPowerWatts, 0.1) * 100,
@@ -384,7 +384,7 @@ private struct RemainingTimeHeroSection: View {
                 selection: $selectedHelp
             )
             PriorityMetricCard(
-                icon: "thermometer.medium",
+                icon: .temperature,
                 title: dashboardText("p.priority_temp", fallback: "当前电池温度"),
                 value: LNum("%.1f", snapshot.data.temperatureCelsius), unit: "°C",
                 status: snapshot.data.temperatureCelsius < 35 ? L("stat.temp_normal") : L("stat.temp_high"),
@@ -401,7 +401,7 @@ private struct RemainingTimeHeroSection: View {
 }
 
 private struct PriorityMetricCard: View {
-    let icon: String
+    let icon: BatteryMetricIcon
     let title: String
     let value: String
     let unit: String
@@ -417,9 +417,7 @@ private struct PriorityMetricCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 9) {
             HStack(spacing: 6) {
-                Image(systemName: icon)
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(color)
+                MetricGlyph(icon, tint: color, scale: .compact)
                 Text(title)
                     .font(.system(size: 10.5, weight: .medium))
                     .foregroundStyle(AppTheme.textTertiary)
@@ -762,7 +760,7 @@ private struct RemainingTimeHistorySection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 15) {
             DashboardSectionHeader(
-                icon: "waveform.path.ecg",
+                icon: BatteryMetricIcon.runtime.symbol,
                 title: isForecast
                     ? dashboardText("p.unplug_trend", fallback: "拔电后的预计续航")
                     : dashboardText("p.remaining_trend", fallback: "系统剩余时间记录"),
@@ -972,10 +970,8 @@ struct DashboardSectionHeader: View {
     var trailing: AnyView? = nil
 
     var body: some View {
-        HStack(spacing: 7) {
-            Image(systemName: icon)
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(color)
+        HStack(spacing: 9) {
+            MetricGlyph(systemName: icon, tint: color, scale: .compact)
             Text(title)
                 .font(.system(size: 13, weight: .semibold, design: .rounded))
                 .foregroundStyle(AppTheme.textPrimary)

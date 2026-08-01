@@ -1,4 +1,5 @@
 import Foundation
+import AppKit
 
 // InsightEngine / BatteryAgeEstimator / 硬件解析的边界测试。
 // 由 Tests/run-insight-tests.sh 编译运行，不依赖 Xcode 也不依赖界面截图。
@@ -357,6 +358,23 @@ expect(DashboardNavigation.shared.destination == .settings,
        "添加更多指标可把完整看板直接导航到设置页")
 DashboardNavigation.shared.destination = .overview
 preferenceDefaults.removePersistentDomain(forName: preferenceSuiteName)
+
+print("── 10c) 主指标图标语义与系统兼容")
+let metricIcons = BatteryMetricIcon.allCases
+expect(metricIcons.count == Set(metricIcons.map(\.symbol)).count,
+       "主指标各自使用可辨识的独立 SF Symbol")
+let unavailableMetricSymbols = metricIcons.filter {
+    NSImage(systemSymbolName: $0.symbol, accessibilityDescription: nil) == nil
+}
+expect(unavailableMetricSymbols.isEmpty,
+       "所有主指标图标均能由当前 macOS 解析\(unavailableMetricSymbols.isEmpty ? "" : "：\(unavailableMetricSymbols.map(\.rawValue))")")
+let unavailableFallbackSymbols = metricIcons.filter {
+    NSImage(systemSymbolName: $0.fallbackSymbol, accessibilityDescription: nil) == nil
+}
+expect(unavailableFallbackSymbols.isEmpty,
+       "macOS 14 兼容回退图标不会留下空白占位\(unavailableFallbackSymbols.isEmpty ? "" : "：\(unavailableFallbackSymbols.map(\.rawValue))")")
+expect(MenuBarMetric.allCases.allSatisfy { $0.symbol == $0.icon.symbol },
+       "菜单栏、总览与详情页共用同一套指标图标映射")
 
 // MARK: - 11) 系统时间与功耗口径
 

@@ -20,7 +20,7 @@ struct CapacityBreakdownSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             DashboardSectionHeader(
-                icon: "battery.100",
+                icon: BatteryMetricIcon.designCapacity.symbol,
                 title: dashboardText("p.where_title", fallback: "你买的容量去哪了"),
                 color: AppTheme.batteryYellow,
                 help: DashboardHelp.capacityOverview(snapshot),
@@ -61,13 +61,13 @@ struct CapacityBreakdownSection: View {
                     subtitle: dashboardText("p.eq_capacity_sub", fallback: "出厂设计减去长期容量损失"),
                     terms: [
                         .init(label: dashboardText("p.design_capacity", fallback: "设计容量"), value: design,
-                              icon: "shippingbox", color: AppTheme.batteryYellow,
+                              icon: .designCapacity, color: AppTheme.batteryYellow,
                               help: DashboardHelp.designCapacity(snapshot)),
                         .init(label: dashboardText("p.capacity_gap", fallback: "长期容量总差额"), value: gap,
-                              icon: "arrow.triangle.2.circlepath", color: AppTheme.batteryRed,
+                              icon: .capacityGap, color: AppTheme.batteryRed,
                               help: DashboardHelp.capacityGap(snapshot)),
                         .init(label: dashboardText("p.current_max", fallback: "目前最大容量"), value: full,
-                              icon: "shield", color: AppTheme.chargingCyan,
+                              icon: .capacity, color: AppTheme.chargingCyan,
                               help: DashboardHelp.currentMax(snapshot)),
                     ],
                     operators: ["−", "="],
@@ -79,13 +79,13 @@ struct CapacityBreakdownSection: View {
                     subtitle: dashboardText("p.eq_usage_sub", fallback: "目前最大容量减去本次已用，就是此刻还剩"),
                     terms: [
                         .init(label: dashboardText("p.current_max", fallback: "目前最大容量"), value: full,
-                              icon: "shield", color: AppTheme.chargingCyan,
+                              icon: .capacity, color: AppTheme.chargingCyan,
                               help: DashboardHelp.currentMax(snapshot)),
                         .init(label: dashboardText("p.used_since_full", fallback: "本次已经用掉"), value: used,
-                              icon: "bolt", color: AppTheme.chargingBlue,
+                              icon: .usedCapacity, color: AppTheme.chargingBlue,
                               help: DashboardHelp.usedSinceFull(snapshot)),
                         .init(label: dashboardText("p.current_actual", fallback: "此刻还剩"), value: current,
-                              icon: "battery.75", color: AppTheme.chargingCyan,
+                              icon: .stateOfCharge, color: AppTheme.chargingCyan,
                               help: DashboardHelp.currentActual(snapshot)),
                     ],
                     operators: ["−", "="],
@@ -109,13 +109,13 @@ struct CapacityBreakdownSection: View {
                         ),
                         terms: [
                             .init(label: dashboardText("p.capacity_gap", fallback: "长期容量总差额"), value: gap,
-                                  icon: "arrow.triangle.2.circlepath", color: AppTheme.batteryYellow,
+                                  icon: .capacityGap, color: AppTheme.batteryYellow,
                                   help: DashboardHelp.capacityGap(snapshot)),
                             .init(label: dashboardText("p.seg_un", fallback: "暂时够不到"), value: inaccessible,
-                                  icon: "drop.triangle", color: AppTheme.batteryYellow,
+                                  icon: .inaccessibleCapacity, color: AppTheme.batteryYellow,
                                   help: DashboardHelp.inaccessibleCapacity(snapshot)),
                             .init(label: dashboardText("p.seg_age", fallback: "真正老化"), value: permanent,
-                                  icon: "arrow.down.heart", color: AppTheme.batteryRed,
+                                  icon: .permanentLoss, color: AppTheme.batteryRed,
                                   help: DashboardHelp.permanentLoss(snapshot)),
                         ],
                         operators: ["=", "+"],
@@ -213,7 +213,7 @@ struct CapacityBreakdownSection: View {
     @ViewBuilder
     private var capacityCards: some View {
         CapacityLegendCard(
-            icon: "shippingbox.fill",
+            icon: .designCapacity,
             title: dashboardText("p.design_capacity", fallback: "出厂设计容量"),
             value: design,
             percentage: 100,
@@ -224,7 +224,7 @@ struct CapacityBreakdownSection: View {
             selection: $selectedHelp
         )
         CapacityLegendCard(
-            icon: "shield.fill",
+            icon: .capacity,
             title: dashboardText("p.current_max", fallback: "目前充满能装"),
             value: full,
             percentage: ratio(full),
@@ -234,7 +234,7 @@ struct CapacityBreakdownSection: View {
             selection: $selectedHelp
         )
         CapacityLegendCard(
-            icon: "battery.75",
+            icon: .stateOfCharge,
             title: dashboardText("p.current_actual", fallback: "此刻还剩"),
             value: current,
             percentage: ratio(current),
@@ -244,7 +244,7 @@ struct CapacityBreakdownSection: View {
             selection: $selectedHelp
         )
         CapacityLegendCard(
-            icon: "bolt.fill",
+            icon: .usedCapacity,
             title: dashboardText("p.used_since_full", fallback: "本次已经用掉"),
             value: used,
             percentage: ratio(used),
@@ -256,7 +256,7 @@ struct CapacityBreakdownSection: View {
         )
         if let inaccessible, let permanent {
             CapacityLegendCard(
-                icon: "drop.triangle.fill",
+                icon: .inaccessibleCapacity,
                 title: dashboardText("p.seg_un", fallback: "暂时够不到"),
                 value: inaccessible,
                 percentage: ratio(inaccessible),
@@ -266,7 +266,7 @@ struct CapacityBreakdownSection: View {
                 selection: $selectedHelp
             )
             CapacityLegendCard(
-                icon: "arrow.down.heart.fill",
+                icon: .permanentLoss,
                 title: dashboardText("p.seg_age", fallback: "真正老化"),
                 value: permanent,
                 percentage: ratio(permanent),
@@ -277,7 +277,7 @@ struct CapacityBreakdownSection: View {
             )
         } else {
             CapacityLegendCard(
-                icon: "arrow.triangle.2.circlepath",
+                icon: .capacityGap,
                 title: dashboardText("p.capacity_gap", fallback: "长期容量总差额"),
                 value: gap,
                 percentage: ratio(gap),
@@ -334,7 +334,7 @@ struct CapacityBreakdownSection: View {
 }
 
 private struct CapacityLegendCard: View {
-    let icon: String
+    let icon: BatteryMetricIcon
     let title: String
     let value: Int
     let percentage: Double
@@ -346,12 +346,7 @@ private struct CapacityLegendCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 9) {
             HStack(alignment: .top, spacing: 9) {
-                Image(systemName: icon)
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(color)
-                    .frame(width: 36, height: 36)
-                    .background(RoundedRectangle(cornerRadius: 10).fill(color.opacity(0.10)))
-                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(color.opacity(0.24)))
+                MetricGlyph(icon, tint: color, scale: .card)
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 4) {
                         Text(title)
@@ -394,7 +389,7 @@ private struct CapacityLegendCard: View {
 private struct CapacityEquationTerm {
     let label: String
     let value: Int
-    let icon: String
+    let icon: BatteryMetricIcon
     let color: Color
     let help: MetricHelpContent
 }
@@ -433,11 +428,7 @@ private struct CapacityEquation: View {
         HStack(spacing: 7) {
             ForEach(Array(terms.enumerated()), id: \.offset) { index, term in
                 HStack(spacing: 6) {
-                    Image(systemName: term.icon)
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(term.color)
-                        .frame(width: 28, height: 28)
-                        .background(RoundedRectangle(cornerRadius: 8).fill(term.color.opacity(0.08)))
+                    MetricGlyph(term.icon, tint: term.color, scale: .compact)
                     VStack(alignment: .leading, spacing: 1) {
                         HStack(spacing: 3) {
                             Text(term.label)
@@ -479,6 +470,7 @@ struct MetricReferenceSection: View {
 
         return [
             ReferenceMetric(
+                icon: .balance,
                 title: dashboardText("insight.factor.balance", fallback: "各单元均衡度"),
                 current: "\(delta) mV",
                 range: "0–20 mV",
@@ -492,6 +484,7 @@ struct MetricReferenceSection: View {
                 help: DashboardHelp.cellBalance(snapshot)
             ),
             ReferenceMetric(
+                icon: .resistance,
                 title: dashboardText("insight.factor.resistance", fallback: "电池内部阻力"),
                 current: "\(maxResistance) mΩ",
                 range: "0–130 mΩ",
@@ -505,6 +498,7 @@ struct MetricReferenceSection: View {
                 help: DashboardHelp.resistance(snapshot)
             ),
             ReferenceMetric(
+                icon: .cycles,
                 title: dashboardText("insight.factor.cycles", fallback: "循环使用率"),
                 current: LNum("%.1f%%", cycleUsage),
                 range: "0–50%",
@@ -516,6 +510,7 @@ struct MetricReferenceSection: View {
                 help: DashboardHelp.cycles(snapshot)
             ),
             ReferenceMetric(
+                icon: .voltage,
                 title: dashboardText("hw.m.pack_voltage", fallback: "电池组电压"),
                 current: LNum("%.2f V", packVoltage),
                 range: detail.minimumPackVoltage > 0 && detail.maximumPackVoltage > 0
@@ -597,6 +592,7 @@ struct MetricReferenceSection: View {
 }
 
 private struct ReferenceMetric: Identifiable {
+    let icon: BatteryMetricIcon
     let title: String
     let current: String
     let range: String
@@ -669,6 +665,7 @@ private struct ReferenceMetricRow: View {
 
     private var metricLabel: some View {
         HStack(spacing: 4) {
+            MetricGlyph(metric.icon, tint: metric.color, scale: .micro, style: .plain)
             Text(metric.title)
                 .font(.system(size: 9, weight: .semibold))
                 .foregroundStyle(AppTheme.textPrimary)
@@ -693,6 +690,7 @@ private struct ReferenceMetricCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
+                MetricGlyph(metric.icon, tint: metric.color, scale: .compact)
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 4) {
                         Text(metric.title)

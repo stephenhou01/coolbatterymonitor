@@ -62,9 +62,11 @@ struct RealtimeMonitorView: View {
         VStack(alignment: .leading, spacing: 16) {
             // Header
             HStack {
-                Image(systemName: "waveform.path.ecg")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(AppTheme.chargingCyan)
+                MetricGlyph(
+                    .power,
+                    tint: AppTheme.chargingCyan,
+                    scale: .compact
+                )
                 HStack(spacing: 4) {
                     Text(L("rt.title"))
                         .font(AppTheme.Typography.sectionTitle)
@@ -211,28 +213,28 @@ struct RealtimeMonitorView: View {
     private var currentStatsRow: some View {
         HStack(spacing: 12) {
             StatMiniCard(
-                icon: "bolt.fill",
+                icon: .power,
                 label: L("rt.power"),
                 value: LNum("%.1fW", batteryData.currentPowerWatts),
                 color: AppTheme.chargingBlue,
                 tooltipKey: "tip.power"
             )
             StatMiniCard(
-                icon: "gauge.medium",
+                icon: .voltage,
                 label: L("rt.voltage"),
                 value: LNum("%.2fV", batteryData.voltage),
                 color: AppTheme.accentPurple,
                 tooltipKey: "tip.voltage"
             )
             StatMiniCard(
-                icon: "arrow.up.arrow.down",
+                icon: .current,
                 label: L("rt.amperage"),
                 value: "\(batteryData.amperage)mA",
                 color: AppTheme.chargingCyan,
                 tooltipKey: "tip.amperage"
             )
             StatMiniCard(
-                icon: "thermometer.medium",
+                icon: .temperature,
                 label: L("rt.temperature"),
                 value: LNum("%.1f°C", batteryData.temperatureCelsius),
                 color: tempColor,
@@ -283,7 +285,7 @@ struct RealtimeMonitorView: View {
 // MARK: - Mini Stat Card
 
 struct StatMiniCard: View {
-    let icon: String
+    let icon: BatteryMetricIcon
     let label: String
     let value: String
     let color: Color
@@ -292,9 +294,7 @@ struct StatMiniCard: View {
     var body: some View {
         VStack(spacing: 4) {
             HStack(spacing: 4) {
-                Image(systemName: icon)
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(color)
+                MetricGlyph(icon, tint: color, scale: .micro, style: .plain)
                 Text(label)
                     .font(.system(size: 10))
                     .foregroundStyle(AppTheme.textTertiary)

@@ -291,7 +291,10 @@ struct DashboardOverviewPage: View {
                 }
 
                 HStack(spacing: 8) {
-                    Image(systemName: data.isOnAC ? "bolt.fill" : "waveform.path.ecg")
+                    MetricGlyph(data.isOnAC ? .charging : .power,
+                                tint: data.isOnAC ? AppTheme.batteryYellow : AppTheme.chargingBlue,
+                                scale: .micro,
+                                style: .plain)
                     Text(presentation.sourceText)
                 }
                 .font(.system(size: 10.5))
@@ -331,26 +334,26 @@ struct DashboardOverviewPage: View {
 
     private var metricRail: some View {
         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 0), count: 6), spacing: 0) {
-            overviewMetric("waveform.path.ecg", MenuBarMetric.power.title,
+            overviewMetric(.power, MenuBarMetric.power.title,
                            LNum("%.1f W", snapshot.currentPowerWatts), AppTheme.chargingBlue,
                            dashboardText("shell.power_hint", fallback: "整机实时功率"),
                            help: DashboardHelp.power(snapshot))
-            overviewMetric("powerplug", dashboardText("shell.adapter", fallback: "适配器功率"),
+            overviewMetric(.adapter, dashboardText("shell.adapter", fallback: "适配器功率"),
                            "\(data.chargerWattage) W", AppTheme.textSecondary,
                            data.isOnAC ? dashboardText("shell.adapter_connected", fallback: "当前额定功率") : dashboardText("shell.not_connected", fallback: "未连接"),
                            help: DashboardHelp.adapterPower(snapshot))
-            overviewMetric("bolt.fill", dashboardText("shell.charge_power", fallback: "充电功率"),
+            overviewMetric(.charging, dashboardText("shell.charge_power", fallback: "充电功率"),
                            LNum("%.1f W", max(0, Double(data.hardwareDetail.systemPowerIn) / 1000)), AppTheme.batteryGreen,
                            data.isCharging ? dashboardText("shell.charging", fallback: "正在充电") : dashboardText("shell.not_charging", fallback: "当前未充电"),
                            help: DashboardHelp.chargingPower(snapshot))
-            overviewMetric("thermometer.medium", MenuBarMetric.temperature.title,
+            overviewMetric(.temperature, MenuBarMetric.temperature.title,
                            LNum("%.1f ℃", data.temperatureCelsius), AppTheme.textSecondary,
                            dashboardText("shell.temp_range", fallback: "建议 20–35℃"),
                            help: DashboardHelp.temperature(snapshot))
-            overviewMetric("arrow.triangle.2.circlepath", MenuBarMetric.cycles.title, "\(data.cycleCount)", AppTheme.textSecondary,
+            overviewMetric(.cycles, MenuBarMetric.cycles.title, "\(data.cycleCount)", AppTheme.accentPurple,
                            dashboardText("shell.cycle_reference", fallback: "参考额定 1000 次"),
                            help: DashboardHelp.cycleCount(snapshot))
-            overviewMetric("heart.fill", MenuBarMetric.health.title,
+            overviewMetric(.health, MenuBarMetric.health.title,
                            LNum("%.1f%%", snapshot.healthPercent), AppTheme.batteryGreen,
                            healthLabel,
                            help: DashboardHelp.health(snapshot))
@@ -361,7 +364,7 @@ struct DashboardOverviewPage: View {
     }
 
     private func overviewMetric(
-        _ icon: String,
+        _ icon: BatteryMetricIcon,
         _ title: String,
         _ value: String,
         _ color: Color,
@@ -369,9 +372,7 @@ struct DashboardOverviewPage: View {
         help: MetricHelpContent
     ) -> some View {
         VStack(spacing: 9) {
-            Image(systemName: icon)
-                .font(.system(size: 22, weight: .medium))
-                .foregroundStyle(color)
+            MetricGlyph(icon, tint: color, scale: .card)
             Text(title)
                 .font(.system(size: 10.5))
                 .foregroundStyle(AppTheme.textSecondary)
@@ -381,7 +382,7 @@ struct DashboardOverviewPage: View {
             Text(value).font(.system(size: 20, weight: .medium, design: .rounded)).foregroundStyle(AppTheme.textPrimary).monospacedDigit().lineLimit(1)
             Text(hint).font(.system(size: 8.5)).foregroundStyle(AppTheme.textTertiary).lineLimit(2).multilineTextAlignment(.center)
         }
-        .frame(maxWidth: .infinity, minHeight: 130)
+        .frame(maxWidth: .infinity, minHeight: 146)
         .padding(.horizontal, 8)
         .overlay(alignment: .topTrailing) {
             MetricHelpButton(content: help, selection: $selectedHelp)

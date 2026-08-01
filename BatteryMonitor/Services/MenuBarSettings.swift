@@ -31,16 +31,18 @@ enum MenuBarMetric: String, CaseIterable, Identifiable {
         }
     }
 
-    var symbol: String {
+    var icon: BatteryMetricIcon {
         switch self {
-        case .runtime: return "clock"
-        case .power: return "bolt.fill"
-        case .temperature: return "thermometer.medium"
-        case .cycles: return "arrow.triangle.2.circlepath"
-        case .health: return "heart.fill"
-        case .current: return "bolt.horizontal"
+        case .runtime: return .runtime
+        case .power: return .power
+        case .temperature: return .temperature
+        case .cycles: return .cycles
+        case .health: return .health
+        case .current: return .current
         }
     }
+
+    var symbol: String { icon.symbol }
 }
 
 @Observable

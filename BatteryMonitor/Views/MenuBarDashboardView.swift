@@ -240,18 +240,7 @@ struct MenuBarDashboardView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 7) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(AppTheme.chargingCyan.opacity(0.09))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .stroke(AppTheme.chargingCyan.opacity(0.28), lineWidth: 1)
-                        )
-                    Image(systemName: "battery.100")
-                        .font(.system(size: 18, weight: .medium))
-                        .foregroundStyle(AppTheme.chargingCyan)
-                }
-                .frame(width: 36, height: 36)
+                MetricGlyph(.stateOfCharge, tint: AppTheme.chargingCyan, scale: .card)
 
                 Text(L("app.title"))
                     .font(.system(size: 14, weight: .bold, design: .rounded))
@@ -417,10 +406,7 @@ struct MenuBarDashboardView: View {
 
     private func metricValueRow(_ metric: MenuBarMetric, index: Int) -> some View {
         HStack(spacing: 9) {
-            Image(systemName: metric.symbol)
-                .font(.system(size: 10.5, weight: .semibold))
-                .foregroundStyle(metricColor(metric))
-                .frame(width: 17)
+            MetricGlyph(metric.icon, tint: metricColor(metric), scale: .compact)
             Text(presentation.title(for: metric))
                 .font(.system(size: 11))
                 .foregroundStyle(AppTheme.textSecondary)
@@ -599,21 +585,21 @@ struct MenuBarDashboardView: View {
             }
 
             trendRow(
-                icon: "waveform.path.ecg",
+                icon: .power,
                 title: dashboardText("shell.instant_power", fallback: "瞬时功率"),
                 values: batteryService.realtimeData.suffix(32).map(\.power),
                 value: presentation.powerText,
                 color: AppTheme.chargingCyan
             )
             trendRow(
-                icon: "clock",
+                icon: .runtime,
                 title: dashboardText("p.menu_time", fallback: "预计续航"),
                 values: batteryService.runtimeSamples.suffix(32).map { Double($0.minutesRemaining) },
                 value: presentation.runtimeText,
                 color: AppTheme.chargingBlue
             )
             trendRow(
-                icon: "bolt.horizontal",
+                icon: .current,
                 title: dashboardText("shell.current", fallback: "电流"),
                 values: batteryService.realtimeData.suffix(32).map(\.amperage),
                 value: LNum("%.2f A", Double(data.amperage) / 1000),
@@ -624,12 +610,9 @@ struct MenuBarDashboardView: View {
         .overlay(alignment: .top) { Divider().overlay(AppTheme.cardBorder) }
     }
 
-    private func trendRow(icon: String, title: String, values: [Double], value: String, color: Color) -> some View {
+    private func trendRow(icon: BatteryMetricIcon, title: String, values: [Double], value: String, color: Color) -> some View {
         HStack(spacing: 9) {
-            Image(systemName: icon)
-                .font(.system(size: 11, weight: .medium))
-                .foregroundStyle(color)
-                .frame(width: 15)
+            MetricGlyph(icon, tint: color, scale: .micro, style: .plain)
             Text(title)
                 .font(.system(size: 10.5))
                 .foregroundStyle(AppTheme.textSecondary)
@@ -698,7 +681,7 @@ struct MenuBarDashboardView: View {
     private var footer: some View {
         Button(action: showDashboard) {
             HStack(spacing: 7) {
-                Image(systemName: "waveform.path.ecg")
+                Image(systemName: BatteryMetricIcon.power.symbol)
                 Text(dashboardText("p.menu_open", fallback: "打开完整看板"))
             }
             .font(.system(size: 11, weight: .semibold))

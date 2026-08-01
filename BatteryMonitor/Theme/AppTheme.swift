@@ -139,6 +139,198 @@ enum AppTheme {
     }
 }
 
+// MARK: - Metric icon system
+
+/// One semantic icon vocabulary shared by the overview, detail cards and the
+/// menu-bar panel. Keeping the mapping here prevents the same metric from
+/// becoming a bolt in one surface and an ECG waveform in another.
+enum BatteryMetricIcon: String, CaseIterable {
+    case stateOfCharge
+    case runtime
+    case power
+    case adapter
+    case charging
+    case temperature
+    case cycles
+    case health
+    case current
+    case capacity
+    case designCapacity
+    case usedCapacity
+    case inaccessibleCapacity
+    case permanentLoss
+    case capacityGap
+    case status
+    case balance
+    case resistance
+    case voltage
+
+    private var preferredSymbol: String {
+        switch self {
+        case .stateOfCharge: return "battery.75percent"
+        case .runtime: return "clock"
+        case .power: return "waveform.path.ecg"
+        case .adapter: return "powerplug.fill"
+        case .charging: return "bolt.fill"
+        case .temperature: return "thermometer.medium"
+        case .cycles: return "arrow.triangle.2.circlepath"
+        case .health: return "heart.fill"
+        case .current: return "bolt.horizontal"
+        case .capacity: return "battery.100percent"
+        case .designCapacity: return "battery.100"
+        case .usedCapacity: return "bolt.slash.fill"
+        case .inaccessibleCapacity: return "lock.fill"
+        case .permanentLoss: return "arrow.down.heart.fill"
+        case .capacityGap: return "arrow.down.right.circle.fill"
+        case .status: return "checkmark.shield.fill"
+        case .balance: return "scale.3d"
+        case .resistance: return "gauge.with.dots.needle.33percent"
+        case .voltage: return "bolt.horizontal.circle"
+        }
+    }
+
+    /// Conservative symbols kept for macOS 14 machines whose bundled SF
+    /// Symbols catalogue may not contain a newer preferred glyph. A missing
+    /// symbol must degrade to a simpler icon, never to an empty slot.
+    var fallbackSymbol: String {
+        switch self {
+        case .stateOfCharge: return "battery.75"
+        case .runtime: return "clock"
+        case .power: return "waveform.path.ecg"
+        case .adapter: return "powerplug"
+        case .charging: return "bolt.fill"
+        case .temperature: return "thermometer"
+        case .cycles: return "arrow.2.circlepath"
+        case .health: return "heart.fill"
+        case .current: return "arrow.left.arrow.right"
+        case .capacity: return "battery.100"
+        case .designCapacity: return "ruler.fill"
+        case .usedCapacity: return "bolt.slash"
+        case .inaccessibleCapacity: return "lock.fill"
+        case .permanentLoss: return "heart.slash.fill"
+        case .capacityGap: return "arrow.down.right.circle"
+        case .status: return "checkmark.shield"
+        case .balance: return "scale.3d"
+        case .resistance: return "gauge.medium"
+        case .voltage: return "bolt.circle"
+        }
+    }
+
+    private static let resolvedSymbols: [BatteryMetricIcon: String] = Dictionary(
+        uniqueKeysWithValues: allCases.map { metric in
+            let preferred = metric.preferredSymbol
+            let resolved = NSImage(systemSymbolName: preferred, accessibilityDescription: nil) == nil
+                ? metric.fallbackSymbol
+                : preferred
+            return (metric, resolved)
+        }
+    )
+
+    /// Resolve once per process instead of asking AppKit for the same symbol on
+    /// every ten-second refresh and SwiftUI body recomputation.
+    var symbol: String { Self.resolvedSymbols[self] ?? fallbackSymbol }
+}
+
+enum MetricGlyphScale {
+    case micro
+    case compact
+    case card
+    case feature
+
+    fileprivate var frame: CGFloat {
+        switch self {
+        case .micro: return 16
+        case .compact: return 25
+        case .card: return 38
+        case .feature: return 48
+        }
+    }
+
+    fileprivate var symbol: CGFloat {
+        switch self {
+        case .micro: return 9.5
+        case .compact: return 13
+        case .card: return 18
+        case .feature: return 23
+        }
+    }
+}
+
+enum MetricGlyphStyle {
+    case plain
+    case tintedTile
+}
+
+/// Normalizes SF Symbols with very different native aspect ratios into one
+/// visual weight. The tile uses semantic color at low opacity, so the icon
+/// remains an accent and never competes with the metric value.
+struct MetricGlyph: View {
+    let systemName: String
+    let tint: Color
+    var scale: MetricGlyphScale = .compact
+    var style: MetricGlyphStyle = .tintedTile
+
+    @Environment(\.colorScheme) private var colorScheme
+    @ScaledMetric(relativeTo: .body) private var accessibilityScale: CGFloat = 1
+
+    init(
+        _ metric: BatteryMetricIcon,
+        tint: Color,
+        scale: MetricGlyphScale = .compact,
+        style: MetricGlyphStyle = .tintedTile
+    ) {
+        systemName = metric.symbol
+        self.tint = tint
+        self.scale = scale
+        self.style = style
+    }
+
+    init(
+        systemName: String,
+        tint: Color,
+        scale: MetricGlyphScale = .compact,
+        style: MetricGlyphStyle = .tintedTile
+    ) {
+        self.systemName = systemName
+        self.tint = tint
+        self.scale = scale
+        self.style = style
+    }
+
+    var body: some View {
+        let multiplier = min(max(accessibilityScale, 1), 1.24)
+        let dimension = scale.frame * multiplier
+        let symbolSize = scale.symbol * multiplier
+
+        ZStack {
+            if style == .tintedTile {
+                RoundedRectangle(cornerRadius: dimension * 0.29, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [tint.opacity(colorScheme == .dark ? 0.19 : 0.15),
+                                     tint.opacity(colorScheme == .dark ? 0.065 : 0.045)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: dimension * 0.29, style: .continuous)
+                            .stroke(tint.opacity(colorScheme == .dark ? 0.30 : 0.22), lineWidth: 0.8)
+                    )
+                    .shadow(color: tint.opacity(colorScheme == .dark ? 0.10 : 0.07), radius: 5, y: 2)
+            }
+
+            Image(systemName: systemName)
+                .font(.system(size: symbolSize, weight: .semibold))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(tint)
+                .frame(width: dimension, height: dimension)
+        }
+        .frame(width: dimension, height: dimension)
+        .accessibilityHidden(true)
+    }
+}
+
 // MARK: - Hover pointer (macOS 原生手感)
 extension View {
     func pointerOnHover() -> some View {
