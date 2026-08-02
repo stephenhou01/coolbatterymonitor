@@ -177,7 +177,7 @@ if phase2 {
     expect(l.string("app.title") == "IT-OVERRIDE-OK", "签名合法的 key 被保留: \(l.string("app.title"))")
     let bad = l.string("status.charging")
     expect(!bad.hasPrefix("ROTTO"), "签名非法的 status.charging 被丢弃")
-    expect(bad == "Charging at %.1fW · Adapter %dW", "并回落到 en: \(bad)")
+    expect(bad == "Carica %.1fW · Adattatore %dW", "并保留可信内置意大利语: \(bad)")
     // 真正的安全性验证：用 Double+Int 实参调用，若坏格式串没被拦会读错位模式
     let out = l.format("status.charging", [17.25, 65])
     expect(out.contains("17,2") && out.contains("65"), "带 Double 实参格式化安全，且数字仍按用户选的 it locale: \(out)")
