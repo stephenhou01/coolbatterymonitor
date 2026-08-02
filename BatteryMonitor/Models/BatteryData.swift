@@ -108,7 +108,8 @@ struct BatteryData: Equatable {
     /// 插电时也可展示的“按当前电脑状态拔电预计”；这是推导值，不是系统剩余时间。
     var unplugEstimateMinutes: Int? {
         guard let energy = remainingEnergyWh, currentPowerWatts > 0.5 else { return nil }
-        return max(0, Int((energy / currentPowerWatts * 60).rounded()))
+        let minutes = max(0, Int((energy / currentPowerWatts * 60).rounded()))
+        return RuntimeSample.isValid(minutes: minutes) ? minutes : nil
     }
 
     /// Apple官方网页续航隐含的平均测试功耗。

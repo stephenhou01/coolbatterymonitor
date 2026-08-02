@@ -10,7 +10,10 @@ struct RuntimeSample: Identifiable, Codable, Equatable, Sendable {
 
     var id: Date { timestamp }
 
-    static let validMinutes = 1...65_534
+    /// Product display range. Values above 24 hours are technically integers,
+    /// but are not credible laptop-runtime estimates and must not enter the UI
+    /// or persisted history.
+    static let validMinutes = 1...(24 * 60)
     static let minimumSamplingInterval: TimeInterval = 56
     static let recentUsageLookback: TimeInterval = 24 * 60 * 60
     static let maximumContinuousSampleGap: TimeInterval = 5 * 60

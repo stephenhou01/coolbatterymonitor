@@ -847,22 +847,54 @@ enum DashboardHelp {
         let systemMinutes = s.systemRuntimeMinutes
         let stableMinutes = s.stableRuntimeMinutes
         let currentMinutes = s.currentLoadRuntimeMinutes
-        let systemNote = s.data.isOnAC && s.systemRuntimeFallbackSample != nil
-            ? dashboardText("shell.apple_runtime_last_note", fallback: "接电状态下保留最近一次有效的 Apple 官方系统预估")
-            : (s.data.isOnAC
-               ? dashboardText("p.no_estimate_ac", fallback: "已连接电源，macOS 暂不估算放电剩余时间")
-            : (systemMinutes == nil
-               ? dashboardText("p.chart_waiting", fallback: "等待电量计给出续航预测")
-               : dashboardText("p.runtime_system_note", fallback: "直接读取 TimeRemaining；无效时回退 AvgTimeToEmpty")))
+        let referenceMinutes = currentMinutes ?? stableMinutes
+        let hasLiveSystemReading = !s.data.isOnAC
+            && s.data.timeRemainingMinutes.map(RuntimeSample.isValid(minutes:)) == true
+        let validFallbackSample = s.systemRuntimeFallbackSample.flatMap { sample in
+            RuntimeSample.isValid(minutes: sample.minutesRemaining) ? sample : nil
+        }
+        let systemReadTime = hasLiveSystemReading
+            ? s.data.lastUpdated
+            : validFallbackSample?.timestamp
+        let systemNote: String
+        if systemMinutes == nil, let referenceMinutes {
+            systemNote = dashboardText(
+                "p.runtime_system_unavailable_estimate",
+                fallback: "按实测功耗预计可用 {time} · 拔掉电源后约等 10 分钟再查看系统时间",
+                replacements: ["time": runtime(referenceMinutes)]
+            )
+        } else if systemMinutes == nil {
+            systemNote = dashboardText(
+                "p.runtime_system_unavailable_note",
+                fallback: "暂无可靠的系统时间 · 拔掉电源后约等 10 分钟再查看"
+            )
+        } else if let systemReadTime {
+            let key = hasLiveSystemReading
+                ? "p.runtime_system_read_live"
+                : "p.runtime_system_read_last"
+            let fallback = hasLiveSystemReading
+                ? "TimeRemaining / AvgTimeToEmpty · 读取于 {time} · 卡片每 10 秒检查一次；有效历史约每分钟记录一条"
+                : "TimeRemaining / AvgTimeToEmpty · 最近一次有效读取于 {time} · 卡片每 10 秒检查一次；有效历史约每分钟记录一条"
+            systemNote = dashboardText(
+                key,
+                fallback: fallback,
+                replacements: ["time": runtimeReadTimestamp(systemReadTime)]
+            )
+        } else {
+            systemNote = dashboardText("p.chart_waiting", fallback: "等待电量计给出续航预测")
+        }
+
+        let systemValue = systemMinutes.map(runtime)
+            ?? dashboardText("p.runtime_unavailable", fallback: "不可用")
 
         return content(
             id: "runtime.comparison",
             title: dashboardText("p.runtime_compare_title", fallback: "三种续航口径"),
             summary: dashboardText("p.runtime_compare_summary", fallback: "主结果以 macOS 系统时间为准；下面两项是同一份剩余电量分别按稳健功耗和当前功耗换算的参考值。"),
-            result: runtime(systemMinutes),
+            result: systemValue,
             fields: [
-                field("TimeRemaining", detail.timeRemainingRaw, "min"),
-                field("AvgTimeToEmpty", detail.avgTimeToEmpty, "min"),
+                runtimeRawField("TimeRemaining", detail.timeRemainingRaw),
+                runtimeRawField("AvgTimeToEmpty", detail.avgTimeToEmpty),
                 field("ModelDesignEnergy", f(s.designEnergyWh), "Wh"),
                 field("AppleRawCurrentCapacity", s.currentCapacity, "mAh"),
                 field("DesignCapacity", s.designCapacity, "mAh"),
@@ -872,13 +904,13 @@ enum DashboardHelp {
                 field("Derived.CurrentPowerSampleAge", s.currentPowerAgeSeconds, "s"),
             ],
             formula: "systemMinutes = valid(TimeRemaining) ?? valid(AvgTimeToEmpty) ?? latestPersistedSystemSample\nremainingWh = designWh × currentCapacity ÷ designCapacity\nstableMinutes = remainingWh ÷ median(last10mPower) × 60\ncurrentLoadMinutes = remainingWh ÷ currentSystemPower × 60",
-            substitution: "system: \(optional(detail.timeRemainingRaw)) / \(optional(detail.avgTimeToEmpty)) min; latest persisted \(optional(s.systemRuntimeFallbackSample?.minutesRemaining)) min → \(runtime(systemMinutes))\nremaining: \(f(s.designEnergyWh)) × \(s.currentCapacity) ÷ \(s.designCapacity) = \(f(s.remainingEnergyWh)) Wh\nstable: \(f(s.remainingEnergyWh)) ÷ \(f(s.stablePowerWatts)) × 60 = \(optional(stableMinutes)) min\ncurrent: \(f(s.remainingEnergyWh)) ÷ \(f(s.currentPowerWatts)) × 60 = \(optional(currentMinutes)) min",
+            substitution: "system: \(runtimeRawValue(detail.timeRemainingRaw)) / \(runtimeRawValue(detail.avgTimeToEmpty)); latest persisted \(runtimeRawValue(s.systemRuntimeFallbackSample?.minutesRemaining)) → \(systemValue)\nremaining: \(f(s.designEnergyWh)) × \(s.currentCapacity) ÷ \(s.designCapacity) = \(f(s.remainingEnergyWh)) Wh\nstable: \(f(s.remainingEnergyWh)) ÷ \(f(s.stablePowerWatts)) × 60 = \(optional(stableMinutes)) min\ncurrent: \(f(s.remainingEnergyWh)) ÷ \(f(s.currentPowerWatts)) × 60 = \(optional(currentMinutes)) min",
             source: dashboardText("p.runtime_compare_source", fallback: "macOS 系统时间来自 AppleSmartBattery；两项计算值由本机剩余能量和实测功耗推导，只作对照，不写入系统续航历史。"),
             results: [
                 MetricHelpResult(
                     id: "runtime.system",
                     title: dashboardText("p.runtime_system_label", fallback: "macOS 系统时间"),
-                    value: runtime(systemMinutes),
+                    value: systemValue,
                     note: systemNote,
                     style: .primary
                 ),
@@ -1505,6 +1537,29 @@ enum DashboardHelp {
         _ explanation: String = ""
     ) -> MetricRawField {
         MetricRawField(name: name, value: value.map { String($0) } ?? "—", unit: unit, explanation: explanation)
+    }
+
+    private static func runtimeRawField(_ name: String, _ value: Int?) -> MetricRawField {
+        field(name, runtimeRawValue(value))
+    }
+
+    /// The fuel gauge uses sentinel integers such as 65,535 to mean that no
+    /// estimate is available. Product UI hides that implementation value and
+    /// also rejects any runtime above the 24-hour display ceiling.
+    private static func runtimeRawValue(_ value: Int?) -> String {
+        guard let value else { return "—" }
+        guard RuntimeSample.isValid(minutes: value) else {
+            return dashboardText("p.runtime_raw_unavailable", fallback: "不可用")
+        }
+        return "\(value) min"
+    }
+
+    private static func runtimeReadTimestamp(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: L10n.shared.effectiveCode)
+        formatter.dateStyle = .short
+        formatter.timeStyle = .medium
+        return formatter.string(from: date)
     }
 
     private static func f(_ value: Double?) -> String {

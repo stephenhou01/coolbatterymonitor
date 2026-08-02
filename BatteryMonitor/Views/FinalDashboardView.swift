@@ -226,7 +226,8 @@ struct DashboardMetricSnapshot {
     }
     var unplugEstimateMinutes: Int? {
         guard let remainingEnergyWh, currentPowerWatts > 0.1 else { return nil }
-        return max(1, Int((remainingEnergyWh / currentPowerWatts * 60).rounded()))
+        let minutes = max(1, Int((remainingEnergyWh / currentPowerWatts * 60).rounded()))
+        return RuntimeSample.isValid(minutes: minutes) ? minutes : nil
     }
 
     /// Valid power readings from the most recent ten minutes. Requiring at
@@ -255,7 +256,8 @@ struct DashboardMetricSnapshot {
         guard let remainingEnergyWh,
               let stablePowerWatts,
               stablePowerWatts > 0.1 else { return nil }
-        return max(1, Int((remainingEnergyWh / stablePowerWatts * 60).rounded()))
+        let minutes = max(1, Int((remainingEnergyWh / stablePowerWatts * 60).rounded()))
+        return RuntimeSample.isValid(minutes: minutes) ? minutes : nil
     }
 
     var currentPowerAgeSeconds: Int {
@@ -273,7 +275,9 @@ struct DashboardMetricSnapshot {
            RuntimeSample.isValid(minutes: minutes) {
             return minutes
         }
-        return systemRuntimeFallbackSample?.minutesRemaining
+        guard let fallback = systemRuntimeFallbackSample,
+              RuntimeSample.isValid(minutes: fallback.minutesRemaining) else { return nil }
+        return fallback.minutesRemaining
     }
 
     var displayedRuntimeMinutes: Int? {

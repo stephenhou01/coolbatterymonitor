@@ -12,20 +12,9 @@ struct HealthDiagnosisCard: View {
         VStack(alignment: .leading, spacing: 14) {
             SectionLabel(key: "insight.section.health")
 
-            HStack(alignment: .top, spacing: 20) {
-                scoreRing
-                VStack(alignment: .leading, spacing: 5) {
-                    Text(L(diagnosis.level.labelKey))
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(levelColor)
-                        .tracking(0.5)
-                    Text(diagnosis.headline)
-                        .font(.system(size: 12.5))
-                        .foregroundStyle(AppTheme.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                Spacer(minLength: 8)
-                metaColumn
+            ViewThatFits(in: .horizontal) {
+                wideSummary
+                compactSummary
             }
 
             if showFactors {
@@ -56,6 +45,61 @@ struct HealthDiagnosisCard: View {
         .modifier(AppTheme.hoverLift(accent: levelColor))
     }
 
+    /// The two-column diagnostics page can make a card quite narrow. Keep a
+    /// comfortably readable middle column when space permits, then move the
+    /// metadata below the score instead of compressing Chinese text to one
+    /// character per line.
+    private var wideSummary: some View {
+        HStack(alignment: .top, spacing: 16) {
+            scoreRing
+            diagnosisSummary
+                .frame(minWidth: 110, maxWidth: .infinity, alignment: .leading)
+            metaColumn
+        }
+        .frame(minWidth: 430, maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var compactSummary: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top, spacing: 14) {
+                scoreRing
+                diagnosisSummary
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            Rectangle()
+                .fill(AppTheme.divider)
+                .frame(height: 1)
+
+            LazyVGrid(
+                columns: [GridItem(.flexible()), GridItem(.flexible())],
+                alignment: .leading,
+                spacing: 10
+            ) {
+                ForEach(metaSummaries) { summary in
+                    metaItem(summary, leading: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var diagnosisSummary: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(L(diagnosis.level.labelKey))
+                .font(.system(size: 15, weight: .bold))
+                .foregroundStyle(levelColor)
+                .tracking(0.5)
+                .lineLimit(1)
+            Text(diagnosis.headline)
+                .font(.system(size: 12.5))
+                .foregroundStyle(AppTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .layoutPriority(1)
+    }
+
     private var scoreRing: some View {
         ZStack {
             Circle().stroke(levelColor.opacity(0.15), lineWidth: 7)
@@ -70,23 +114,8 @@ struct HealthDiagnosisCard: View {
     /// 右侧四项摘要。剩余寿命刻意不给日历日期 —— 见 InsightEngine 顶部说明。
     private var metaColumn: some View {
         VStack(alignment: .trailing, spacing: 7) {
-            let life = diagnosis.remainingLife
-            if let m = life.estimatedMonths {
-                metaItem(L("insight.life.label"), L("insight.life.months", m / 12, m % 12))
-            } else if let c = life.remainingCycles {
-                metaItem(L("insight.life.label"), L("insight.life.remaining_cycles", c),
-                         hint: L("insight.life.observing", life.observedDays, life.daysNeeded))
-            }
-            if let age = diagnosis.age {
-                metaItem(L("insight.age.label"),
-                         L("insight.age.value", age.years, age.months) + " " + estimatedTag,
-                         help: L("insight.age.tip"))
-            }
-            if let cycles = diagnosis.factors.first(where: { $0.labelKey == "insight.factor.cycles" }) {
-                metaItem(L("insight.factor.cycles"), cycles.rawValue)
-            }
-            if let cap = diagnosis.factors.first(where: { $0.labelKey == "insight.factor.capacity" }) {
-                metaItem(L("insight.factor.capacity"), cap.consumerDetail)
+            ForEach(metaSummaries) { summary in
+                metaItem(summary)
             }
         }
         .fixedSize(horizontal: true, vertical: false)
@@ -94,23 +123,75 @@ struct HealthDiagnosisCard: View {
 
     private var estimatedTag: String { "(\(L("insight.estimated")))" }
 
-    private func metaItem(_ label: String, _ value: String,
-                          hint: String? = nil, help: String? = nil) -> some View {
-        VStack(alignment: .trailing, spacing: 1) {
-            Text(label)
+    private var metaSummaries: [HealthDiagnosisMetaSummary] {
+        var summaries: [HealthDiagnosisMetaSummary] = []
+        let life = diagnosis.remainingLife
+
+        if let months = life.estimatedMonths {
+            summaries.append(.init(
+                id: "life",
+                label: L("insight.life.label"),
+                value: L("insight.life.months", months / 12, months % 12)
+            ))
+        } else if let cycles = life.remainingCycles {
+            summaries.append(.init(
+                id: "life",
+                label: L("insight.life.label"),
+                value: L("insight.life.remaining_cycles", cycles),
+                hint: L("insight.life.observing", life.observedDays, life.daysNeeded)
+            ))
+        }
+        if let age = diagnosis.age {
+            summaries.append(.init(
+                id: "age",
+                label: L("insight.age.label"),
+                value: L("insight.age.value", age.years, age.months) + " " + estimatedTag,
+                help: L("insight.age.tip")
+            ))
+        }
+        if let cycles = diagnosis.factors.first(where: { $0.labelKey == "insight.factor.cycles" }) {
+            summaries.append(.init(
+                id: "cycles",
+                label: L("insight.factor.cycles"),
+                value: cycles.rawValue
+            ))
+        }
+        if let capacity = diagnosis.factors.first(where: { $0.labelKey == "insight.factor.capacity" }) {
+            summaries.append(.init(
+                id: "capacity",
+                label: L("insight.factor.capacity"),
+                value: capacity.consumerDetail
+            ))
+        }
+        return summaries
+    }
+
+    private func metaItem(_ summary: HealthDiagnosisMetaSummary,
+                          leading: Bool = false) -> some View {
+        VStack(alignment: leading ? .leading : .trailing, spacing: 1) {
+            Text(summary.label)
                 .font(.system(size: 9))
                 .foregroundStyle(AppTheme.textTertiary)
-            Text(value)
+            Text(summary.value)
                 .font(.system(size: 12.5, weight: .semibold, design: .rounded))
                 .foregroundStyle(AppTheme.textPrimary)
-            if let hint {
+            if let hint = summary.hint {
                 Text(hint)
                     .font(.system(size: 8.5))
                     .foregroundStyle(AppTheme.textTertiary.opacity(0.8))
             }
         }
-        .help(help ?? "")
+        .multilineTextAlignment(leading ? .leading : .trailing)
+        .help(summary.help ?? "")
     }
+}
+
+private struct HealthDiagnosisMetaSummary: Identifiable {
+    let id: String
+    let label: String
+    let value: String
+    var hint: String? = nil
+    var help: String? = nil
 }
 
 /// 评分环，入场时从 0 扫到目标比例。
