@@ -847,6 +847,16 @@
     "system.anomaly.cell_spread_attention": "Die Zellspannungsdifferenz liegt über 20 mV; den Verlauf auf diesem Mac weiter beobachten.",
     "system.anomaly.temperature_high": "Die Akkutemperatur liegt bei mindestens 45°C.",
     "system.anomaly.temperature_low": "Niedrige Temperaturen können die nutzbare Laufzeit vorübergehend verkürzen.",
-    "system.anomaly.diagnostic_nonzero": "Ein Diagnosezähler oder Ursachencode ist ungleich null; mit Verlauf und verwandten Messwerten prüfen."
+    "system.anomaly.diagnostic_nonzero": "Ein Diagnosezähler oder Ursachencode ist ungleich null; mit Verlauf und verwandten Messwerten prüfen.",
+    "shell.runtime_comparison": "Laufzeitvergleich",
+    "shell.instant_runtime": "Schätzung mit Momentanleistung",
+    "shell.instant_runtime_note": "Berechnet bei gleichbleibender Momentanleistung von {power} W",
+    "shell.instant_runtime_waiting": "Warten auf gültige Momentanleistungsdaten",
+    "shell.apple_runtime": "Apple-Systemzeit",
+    "shell.apple_runtime_unavailable": "Apple-Systemschätzung · nach Akkubetrieb verfügbar",
+    "shell.apple_runtime_collecting": "Apple-Systemschätzung · tatsächliche Akkunutzung der letzten 24 Stunden wird erfasst",
+    "shell.apple_runtime_recent": "Apple-Systemschätzung · ca. {hours} Std. tatsächliche Akkunutzung in den letzten 24 Std.",
+    "shell.apple_runtime_recent_last": "Letzte Apple-Systemschätzung · ca. {hours} Std. tatsächliche Akkunutzung in den letzten 24 Std.",
+    "shell.apple_runtime_last_note": "Bei Netzbetrieb bleibt die letzte gültige Apple-Systemschätzung erhalten"
   }
 }

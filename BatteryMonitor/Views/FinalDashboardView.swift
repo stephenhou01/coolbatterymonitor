@@ -108,6 +108,10 @@ struct FinalDashboardView: View {
 struct DashboardMetricSnapshot {
     let data: BatteryData
     let realtimeData: [RealtimeDataPoint]
+    /// The latest persisted Apple system estimate. Overview uses this while on
+    /// AC because the live gauge returns 65535 there; derived power estimates
+    /// are never written into this fallback.
+    var systemRuntimeFallbackSample: RuntimeSample? = nil
 
     var detail: BatteryHardwareDetail { data.hardwareDetail }
     var modelIdentifier: String {
@@ -261,6 +265,15 @@ struct DashboardMetricSnapshot {
     var currentLoadRuntimeMinutes: Int? {
         guard currentPowerAgeSeconds <= 120 else { return nil }
         return unplugEstimateMinutes
+    }
+
+    var systemRuntimeMinutes: Int? {
+        if !data.isOnAC,
+           let minutes = data.timeRemainingMinutes,
+           RuntimeSample.isValid(minutes: minutes) {
+            return minutes
+        }
+        return systemRuntimeFallbackSample?.minutesRemaining
     }
 
     var displayedRuntimeMinutes: Int? {

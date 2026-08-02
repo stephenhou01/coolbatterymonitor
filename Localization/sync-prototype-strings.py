@@ -29,6 +29,65 @@ APP_EXTRA = {
         "en": "Quit BatteryMonitor completely",
         "ja": "BatteryMonitor を完全に終了", "de": "BatteryMonitor vollständig beenden"
     },
+    "shell.runtime_comparison": {
+        "zh-Hans": "续航时间对照", "zh-Hant": "續航時間對照", "en": "Runtime comparison",
+        "ja": "駆動時間の比較", "de": "Laufzeitvergleich"
+    },
+    "shell.instant_runtime": {
+        "zh-Hans": "瞬时功率预计", "zh-Hant": "即時功率預估", "en": "Instant-power estimate",
+        "ja": "瞬時電力による予測", "de": "Schätzung mit Momentanleistung"
+    },
+    "shell.instant_runtime_note": {
+        "zh-Hans": "按当前 {power} W 瞬时功率持续计算",
+        "zh-Hant": "依目前 {power} W 即時功率持續計算",
+        "en": "Assumes the current {power} W instant power continues",
+        "ja": "現在の瞬時電力 {power} W が続くとして計算",
+        "de": "Berechnet bei gleichbleibender Momentanleistung von {power} W"
+    },
+    "shell.instant_runtime_waiting": {
+        "zh-Hans": "等待有效的瞬时功率数据", "zh-Hant": "等待有效的即時功率資料",
+        "en": "Waiting for valid instant-power data", "ja": "有効な瞬時電力データを待機中",
+        "de": "Warten auf gültige Momentanleistungsdaten"
+    },
+    "shell.apple_runtime": {
+        "zh-Hans": "Apple 系统读取时间", "zh-Hant": "Apple 系統讀取時間",
+        "en": "Apple system time", "ja": "Apple システムの時間", "de": "Apple-Systemzeit"
+    },
+    "shell.apple_runtime_unavailable": {
+        "zh-Hans": "Apple 官方系统预估 · 拔电使用后生成",
+        "zh-Hant": "Apple 官方系統預估 · 拔電使用後產生",
+        "en": "Apple system estimate · available after battery use",
+        "ja": "Apple システム予測・バッテリー使用後に表示",
+        "de": "Apple-Systemschätzung · nach Akkubetrieb verfügbar"
+    },
+    "shell.apple_runtime_collecting": {
+        "zh-Hans": "Apple 官方系统预估 · 正在积累近 24 小时实际电池使用",
+        "zh-Hant": "Apple 官方系統預估 · 正在累積近 24 小時實際電池使用",
+        "en": "Apple system estimate · collecting actual battery use from the last 24 hours",
+        "ja": "Apple システム予測・直近24時間の実使用を記録中",
+        "de": "Apple-Systemschätzung · tatsächliche Akkunutzung der letzten 24 Stunden wird erfasst"
+    },
+    "shell.apple_runtime_last_note": {
+        "zh-Hans": "接电状态下保留最近一次有效的 Apple 官方系统预估",
+        "zh-Hant": "接電狀態下保留最近一次有效的 Apple 官方系統預估",
+        "en": "Keeps the latest valid Apple system estimate while connected to power",
+        "ja": "電源接続中は直近の有効な Apple システム予測を保持",
+        "de": "Bei Netzbetrieb bleibt die letzte gültige Apple-Systemschätzung erhalten"
+    },
+    "shell.apple_runtime_recent": {
+        "zh-Hans": "Apple 官方系统预估 · 近 24 小时记录约 {hours} 小时实际电池使用",
+        "zh-Hant": "Apple 官方系統預估 · 近 24 小時記錄約 {hours} 小時實際電池使用",
+        "en": "Apple system estimate · about {hours} hours of actual battery use recorded in the last 24 hours",
+        "ja": "Apple システム予測・直近24時間に約 {hours} 時間の実使用を記録",
+        "de": "Apple-Systemschätzung · ca. {hours} Std. tatsächliche Akkunutzung in den letzten 24 Std."
+    },
+    "shell.apple_runtime_recent_last": {
+        "zh-Hans": "最近一次 Apple 官方系统预估 · 近 24 小时记录约 {hours} 小时实际电池使用",
+        "zh-Hant": "最近一次 Apple 官方系統預估 · 近 24 小時記錄約 {hours} 小時實際電池使用",
+        "en": "Latest Apple system estimate · about {hours} hours of actual battery use recorded in the last 24 hours",
+        "ja": "直近の Apple システム予測・直近24時間に約 {hours} 時間の実使用を記録",
+        "de": "Letzte Apple-Systemschätzung · ca. {hours} Std. tatsächliche Akkunutzung in den letzten 24 Std."
+    },
     "appearance.system": {
         "zh-Hans": "跟随系统", "zh-Hant": "跟隨系統", "en": "System",
         "ja": "システム設定に従う", "de": "Systemeinstellung"

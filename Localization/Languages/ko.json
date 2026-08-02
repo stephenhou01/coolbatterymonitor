@@ -847,6 +847,16 @@
     "system.anomaly.cell_spread_attention": "셀 전압 차이가 20 mV를 넘었습니다. 이 Mac의 추세를 계속 관찰하세요.",
     "system.anomaly.temperature_high": "배터리 온도가 45°C 이상입니다.",
     "system.anomaly.temperature_low": "낮은 온도에서는 사용 시간이 일시적으로 줄어들 수 있습니다.",
-    "system.anomaly.diagnostic_nonzero": "진단 횟수 또는 원인 코드가 0이 아닙니다. 기록과 관련 지표를 함께 확인하세요."
+    "system.anomaly.diagnostic_nonzero": "진단 횟수 또는 원인 코드가 0이 아닙니다. 기록과 관련 지표를 함께 확인하세요.",
+    "shell.runtime_comparison": "Runtime comparison",
+    "shell.instant_runtime": "Instant-power estimate",
+    "shell.instant_runtime_note": "Assumes the current {power} W instant power continues",
+    "shell.instant_runtime_waiting": "Waiting for valid instant-power data",
+    "shell.apple_runtime": "Apple system time",
+    "shell.apple_runtime_unavailable": "Apple system estimate · available after battery use",
+    "shell.apple_runtime_collecting": "Apple system estimate · collecting actual battery use from the last 24 hours",
+    "shell.apple_runtime_recent": "Apple system estimate · about {hours} hours of actual battery use recorded in the last 24 hours",
+    "shell.apple_runtime_recent_last": "Latest Apple system estimate · about {hours} hours of actual battery use recorded in the last 24 hours",
+    "shell.apple_runtime_last_note": "Keeps the latest valid Apple system estimate while connected to power"
   }
 }

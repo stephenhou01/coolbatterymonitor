@@ -429,6 +429,17 @@ let pluggedHelp = DashboardHelp.runtime(
 expect(pluggedHelp.comparisonResults.first?.value == "—"
        && pluggedHelp.comparisonResults.dropFirst().allSatisfy { $0.value != "—" },
        "插电时系统时间明确不可用，但两项拔电计算值仍可对照")
+let pluggedHelpWithSystemHistory = DashboardHelp.runtime(
+    DashboardMetricSnapshot(
+        data: pluggedRuntimeData,
+        realtimeData: stablePoints,
+        systemRuntimeFallbackSample: RuntimeSample(
+            timestamp: Date(), minutesRemaining: 192, percent: pluggedRuntimeData.percent
+        )
+    )
+)
+expect(pluggedHelpWithSystemHistory.comparisonResults.first?.value == "3 h 12 m",
+       "插电时续航说明保留最近一次有效的Apple系统时间")
 
 // MARK: - 10.1) 四层系统数据的类型与异常规则
 
@@ -702,6 +713,20 @@ expect(RuntimeSample.isValid(minutes: 1) && RuntimeSample.isValid(minutes: 65_53
 expect(RuntimeSample.shouldAppend(r0, after: nil), "首个有效样本可写入")
 expect(!RuntimeSample.shouldAppend(r55, after: r0), "55秒不重复写入")
 expect(RuntimeSample.shouldAppend(r56, after: r0), "满56秒才写入下一点")
+let usageNow = t0.addingTimeInterval(70 * 60)
+let usageSamples = [
+    RuntimeSample(timestamp: usageNow.addingTimeInterval(-70 * 60), minutesRemaining: 180, percent: 80),
+    RuntimeSample(timestamp: usageNow.addingTimeInterval(-69 * 60), minutesRemaining: 179, percent: 80),
+    RuntimeSample(timestamp: usageNow.addingTimeInterval(-60 * 60), minutesRemaining: 170, percent: 76),
+    RuntimeSample(timestamp: usageNow.addingTimeInterval(-59 * 60), minutesRemaining: 169, percent: 76),
+    RuntimeSample(timestamp: usageNow.addingTimeInterval(-58 * 60), minutesRemaining: 168, percent: 75),
+]
+expect(RuntimeSample.observedUsageDuration(in: usageSamples, now: usageNow) == 3 * 60,
+       "实际使用时长只累计连续采样区间，不把9分钟空档算作电池使用")
+expect(RuntimeSample.observedUsageDuration(
+    in: usageSamples,
+    now: usageNow.addingTimeInterval(25 * 60 * 60)
+) == 0, "近24小时之外的旧系统读数不计入近期实际使用")
 expect(SOCHistory.fullHoldSamplesPerEvent == 32,
        "56秒采样下约32个满充样本对应30分钟")
 if let encoded = try? JSONEncoder().encode([r0, r56]),

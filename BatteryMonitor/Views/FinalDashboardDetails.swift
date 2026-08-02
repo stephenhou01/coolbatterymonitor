@@ -844,14 +844,16 @@ private struct ExplanationCard: View {
 enum DashboardHelp {
     static func runtime(_ s: DashboardMetricSnapshot) -> MetricHelpContent {
         let detail = s.detail
-        let systemMinutes = s.data.isOnAC ? nil : s.data.timeRemainingMinutes
+        let systemMinutes = s.systemRuntimeMinutes
         let stableMinutes = s.stableRuntimeMinutes
         let currentMinutes = s.currentLoadRuntimeMinutes
-        let systemNote = s.data.isOnAC
-            ? dashboardText("p.no_estimate_ac", fallback: "已连接电源，macOS 暂不估算放电剩余时间")
+        let systemNote = s.data.isOnAC && s.systemRuntimeFallbackSample != nil
+            ? dashboardText("shell.apple_runtime_last_note", fallback: "接电状态下保留最近一次有效的 Apple 官方系统预估")
+            : (s.data.isOnAC
+               ? dashboardText("p.no_estimate_ac", fallback: "已连接电源，macOS 暂不估算放电剩余时间")
             : (systemMinutes == nil
                ? dashboardText("p.chart_waiting", fallback: "等待电量计给出续航预测")
-               : dashboardText("p.runtime_system_note", fallback: "直接读取 TimeRemaining；无效时回退 AvgTimeToEmpty"))
+               : dashboardText("p.runtime_system_note", fallback: "直接读取 TimeRemaining；无效时回退 AvgTimeToEmpty")))
 
         return content(
             id: "runtime.comparison",
@@ -869,8 +871,8 @@ enum DashboardHelp {
                 field("BatteryData.SystemPower", f(s.currentPowerWatts), "W"),
                 field("Derived.CurrentPowerSampleAge", s.currentPowerAgeSeconds, "s"),
             ],
-            formula: "systemMinutes = valid(TimeRemaining) ?? valid(AvgTimeToEmpty)\nremainingWh = designWh × currentCapacity ÷ designCapacity\nstableMinutes = remainingWh ÷ median(last10mPower) × 60\ncurrentLoadMinutes = remainingWh ÷ currentSystemPower × 60",
-            substitution: "system: \(optional(detail.timeRemainingRaw)) / \(optional(detail.avgTimeToEmpty)) min → \(runtime(systemMinutes))\nremaining: \(f(s.designEnergyWh)) × \(s.currentCapacity) ÷ \(s.designCapacity) = \(f(s.remainingEnergyWh)) Wh\nstable: \(f(s.remainingEnergyWh)) ÷ \(f(s.stablePowerWatts)) × 60 = \(optional(stableMinutes)) min\ncurrent: \(f(s.remainingEnergyWh)) ÷ \(f(s.currentPowerWatts)) × 60 = \(optional(currentMinutes)) min",
+            formula: "systemMinutes = valid(TimeRemaining) ?? valid(AvgTimeToEmpty) ?? latestPersistedSystemSample\nremainingWh = designWh × currentCapacity ÷ designCapacity\nstableMinutes = remainingWh ÷ median(last10mPower) × 60\ncurrentLoadMinutes = remainingWh ÷ currentSystemPower × 60",
+            substitution: "system: \(optional(detail.timeRemainingRaw)) / \(optional(detail.avgTimeToEmpty)) min; latest persisted \(optional(s.systemRuntimeFallbackSample?.minutesRemaining)) min → \(runtime(systemMinutes))\nremaining: \(f(s.designEnergyWh)) × \(s.currentCapacity) ÷ \(s.designCapacity) = \(f(s.remainingEnergyWh)) Wh\nstable: \(f(s.remainingEnergyWh)) ÷ \(f(s.stablePowerWatts)) × 60 = \(optional(stableMinutes)) min\ncurrent: \(f(s.remainingEnergyWh)) ÷ \(f(s.currentPowerWatts)) × 60 = \(optional(currentMinutes)) min",
             source: dashboardText("p.runtime_compare_source", fallback: "macOS 系统时间来自 AppleSmartBattery；两项计算值由本机剩余能量和实测功耗推导，只作对照，不写入系统续航历史。"),
             results: [
                 MetricHelpResult(

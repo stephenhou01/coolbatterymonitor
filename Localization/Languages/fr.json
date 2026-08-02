@@ -847,6 +847,16 @@
     "system.anomaly.cell_spread_attention": "L’écart de tension entre cellules dépasse 20 mV ; continuez à observer la tendance sur ce Mac.",
     "system.anomaly.temperature_high": "La température de la batterie est supérieure ou égale à 45°C.",
     "system.anomaly.temperature_low": "Une température basse peut réduire temporairement l’autonomie disponible.",
-    "system.anomaly.diagnostic_nonzero": "Un compteur de diagnostic ou un code de motif est non nul ; vérifiez-le avec l’historique et les indicateurs associés."
+    "system.anomaly.diagnostic_nonzero": "Un compteur de diagnostic ou un code de motif est non nul ; vérifiez-le avec l’historique et les indicateurs associés.",
+    "shell.runtime_comparison": "Runtime comparison",
+    "shell.instant_runtime": "Instant-power estimate",
+    "shell.instant_runtime_note": "Assumes the current {power} W instant power continues",
+    "shell.instant_runtime_waiting": "Waiting for valid instant-power data",
+    "shell.apple_runtime": "Apple system time",
+    "shell.apple_runtime_unavailable": "Apple system estimate · available after battery use",
+    "shell.apple_runtime_collecting": "Apple system estimate · collecting actual battery use from the last 24 hours",
+    "shell.apple_runtime_recent": "Apple system estimate · about {hours} hours of actual battery use recorded in the last 24 hours",
+    "shell.apple_runtime_recent_last": "Latest Apple system estimate · about {hours} hours of actual battery use recorded in the last 24 hours",
+    "shell.apple_runtime_last_note": "Keeps the latest valid Apple system estimate while connected to power"
   }
 }

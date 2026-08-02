@@ -233,9 +233,26 @@ struct DashboardOverviewPage: View {
 
     private var data: BatteryData { batteryService.batteryData }
     private var snapshot: DashboardMetricSnapshot {
-        DashboardMetricSnapshot(data: data, realtimeData: batteryService.realtimeData)
+        DashboardMetricSnapshot(
+            data: data,
+            realtimeData: batteryService.realtimeData,
+            systemRuntimeFallbackSample: batteryService.runtimeSamples.last
+        )
     }
     private var presentation: MenuBarPresentation { .init(data: data) }
+    private var currentLoadRuntimeMinutes: Int? { snapshot.currentLoadRuntimeMinutes }
+    private var latestSystemRuntimeSample: RuntimeSample? {
+        if let minutes = data.timeRemainingMinutes,
+           RuntimeSample.isValid(minutes: minutes) {
+            return RuntimeSample(timestamp: data.lastUpdated,
+                                 minutesRemaining: minutes,
+                                 percent: data.percent)
+        }
+        return batteryService.runtimeSamples.last
+    }
+    private var observedBatteryUsageHours: Double {
+        RuntimeSample.observedUsageDuration(in: batteryService.runtimeSamples) / 3600
+    }
 
     var body: some View {
         ScrollView {
@@ -269,39 +286,38 @@ struct DashboardOverviewPage: View {
 
     private var overviewHero: some View {
         HStack(spacing: 24) {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 14) {
                 Text(presentation.percentText)
                     .font(.system(size: 68, weight: .light, design: .rounded))
                     .foregroundStyle(AppTheme.textPrimary)
                     .monospacedDigit()
 
-                Text(data.isOnAC
-                     ? dashboardText("p.menu_unplug", fallback: "拔电后预计")
-                     : dashboardText("p.menu_time", fallback: "预计还能使用"))
-                    .font(.system(size: 13))
-                    .foregroundStyle(AppTheme.textSecondary)
-
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Text(presentation.runtimeText)
-                        .font(.system(size: 37, weight: .medium, design: .rounded))
-                        .foregroundStyle(AppTheme.chargingBlue)
-                        .monospacedDigit()
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.72)
+                HStack(spacing: 7) {
+                    Text(dashboardText("shell.runtime_comparison", fallback: "续航时间对照"))
+                        .font(.system(size: 12.5, weight: .semibold))
+                        .foregroundStyle(AppTheme.textSecondary)
                     MetricHelpButton(content: DashboardHelp.runtime(snapshot),
                                      selection: $selectedHelp)
                 }
 
-                HStack(spacing: 8) {
-                    MetricGlyph(data.isOnAC ? .charging : .power,
-                                tint: data.isOnAC ? AppTheme.batteryYellow : AppTheme.chargingBlue,
-                                scale: .micro,
-                                style: .plain)
-                    Text(presentation.sourceText)
+                VStack(spacing: 9) {
+                    runtimeEstimateRow(
+                        icon: "bolt.fill",
+                        title: dashboardText("shell.instant_runtime", fallback: "瞬时功率预计"),
+                        minutes: currentLoadRuntimeMinutes,
+                        note: instantRuntimeNote,
+                        color: AppTheme.chargingBlue
+                    )
+                    runtimeEstimateRow(
+                        icon: "apple.logo",
+                        title: dashboardText("shell.apple_runtime", fallback: "Apple 系统读取时间"),
+                        minutes: latestSystemRuntimeSample?.minutesRemaining,
+                        note: appleRuntimeNote,
+                        color: AppTheme.chargingCyan
+                    )
                 }
-                .font(.system(size: 10.5))
-                .foregroundStyle(data.isOnAC ? AppTheme.batteryYellow : AppTheme.chargingBlue)
             }
+            .frame(maxWidth: 540, alignment: .leading)
 
             Spacer(minLength: 24)
 
@@ -323,6 +339,79 @@ struct DashboardOverviewPage: View {
         .background(RoundedRectangle(cornerRadius: 16).fill(AppTheme.cardBackground))
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(AppTheme.cardBorder))
         .shadow(color: Color.black.opacity(0.10), radius: 22, y: 8)
+    }
+
+    private var instantRuntimeNote: String {
+        guard currentLoadRuntimeMinutes != nil else {
+            return dashboardText("shell.instant_runtime_waiting", fallback: "等待有效的瞬时功率数据")
+        }
+        return dashboardText(
+            "shell.instant_runtime_note",
+            fallback: "按当前 {power} W 瞬时功率持续计算",
+            replacements: ["power": LNum("%.1f", snapshot.currentPowerWatts)]
+        )
+    }
+
+    private var appleRuntimeNote: String {
+        guard latestSystemRuntimeSample != nil else {
+            return dashboardText("shell.apple_runtime_unavailable", fallback: "Apple 官方系统预估 · 拔电使用后生成")
+        }
+        guard observedBatteryUsageHours >= 0.1 else {
+            return dashboardText("shell.apple_runtime_collecting", fallback: "Apple 官方系统预估 · 正在积累近 24 小时实际电池使用")
+        }
+        let key = data.timeRemainingMinutes == nil
+            ? "shell.apple_runtime_recent_last"
+            : "shell.apple_runtime_recent"
+        let fallback = data.timeRemainingMinutes == nil
+            ? "最近一次 Apple 官方系统预估 · 近 24 小时记录约 {hours} 小时实际电池使用"
+            : "Apple 官方系统预估 · 近 24 小时记录约 {hours} 小时实际电池使用"
+        return dashboardText(
+            key,
+            fallback: fallback,
+            replacements: ["hours": LNum("%.1f", observedBatteryUsageHours)]
+        )
+    }
+
+    private func runtimeEstimateRow(
+        icon: String,
+        title: String,
+        minutes: Int?,
+        note: String,
+        color: Color
+    ) -> some View {
+        HStack(alignment: .center, spacing: 11) {
+            Image(systemName: icon)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(color)
+                .frame(width: 28, height: 28)
+                .background(RoundedRectangle(cornerRadius: 8).fill(color.opacity(0.09)))
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(AppTheme.textPrimary)
+                Text(note)
+                    .font(.system(size: 9.5))
+                    .foregroundStyle(AppTheme.textTertiary)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 12)
+
+            Text(MenuBarPresentation.durationText(minutes))
+                .font(.system(size: 25, weight: .medium, design: .rounded))
+                .foregroundStyle(color)
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .frame(maxWidth: .infinity, minHeight: 58)
+        .background(RoundedRectangle(cornerRadius: 11).fill(AppTheme.contrastOverlay(0.025)))
+        .overlay(RoundedRectangle(cornerRadius: 11).stroke(AppTheme.cardBorder))
+        .accessibilityElement(children: .combine)
     }
 
     private var batterySymbol: String {

@@ -847,6 +847,16 @@
     "system.anomaly.cell_spread_attention": "セル電圧差が 20 mV を超えています。この Mac で傾向を観察してください。",
     "system.anomaly.temperature_high": "バッテリー温度が 45°C 以上です。",
     "system.anomaly.temperature_low": "低温では使用可能時間が一時的に短くなることがあります。",
-    "system.anomaly.diagnostic_nonzero": "診断カウントまたは理由コードがゼロ以外です。履歴と関連指標を合わせて確認してください。"
+    "system.anomaly.diagnostic_nonzero": "診断カウントまたは理由コードがゼロ以外です。履歴と関連指標を合わせて確認してください。",
+    "shell.runtime_comparison": "駆動時間の比較",
+    "shell.instant_runtime": "瞬時電力による予測",
+    "shell.instant_runtime_note": "現在の瞬時電力 {power} W が続くとして計算",
+    "shell.instant_runtime_waiting": "有効な瞬時電力データを待機中",
+    "shell.apple_runtime": "Apple システムの時間",
+    "shell.apple_runtime_unavailable": "Apple システム予測・バッテリー使用後に表示",
+    "shell.apple_runtime_collecting": "Apple システム予測・直近24時間の実使用を記録中",
+    "shell.apple_runtime_recent": "Apple システム予測・直近24時間に約 {hours} 時間の実使用を記録",
+    "shell.apple_runtime_recent_last": "直近の Apple システム予測・直近24時間に約 {hours} 時間の実使用を記録",
+    "shell.apple_runtime_last_note": "電源接続中は直近の有効な Apple システム予測を保持"
   }
 }

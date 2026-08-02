@@ -31,7 +31,9 @@ struct OverviewMetricSnapshotHarness {
         appearance.select(mode)
 
         let batteryService = BatteryService()
-        batteryService.refreshNow()
+        // Load the persisted system-runtime samples as the real dashboard does,
+        // so plugged-in snapshots verify the latest Apple estimate fallback.
+        batteryService.startMonitoring()
         let snapshot = DashboardMetricSnapshot(
             data: batteryService.batteryData,
             realtimeData: batteryService.realtimeData

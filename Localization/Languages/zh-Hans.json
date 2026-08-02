@@ -847,6 +847,16 @@
     "system.anomaly.cell_spread_attention": "电芯压差超过 20 mV，建议继续观察同机趋势。",
     "system.anomaly.temperature_high": "电池温度达到 45°C 以上。",
     "system.anomaly.temperature_low": "低温会暂时压缩可用续航。",
-    "system.anomaly.diagnostic_nonzero": "诊断计数或原因码非零，建议结合历史与其他指标复核。"
+    "system.anomaly.diagnostic_nonzero": "诊断计数或原因码非零，建议结合历史与其他指标复核。",
+    "shell.runtime_comparison": "续航时间对照",
+    "shell.instant_runtime": "瞬时功率预计",
+    "shell.instant_runtime_note": "按当前 {power} W 瞬时功率持续计算",
+    "shell.instant_runtime_waiting": "等待有效的瞬时功率数据",
+    "shell.apple_runtime": "Apple 系统读取时间",
+    "shell.apple_runtime_unavailable": "Apple 官方系统预估 · 拔电使用后生成",
+    "shell.apple_runtime_collecting": "Apple 官方系统预估 · 正在积累近 24 小时实际电池使用",
+    "shell.apple_runtime_recent": "Apple 官方系统预估 · 近 24 小时记录约 {hours} 小时实际电池使用",
+    "shell.apple_runtime_recent_last": "最近一次 Apple 官方系统预估 · 近 24 小时记录约 {hours} 小时实际电池使用",
+    "shell.apple_runtime_last_note": "接电状态下保留最近一次有效的 Apple 官方系统预估"
   }
 }
