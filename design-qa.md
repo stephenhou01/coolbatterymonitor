@@ -26,7 +26,7 @@
 ## Patches made since the previous QA pass
 
 - Replaced the single runtime result block with one primary system card and two derived comparison cards.
-- Added a ten-minute median-power calculation with a minimum of three valid samples.
+- Added a ten-minute median-power calculation with a minimum of five valid samples, plus a 120-second freshness limit for the current-load estimate.
 - Added raw fields, formulas, substituted values, and trust-boundary copy for all three time values.
 - Added native copy for all ten supported languages and deterministic runtime-help snapshot coverage.
 

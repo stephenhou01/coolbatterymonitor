@@ -281,7 +281,7 @@ runtimeData.timeRemainingMinutes = 155
 runtimeData.hardwareDetail.timeRemainingRaw = 155
 runtimeData.hardwareDetail.avgTimeToEmpty = 160
 let runtimeSampleEnd = Date()
-let stablePowers = [10.0, 12.0, 14.0, 40.0]
+let stablePowers = [10.0, 12.0, 13.0, 14.0, 40.0]
 let stablePoints = [
     RealtimeDataPoint(timestamp: runtimeSampleEnd.addingTimeInterval(-700),
                       voltage: 12.3, amperage: -800, power: 1,
@@ -292,7 +292,7 @@ let stablePoints = [
                       temperature: 30, percent: 72)
 }
 let runtimeSnapshot = DashboardMetricSnapshot(data: runtimeData, realtimeData: stablePoints)
-expect(runtimeSnapshot.recentStablePowerSamples.count == 4,
+expect(runtimeSnapshot.recentStablePowerSamples.count == 5,
        "稳健估算只采用最近10分钟的有效功耗样本")
 expect(abs((runtimeSnapshot.stablePowerWatts ?? 0) - 13) < 0.001,
        "稳健功耗使用中位数，瞬时高负载不会拉偏")
@@ -309,10 +309,19 @@ expect(runtimeHelp.comparisonResults.first?.value == "2 h 35 m",
 
 let insufficientSnapshot = DashboardMetricSnapshot(
     data: runtimeData,
-    realtimeData: Array(stablePoints.suffix(2))
+    realtimeData: Array(stablePoints.suffix(4))
 )
 expect(insufficientSnapshot.stableRuntimeMinutes == nil,
-       "不足3个样本时不把瞬时读数包装成稳健估算")
+       "不足5个样本时不把瞬时读数包装成稳健估算")
+
+var staleRuntimeData = runtimeData
+staleRuntimeData.lastUpdated = Date().addingTimeInterval(-121)
+let staleRuntimeSnapshot = DashboardMetricSnapshot(
+    data: staleRuntimeData,
+    realtimeData: stablePoints
+)
+expect(staleRuntimeSnapshot.currentLoadRuntimeMinutes == nil,
+       "当前功耗样本超过120秒时停止当前负载预测")
 
 var pluggedRuntimeData = runtimeData
 pluggedRuntimeData.isOnAC = true

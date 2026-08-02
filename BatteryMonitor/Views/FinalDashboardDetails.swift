@@ -867,6 +867,7 @@ enum DashboardHelp {
                 field("Derived.Recent10mMedianPower", f(s.stablePowerWatts), "W"),
                 field("Derived.Recent10mValidSamples", s.recentStablePowerSamples.count),
                 field("BatteryData.SystemPower", f(s.currentPowerWatts), "W"),
+                field("Derived.CurrentPowerSampleAge", s.currentPowerAgeSeconds, "s"),
             ],
             formula: "systemMinutes = valid(TimeRemaining) ?? valid(AvgTimeToEmpty)\nremainingWh = designWh × currentCapacity ÷ designCapacity\nstableMinutes = remainingWh ÷ median(last10mPower) × 60\ncurrentLoadMinutes = remainingWh ÷ currentSystemPower × 60",
             substitution: "system: \(optional(detail.timeRemainingRaw)) / \(optional(detail.avgTimeToEmpty)) min → \(runtime(systemMinutes))\nremaining: \(f(s.designEnergyWh)) × \(s.currentCapacity) ÷ \(s.designCapacity) = \(f(s.remainingEnergyWh)) Wh\nstable: \(f(s.remainingEnergyWh)) ÷ \(f(s.stablePowerWatts)) × 60 = \(optional(stableMinutes)) min\ncurrent: \(f(s.remainingEnergyWh)) ÷ \(f(s.currentPowerWatts)) × 60 = \(optional(currentMinutes)) min",
@@ -883,14 +884,14 @@ enum DashboardHelp {
                     id: "runtime.stable",
                     title: dashboardText("p.runtime_stable_label", fallback: "稳健估算"),
                     value: runtime(stableMinutes),
-                    note: dashboardText("p.runtime_stable_note", fallback: "最近 10 分钟功耗中位数；至少 3 个有效样本"),
+                    note: dashboardText("p.runtime_stable_note", fallback: "最近 10 分钟功耗中位数；至少 5 个有效样本"),
                     style: .stable
                 ),
                 MetricHelpResult(
                     id: "runtime.current-load",
                     title: dashboardText("p.runtime_current_label", fallback: "当前负载估算"),
                     value: runtime(currentMinutes),
-                    note: dashboardText("p.runtime_current_note", fallback: "假设此刻功耗保持不变；最灵敏，也最容易波动"),
+                    note: dashboardText("p.runtime_current_note", fallback: "假设此刻功耗保持不变；样本超过 120 秒就等待新数据"),
                     style: .current
                 ),
             ]
