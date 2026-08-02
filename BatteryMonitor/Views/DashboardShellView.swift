@@ -335,7 +335,18 @@ struct DashboardOverviewPage: View {
     }
 
     private var metricRail: some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 0), count: 6), spacing: 0) {
+        ViewThatFits(in: .horizontal) {
+            metricGrid(columnCount: 7)
+                .frame(minWidth: 760)
+            metricGrid(columnCount: 4)
+        }
+        .padding(.vertical, 18)
+        .background(RoundedRectangle(cornerRadius: 15).fill(AppTheme.cardBackground))
+        .overlay(RoundedRectangle(cornerRadius: 15).stroke(AppTheme.cardBorder))
+    }
+
+    private func metricGrid(columnCount: Int) -> some View {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 0), count: columnCount), spacing: 0) {
             overviewMetric(.power, MenuBarMetric.power.title,
                            LNum("%.1f W", snapshot.currentPowerWatts), AppTheme.chargingBlue,
                            dashboardText("shell.power_hint", fallback: "整机实时功率"),
@@ -344,8 +355,13 @@ struct DashboardOverviewPage: View {
                            "\(data.chargerWattage) W", AppTheme.textSecondary,
                            data.isOnAC ? dashboardText("shell.adapter_connected", fallback: "当前额定功率") : dashboardText("shell.not_connected", fallback: "未连接"),
                            help: DashboardHelp.adapterPower(snapshot))
+            overviewMetric(.adapterOutput, dashboardText("shell.adapter_output_power", fallback: "适配器输出功率"),
+                           snapshot.adapterOutputPowerWatts.map { LNum("%.1f W", $0) } ?? "—",
+                           AppTheme.chargingCyan,
+                           data.isOnAC ? dashboardText("shell.whole_mac_input", fallback: "整机实时输入") : dashboardText("shell.not_connected", fallback: "未连接"),
+                           help: DashboardHelp.adapterOutputPower(snapshot))
             overviewMetric(.charging, dashboardText("shell.charge_power", fallback: "充电功率"),
-                           LNum("%.1f W", max(0, Double(data.hardwareDetail.systemPowerIn) / 1000)), AppTheme.batteryGreen,
+                           chargingPowerText, AppTheme.batteryGreen,
                            data.isCharging ? dashboardText("shell.charging", fallback: "正在充电") : dashboardText("shell.not_charging", fallback: "当前未充电"),
                            help: DashboardHelp.chargingPower(snapshot))
             overviewMetric(.temperature, MenuBarMetric.temperature.title,
@@ -360,9 +376,11 @@ struct DashboardOverviewPage: View {
                            healthLabel,
                            help: DashboardHelp.health(snapshot))
         }
-        .padding(.vertical, 18)
-        .background(RoundedRectangle(cornerRadius: 15).fill(AppTheme.cardBackground))
-        .overlay(RoundedRectangle(cornerRadius: 15).stroke(AppTheme.cardBorder))
+    }
+
+    private var chargingPowerText: String {
+        guard let watts = snapshot.batteryChargingPowerWatts else { return "—" }
+        return watts < 0.05 ? "0 W" : LNum("%.1f W", watts)
     }
 
     private func overviewMetric(

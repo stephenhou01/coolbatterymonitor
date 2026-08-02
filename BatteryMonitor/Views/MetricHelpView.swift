@@ -6,8 +6,88 @@ struct MetricRawField: Identifiable, Equatable {
     let name: String
     let value: String
     var unit: String = ""
+    var explanation: String = ""
 
-    var id: String { "\(name)|\(value)|\(unit)" }
+    var id: String { "\(name)|\(value)|\(unit)|\(explanation)" }
+
+    /// Every raw field must remain understandable in the currently selected
+    /// language. Call sites can provide a more specific explanation, while the
+    /// resolver guarantees that newly-added diagnostic fields never fall back
+    /// to showing an implementation name on its own.
+    var localizedExplanation: String {
+        let explicit = explanation.trimmingCharacters(in: .whitespacesAndNewlines)
+        return explicit.isEmpty ? MetricRawFieldExplanation.text(for: name) : explicit
+    }
+}
+
+private enum MetricRawFieldExplanation {
+    static func text(for rawName: String) -> String {
+        let name = rawName.lowercased()
+
+        if name.contains("systemloadaccumulatorcount") || name.contains("recentsamples") {
+            return localized("p.raw_explain_sample_count", "累计总量中包含的采样次数")
+        }
+        if name.contains("accumulatedsystemload") {
+            return localized("p.raw_explain_accumulated_load", "用于计算长期平均功耗的累计用电总量")
+        }
+        if name.contains("adapter") || name.contains("charger") || name.contains("portcontroller")
+            || name.contains("carriermode") || name.contains("voltagein") || name.contains("currentin")
+            || name.contains("systempowerin") || name.contains("powerout") {
+            return localized("p.raw_explain_adapter", "充电器输入、额定能力或协商状态读数")
+        }
+        if name.contains("systempower") || name == "systempower" {
+            return localized("p.raw_explain_system_power", "系统报告的整台 Mac 当前使用功率")
+        }
+        if name.contains("systemload") || name.contains("power sample") || name.contains("medianpower") {
+            return localized("p.raw_explain_system_load", "Mac 当前运行负载实际使用的功率")
+        }
+        if name.contains("derived") || name.hasPrefix("→") || name.contains("remainingenergy")
+            || name.contains("truepermanentloss") || name.contains("min(qmax)") {
+            return localized("p.raw_explain_derived", "由电池教练根据原始读数算出的中间值")
+        }
+        if name.contains("capacity") || name.contains("packreserve") || name.contains("fcc")
+            || name.contains("qmax") || name.contains("soc") || name.contains("dod") {
+            return localized("p.raw_explain_capacity", "这个指标使用的电量或容量读数")
+        }
+        if name.contains("voltage") {
+            return localized("p.raw_explain_battery_voltage", "电池组当前的实时电压")
+        }
+        if name.contains("amperage") || name.contains("batterycurrent") {
+            return localized("p.raw_explain_battery_current", "电池实时电流；正数充电，负数放电")
+        }
+        if name.contains("timeremaining") || name.contains("timetofull") || name.contains("timetoempty")
+            || name.contains("time to") || name.contains("avgtime") {
+            return localized("p.raw_explain_time", "macOS 为这个指标提供的时间估算")
+        }
+        if name.contains("temperature") {
+            return localized("p.raw_explain_temperature", "电池或电量计报告的温度读数")
+        }
+        if name.contains("weightedra") || name.contains("resistance") {
+            return localized("p.raw_explain_resistance", "用于判断供电阻力的电池内阻读数")
+        }
+        if name.contains("cell") || name.contains("chem") {
+            return localized("p.raw_explain_cell", "用于比较各节电芯状态的底层读数")
+        }
+        if name.contains("cycle") {
+            return localized("p.raw_explain_cycle", "记录电池累计使用程度或寿命的计数")
+        }
+        if name.contains("model") || name.contains("apple published") || name.contains("apple design")
+            || name.contains("apple streaming") || name.contains("apple wireless")
+            || name.contains("reference") {
+            return localized("p.raw_explain_reference", "这台 Mac 对应的机型规格或参考值")
+        }
+        if name.contains("status") || name.contains("state") || name.contains("charging")
+            || name.contains("installed") || name.contains("built-in") || name.contains("fault")
+            || name.contains("failure") || name.contains("invalid") {
+            return localized("p.raw_explain_state", "macOS 返回的状态或诊断标记")
+        }
+
+        return localized("p.raw_explain_generic", "用于解释上方指标的 macOS 底层读数")
+    }
+
+    private static func localized(_ key: String, _ fallback: String) -> String {
+        dashboardText(key, fallback: fallback)
+    }
 }
 
 enum MetricHelpResultStyle: Equatable {
@@ -422,21 +502,35 @@ struct MetricHelpDrawer: View {
     private var rawFieldsBlock: some View {
         if !content.rawFields.isEmpty {
             VStack(alignment: .leading, spacing: 9) {
-                drawerEyebrow(dashboardText("p.help_raw", fallback: "最底层输入字段"))
+                drawerEyebrow(dashboardText("p.help_raw", fallback: "字段说明与原始值"))
                 ForEach(content.rawFields) { field in
-                    HStack(alignment: .firstTextBaseline, spacing: 12) {
-                        Text(field.name)
-                            .font(.system(size: 10, design: .monospaced))
-                            .foregroundStyle(AppTheme.textSecondary)
-                            .textSelection(.enabled)
-                        Spacer(minLength: 8)
+                    HStack(alignment: .center, spacing: 14) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(field.localizedExplanation)
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundStyle(AppTheme.textPrimary)
+                                .fixedSize(horizontal: false, vertical: true)
+                            Text(field.name)
+                                .font(.system(size: 9, design: .monospaced))
+                                .foregroundStyle(AppTheme.textTertiary)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.68)
+                                .allowsTightening(true)
+                                .textSelection(.enabled)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
                         Text([field.value, field.unit].filter { !$0.isEmpty }.joined(separator: " "))
                             .font(.system(size: 11, weight: .semibold, design: .monospaced))
-                            .foregroundStyle(AppTheme.textPrimary)
+                            .foregroundStyle(AppTheme.chargingCyan)
                             .multilineTextAlignment(.trailing)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.72)
                             .textSelection(.enabled)
+                            .frame(maxWidth: 145, alignment: .trailing)
                     }
-                    .padding(11)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
                     .background(RoundedRectangle(cornerRadius: 8).fill(AppTheme.contrastOverlay(0.025)))
                     .overlay(RoundedRectangle(cornerRadius: 8).stroke(AppTheme.contrastOverlay(0.065), lineWidth: 1))
                 }

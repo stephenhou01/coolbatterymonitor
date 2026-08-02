@@ -123,6 +123,43 @@ struct DashboardMetricSnapshot {
         return max(0, data.currentPowerWatts)
     }
 
+    /// Real-time power crossing from the external adapter into the whole Mac.
+    /// This is not battery charging power: part (or all) of it can be consumed
+    /// directly by the running computer.
+    var adapterOutputPowerWatts: Double? {
+        guard data.isOnAC,
+              detail.presentRawFields.contains("PowerTelemetryData.SystemPowerIn") else { return nil }
+        let watts = Double(detail.systemPowerIn) / 1000.0
+        guard watts.isFinite, watts >= 0 else { return nil }
+        return watts
+    }
+
+    /// Positive battery-side current only. `InstantAmperage` is preferred for
+    /// the live card; `Amperage` is the compatible smoothed fallback. A Mac can
+    /// be on AC while this remains exactly zero because the adapter is powering
+    /// the system without adding charge to the battery.
+    var batteryChargingCurrentMilliamps: Int? {
+        guard data.isCharging else { return 0 }
+        if detail.presentRawFields.contains("InstantAmperage") {
+            return max(0, detail.instantAmperage)
+        }
+        if detail.presentRawFields.contains("Amperage") {
+            return max(0, detail.smoothedAmperage)
+        }
+        guard data.amperage != 0 else { return nil }
+        return max(0, data.amperage)
+    }
+
+    /// Battery charging power = pack voltage × positive battery current.
+    /// When IsCharging is false the physical flow into the battery is 0 W,
+    /// regardless of the adapter's whole-Mac input power.
+    var batteryChargingPowerWatts: Double? {
+        guard data.isCharging else { return 0 }
+        guard voltageVolts.isFinite, voltageVolts > 0,
+              let milliamps = batteryChargingCurrentMilliamps else { return nil }
+        return voltageVolts * Double(milliamps) / 1000.0
+    }
+
     var usualPowerWatts: Double {
         detail.averageTelemetryPowerWatts ?? max(currentPowerWatts, 0.1)
     }

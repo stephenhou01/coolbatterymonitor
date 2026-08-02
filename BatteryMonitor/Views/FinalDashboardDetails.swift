@@ -1070,28 +1070,87 @@ enum DashboardHelp {
     }
 
     static func chargingPower(_ s: DashboardMetricSnapshot) -> MetricHelpContent {
-        let detail = s.detail
-        let watts = max(0, Double(detail.systemPowerIn) / 1000.0)
-        let displayedWatts = LNum("%.1f W", watts)
+        let voltage = s.voltageVolts
+        let currentMilliamps = s.batteryChargingCurrentMilliamps
+        let currentAmps = currentMilliamps.map { Double($0) / 1000.0 }
+        let watts = s.batteryChargingPowerWatts
+        let displayedWatts = watts.map { $0 < 0.05 ? "0 W" : LNum("%.1f W", $0) } ?? "—"
+        let rawVoltage = s.detail.packVoltage > 0 ? s.detail.packVoltage : nil
+        let rawSmoothedCurrent: Int? = if s.detail.presentRawFields.contains("Amperage") {
+            s.detail.smoothedAmperage
+        } else if s.data.amperage != 0 {
+            s.data.amperage
+        } else {
+            nil
+        }
         return content(
             id: "power.charging",
             title: dashboardText("shell.charge_power", fallback: "充电功率"),
             summary: dashboardText(
                 "p.help_summary_charging_power",
-                fallback: "这里展示电源送进整机的实时输入功率。它包含电脑当下运行所需的电，因此不等于全部进入电池的功率。"
+                fallback: "这是实际流进电池的功率：电池电压 × 正向充电电流。电脑插着电但电池没有充电时，这里就是 0 W。"
             ),
             result: displayedWatts,
             fields: [
-                field("PowerTelemetryData.SystemPowerIn", detail.systemPowerIn, "mW"),
-                field("PowerTelemetryData.VoltageIn", detail.systemVoltageIn, "mV"),
-                field("PowerTelemetryData.CurrentIn", detail.systemCurrentIn, "mA"),
-                field("PowerTelemetryData.AdapterEfficiencyLoss", detail.adapterEfficiencyLoss, "mW"),
+                field("AppleRawBatteryVoltage", s.detail.appleRawBatteryVoltage, "mV"),
+                field("Voltage", s.detail.voltageRaw, "mV"),
+                field("Derived.BatteryPackVoltage", rawVoltage, "mV"),
+                field("InstantAmperage", s.detail.presentRawFields.contains("InstantAmperage") ? s.detail.instantAmperage : nil, "mA"),
+                field("Amperage", rawSmoothedCurrent, "mA"),
+                field("IsCharging", s.data.isCharging ? "true" : "false"),
             ],
-            formula: "inputPowerW = SystemPowerIn ÷ 1000",
-            substitution: "\(detail.systemPowerIn) ÷ 1000 = \(displayedWatts)",
+            formula: "batteryVoltageV = batteryVoltageMillivolts ÷ 1000\nbatteryChargingCurrentA = IsCharging ? max(batteryCurrentMilliamps, 0) ÷ 1000 : 0\nbatteryChargingPowerW = batteryVoltageV × batteryChargingCurrentA",
+            substitution: "\(optional(rawVoltage)) ÷ 1000 = \(LNum("%.3f V", voltage))\nIsCharging = \(s.data.isCharging) → \(optional(currentMilliamps)) ÷ 1000 = \(f(currentAmps)) A\n\(LNum("%.3f", voltage)) × \(f(currentAmps)) = \(displayedWatts)",
             source: dashboardText(
                 "p.help_source_charging_power",
-                fallback: "IOKit PowerTelemetryData.SystemPowerIn。该字段只在连接电源且系统提供实时遥测时有效。"
+                fallback: "由 AppleSmartBattery 的电池组电压与带符号电池电流推导；放电方向的负电流不会被算作充电。"
+            )
+        )
+    }
+
+    static func adapterOutputPower(_ s: DashboardMetricSnapshot) -> MetricHelpContent {
+        let detail = s.detail
+        let watts = s.adapterOutputPowerWatts
+        let displayedWatts = watts.map { LNum("%.1f W", $0) } ?? "—"
+        return content(
+            id: "power.adapter-output",
+            title: dashboardText("shell.adapter_output_power", fallback: "适配器输出功率"),
+            summary: dashboardText(
+                "p.help_summary_adapter_output_power",
+                fallback: "这是适配器送进整台电脑的实时功率，既包含电脑当前使用的部分，也可能包含给电池充电的部分；它不是电池充电功率。"
+            ),
+            result: displayedWatts,
+            fields: [
+                field(
+                    "PowerTelemetryData.SystemPowerIn",
+                    detail.presentRawFields.contains("PowerTelemetryData.SystemPowerIn") ? detail.systemPowerIn : nil,
+                    "mW",
+                    dashboardText("p.raw_power_in_explain", fallback: "充电器实际送入 Mac 的功率")
+                ),
+                field(
+                    "PowerTelemetryData.VoltageIn",
+                    detail.presentRawFields.contains("PowerTelemetryData.VoltageIn") ? detail.systemVoltageIn : nil,
+                    "mV",
+                    dashboardText("p.raw_voltage_in_explain", fallback: "进入 Mac 的实时电压")
+                ),
+                field(
+                    "PowerTelemetryData.CurrentIn",
+                    detail.presentRawFields.contains("PowerTelemetryData.CurrentIn") ? detail.systemCurrentIn : nil,
+                    "mA",
+                    dashboardText("p.raw_current_in_explain", fallback: "进入 Mac 的实时电流")
+                ),
+                field(
+                    "PowerTelemetryData.AdapterEfficiencyLoss",
+                    detail.presentRawFields.contains("PowerTelemetryData.AdapterEfficiencyLoss") ? detail.adapterEfficiencyLoss : nil,
+                    "mW",
+                    dashboardText("p.raw_adapter_loss_explain", fallback: "适配器效率损耗原始值")
+                ),
+            ],
+            formula: "adapterOutputPowerW = SystemPowerIn ÷ 1000",
+            substitution: "\(optional(detail.presentRawFields.contains("PowerTelemetryData.SystemPowerIn") ? detail.systemPowerIn : nil)) ÷ 1000 = \(displayedWatts)",
+            source: dashboardText(
+                "p.help_source_adapter_output_power",
+                fallback: "直接读取 IOKit PowerTelemetryData.SystemPowerIn；只有连接外部电源且该帧包含实时输入遥测时才展示。"
             )
         )
     }
@@ -1428,12 +1487,22 @@ enum DashboardHelp {
         )
     }
 
-    private static func field(_ name: String, _ value: String, _ unit: String = "") -> MetricRawField {
-        MetricRawField(name: name, value: value.isEmpty ? "—" : value, unit: unit)
+    private static func field(
+        _ name: String,
+        _ value: String,
+        _ unit: String = "",
+        _ explanation: String = ""
+    ) -> MetricRawField {
+        MetricRawField(name: name, value: value.isEmpty ? "—" : value, unit: unit, explanation: explanation)
     }
 
-    private static func field<T: BinaryInteger>(_ name: String, _ value: T?, _ unit: String = "") -> MetricRawField {
-        MetricRawField(name: name, value: value.map { String($0) } ?? "—", unit: unit)
+    private static func field<T: BinaryInteger>(
+        _ name: String,
+        _ value: T?,
+        _ unit: String = "",
+        _ explanation: String = ""
+    ) -> MetricRawField {
+        MetricRawField(name: name, value: value.map { String($0) } ?? "—", unit: unit, explanation: explanation)
     }
 
     private static func f(_ value: Double?) -> String {

@@ -61,11 +61,22 @@ reference_keys = None
 required_help_keys = {
     "p.help_summary_soc", "p.help_summary_health", "p.help_summary_power",
     "p.help_summary_adapter_power", "p.help_source_adapter_power",
+    "p.help_summary_adapter_output_power", "p.help_source_adapter_output_power",
     "p.help_summary_charging_power", "p.help_source_charging_power",
     "p.help_summary_cycle_count", "p.help_source_cycle_count",
     "p.help_summary_temperature", "p.help_summary_time_history",
     "p.help_summary_capacity", "p.help_origin_model",
     "p.help_origin_derived", "p.help_origin_iokit",
+    "p.help_raw", "p.raw_explain_system_power", "p.raw_explain_system_load",
+    "p.raw_explain_battery_voltage", "p.raw_explain_battery_current",
+    "p.raw_explain_accumulated_load", "p.raw_explain_sample_count",
+    "p.raw_explain_capacity", "p.raw_explain_time", "p.raw_explain_temperature",
+    "p.raw_explain_cell", "p.raw_explain_resistance", "p.raw_explain_adapter",
+    "p.raw_explain_cycle", "p.raw_explain_state", "p.raw_explain_reference",
+    "p.raw_explain_derived", "p.raw_explain_generic",
+}
+required_raw_explanation_keys = {
+    key for key in required_help_keys if key.startswith("p.raw_explain_")
 }
 required_menu_keys = {
     "p.menu_time", "p.menu_unplug", "p.menu_unplug_short",
@@ -147,6 +158,10 @@ for code, strings in sorted(pack_strings.items()):
         continue
     untranslated = sorted(key for key in required_audit_keys if strings[key] == english[key])
     assert not untranslated, f"audit keys still use English fallback in {code}: {untranslated}"
+    untranslated_raw = sorted(
+        key for key in required_raw_explanation_keys if strings[key] == english[key]
+    )
+    assert not untranslated_raw, f"raw field explanations still use English fallback in {code}: {untranslated_raw}"
 
 catalog = json.loads(Path("BatteryMonitor/Resources/SystemFieldCatalog.json").read_text(encoding="utf-8"))
 assert catalog["schemaVersion"] == 1

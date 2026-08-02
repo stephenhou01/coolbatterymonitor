@@ -224,6 +224,64 @@ expect(adapterHelp.powerContract?.trendPoints.count == 3
 expect(adapterHelp.rawFields.contains { $0.name == "Derived.NegotiatedPower" && $0.value.contains("65") },
        "额定功率既保留系统 Watts，也提供电压×电流校验值")
 
+let explainedPowerFields = DashboardHelp.power(
+    DashboardMetricSnapshot(data: data(from: d, onAC: false), realtimeData: adapterPoints)
+).rawFields
+expect(explainedPowerFields.count == 6
+       && explainedPowerFields.allSatisfy { !$0.localizedExplanation.isEmpty }
+       && explainedPowerFields.first(where: { $0.name == "Voltage" })?.localizedExplanation.contains("电压") == true
+       && explainedPowerFields.first(where: { $0.name == "Amperage" })?.localizedExplanation.contains("电流") == true
+       && explainedPowerFields.first(where: { $0.name == "SystemLoadAccumulatorCount" })?.localizedExplanation.contains("采样") == true,
+       "功率抽屉的每个底层字段都有易懂中文解释，同时保留系统字段名")
+let uncommonRawField = MetricRawField(name: "VendorDiagnosticCode", value: "7")
+expect(!uncommonRawField.localizedExplanation.isEmpty
+       && uncommonRawField.localizedExplanation != uncommonRawField.name,
+       "新增或冷门诊断字段也会显示本地化兜底说明")
+
+var wholeMacInputData = data(from: plugged, onAC: true)
+wholeMacInputData.hardwareDetail.presentRawFields.formUnion([
+    "PowerTelemetryData.SystemPowerIn",
+    "PowerTelemetryData.VoltageIn",
+    "PowerTelemetryData.CurrentIn",
+    "PowerTelemetryData.AdapterEfficiencyLoss",
+    "AppleRawBatteryVoltage",
+    "InstantAmperage",
+    "Amperage",
+])
+wholeMacInputData.hardwareDetail.packVoltage = 12_466
+wholeMacInputData.hardwareDetail.appleRawBatteryVoltage = 12_466
+wholeMacInputData.hardwareDetail.instantAmperage = 0
+wholeMacInputData.hardwareDetail.smoothedAmperage = 0
+wholeMacInputData.hardwareDetail.systemVoltageIn = 20_000
+wholeMacInputData.hardwareDetail.systemCurrentIn = 3_250
+wholeMacInputData.isCharging = false
+wholeMacInputData.amperage = 0
+let powerFlowSnapshot = DashboardMetricSnapshot(data: wholeMacInputData, realtimeData: adapterPoints)
+let adapterOutputHelp = DashboardHelp.adapterOutputPower(powerFlowSnapshot)
+expect(abs((powerFlowSnapshot.adapterOutputPowerWatts ?? -1) - 16.2) < 0.001
+       && adapterOutputHelp.result.contains("16.2 W"),
+       "SystemPowerIn 16200mW 只作为适配器输出/整机输入 16.2W")
+expect(adapterOutputHelp.rawFields.contains { $0.name == "PowerTelemetryData.SystemPowerIn" },
+       "适配器输出功率抽屉保留 SystemPowerIn 底层字段")
+
+let idleChargingHelp = DashboardHelp.chargingPower(powerFlowSnapshot)
+expect(powerFlowSnapshot.batteryChargingPowerWatts == 0
+       && idleChargingHelp.result == "0 W",
+       "12.466V × 0A = 0W；插电但未充电时明确显示零")
+expect(!idleChargingHelp.rawFields.contains { $0.name == "PowerTelemetryData.SystemPowerIn" }
+       && idleChargingHelp.rawFields.contains { $0.name == "AppleRawBatteryVoltage" }
+       && idleChargingHelp.rawFields.contains { $0.name == "InstantAmperage" },
+       "充电功率只使用电池侧电压和电流，不再混入 SystemPowerIn")
+
+var chargingData = wholeMacInputData
+chargingData.isCharging = true
+chargingData.amperage = 2_000
+chargingData.hardwareDetail.instantAmperage = 2_000
+chargingData.hardwareDetail.smoothedAmperage = 1_950
+let chargingSnapshot = DashboardMetricSnapshot(data: chargingData, realtimeData: adapterPoints)
+expect(abs((chargingSnapshot.batteryChargingPowerWatts ?? -1) - 24.932) < 0.001,
+       "正向充电时按 12.466V × 2.000A = 24.932W 计算电池侧功率")
+
 let disconnectedAdapterHelp = DashboardHelp.adapterPower(
     DashboardMetricSnapshot(data: data(from: d, onAC: false), realtimeData: adapterPoints)
 )
@@ -656,6 +714,15 @@ let textOnlyStatus = MenuBarPresentation(data: textOnlyStatusBattery)
     .menuBarText(secondaryMetric: .runtime)
 expect(textOnlyStatus == "60% (4h 06m)",
        "顶部状态项只展示电量与所选指标文字，不混入电池或充电图标")
+let choicePreviews = MenuBarMetric.allCases.map {
+    MenuBarPresentation(data: textOnlyStatusBattery).choicePreviewText(for: $0)
+}
+expect(zip(MenuBarMetric.allCases, choicePreviews).allSatisfy { pair in
+    let (metric, preview) = pair
+    return preview.contains(metric.title)
+        && preview.contains(MenuBarPresentation(data: textOnlyStatusBattery)
+            .menuBarText(secondaryMetric: metric))
+}, "顶部指标下拉的每一项同时展示指标名称与对应状态栏预览")
 
 var menuAC = menuBattery
 menuAC.isOnAC = true

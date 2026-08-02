@@ -149,6 +149,7 @@ enum BatteryMetricIcon: String, CaseIterable {
     case runtime
     case power
     case adapter
+    case adapterOutput
     case charging
     case temperature
     case cycles
@@ -171,6 +172,7 @@ enum BatteryMetricIcon: String, CaseIterable {
         case .runtime: return "clock"
         case .power: return "waveform.path.ecg"
         case .adapter: return "powerplug.fill"
+        case .adapterOutput: return "arrow.down.circle.fill"
         case .charging: return "bolt.fill"
         case .temperature: return "thermometer.medium"
         case .cycles: return "arrow.triangle.2.circlepath"
@@ -198,6 +200,7 @@ enum BatteryMetricIcon: String, CaseIterable {
         case .runtime: return "clock"
         case .power: return "waveform.path.ecg"
         case .adapter: return "powerplug"
+        case .adapterOutput: return "arrow.down.circle"
         case .charging: return "bolt.fill"
         case .temperature: return "thermometer"
         case .cycles: return "arrow.2.circlepath"

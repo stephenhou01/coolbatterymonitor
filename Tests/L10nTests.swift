@@ -38,6 +38,7 @@ let shellAndMenuKeys = [
     "shell.overview", "shell.technical", "shell.trends", "shell.diagnostics", "shell.settings",
     "shell.sidebar_subtitle", "shell.local_only", "shell.power_connected", "shell.on_battery",
     "shell.power_hint", "shell.adapter", "shell.adapter_connected", "shell.not_connected",
+    "shell.adapter_output_power", "shell.whole_mac_input",
     "shell.charge_power", "shell.charging", "shell.not_charging", "shell.temp_range",
     "shell.cycle_reference", "shell.health_good", "shell.health_fair", "shell.health_attention",
     "shell.status_attention", "shell.status_good", "shell.status_subtitle",
@@ -59,8 +60,16 @@ let shellAndMenuKeys = [
     "p.adapter_contract_diff", "p.adapter_contract_partial", "p.adapter_voltage",
     "p.adapter_current", "p.adapter_rated_power", "p.adapter_input_trend",
     "p.adapter_input_trend_note", "p.adapter_trend_waiting",
+    "p.help_summary_adapter_output_power", "p.help_source_adapter_output_power",
     "p.help_summary_charging_power", "p.help_source_charging_power",
     "p.help_summary_cycle_count", "p.help_source_cycle_count",
+    "p.help_raw", "p.raw_explain_system_power", "p.raw_explain_system_load",
+    "p.raw_explain_battery_voltage", "p.raw_explain_battery_current",
+    "p.raw_explain_accumulated_load", "p.raw_explain_sample_count",
+    "p.raw_explain_capacity", "p.raw_explain_time", "p.raw_explain_temperature",
+    "p.raw_explain_cell", "p.raw_explain_resistance", "p.raw_explain_adapter",
+    "p.raw_explain_cycle", "p.raw_explain_state", "p.raw_explain_reference",
+    "p.raw_explain_derived", "p.raw_explain_generic",
     "p.current_max_desc", "p.capacity_accessibility_four", "p.capacity_accessibility_gap",
     "p.duration_accessibility", "system.field.new.meaning",
     "system.field.new.recommendation", "system.field.new.note",
@@ -80,6 +89,14 @@ for pack in bundledPacks.sorted(by: { $0.meta.order < $1.meta.order }) {
     let missing = shellAndMenuKeys.filter { pack.strings[$0]?.isEmpty != false }
     expect(missing.isEmpty, "\(pack.meta.code): 外观/主壳/菜单栏配置 key 齐全\(missing.isEmpty ? "" : "，缺少 \(missing)")")
 }
+let rawExplanationKeys = shellAndMenuKeys.filter { $0.hasPrefix("p.raw_explain_") }
+if let english = bundledPacks.first(where: { $0.meta.code == "en" }) {
+    for pack in bundledPacks where pack.meta.code != "en" {
+        let untranslated = rawExplanationKeys.filter { pack.strings[$0] == english.strings[$0] }
+        expect(untranslated.isEmpty,
+               "\(pack.meta.code): 底层字段说明使用本土语言\(untranslated.isEmpty ? "" : "，仍为英文 \(untranslated)")")
+    }
+}
 l.select("zh-Hans")
 expect(l.string("menu.config.title") == "弹出面板指标"
        && l.string("menu.config.second_metric") == "顶部状态栏"
@@ -95,6 +112,11 @@ l.select("ja")
 expect(l.string("system.group.temperature") == "温度／熱状態"
        && l.string("p.duration_accessibility").contains("時間"),
        "动态系统字段与辅助功能说明提供日语原生译文")
+l.select("zh-Hans")
+expect(l.string("p.help_raw") == "字段说明与原始值"
+       && l.string("p.raw_explain_battery_voltage").contains("电池组")
+       && l.string("p.raw_explain_sample_count").contains("采样次数"),
+       "展开指标的字段说明使用易懂的简体中文")
 
 print("── 3) 数字格式化带 locale")
 l.select("de")

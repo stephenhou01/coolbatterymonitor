@@ -1,7 +1,7 @@
 import SwiftUI
 import AppKit
 
-/// Off-screen visual QA harness for the six overview metric help buttons and
+/// Off-screen visual QA harness for the seven overview metric help buttons and
 /// the shared lowest-level field drawer.
 @main
 struct OverviewMetricSnapshotHarness {
@@ -16,6 +16,9 @@ struct OverviewMetricSnapshotHarness {
         let mode = AppearanceMode(rawValue: arguments[1]) ?? .dark
         let outputURL = URL(fileURLWithPath: arguments[2])
         let requestedHelp = arguments.count > 3 ? Int(arguments[3]) : nil
+        let environment = ProcessInfo.processInfo.environment
+        let viewportWidth = CGFloat(Double(environment["SNAPSHOT_WIDTH"] ?? "1080") ?? 1080)
+        let viewportHeight = CGFloat(Double(environment["SNAPSHOT_HEIGHT"] ?? "800") ?? 800)
 
         _ = NSApplication.shared
         L10n.shared.select("zh-Hans")
@@ -60,13 +63,29 @@ struct OverviewMetricSnapshotHarness {
 
         var adapterData = runtimeData
         adapterData.isOnAC = true
-        adapterData.isCharging = true
+        adapterData.isCharging = false
+        adapterData.amperage = 0
         adapterData.chargerWattage = 65
         adapterData.hardwareDetail.adapterWatts = 65
         adapterData.hardwareDetail.adapterVoltage = 20_000
         adapterData.hardwareDetail.adapterCurrent = 3_250
         adapterData.hardwareDetail.adapterDescription = "pd charger"
         adapterData.hardwareDetail.systemPowerIn = 16_200
+        adapterData.hardwareDetail.packVoltage = 12_466
+        adapterData.hardwareDetail.appleRawBatteryVoltage = 12_466
+        adapterData.hardwareDetail.instantAmperage = 0
+        adapterData.hardwareDetail.smoothedAmperage = 0
+        adapterData.hardwareDetail.systemVoltageIn = 20_000
+        adapterData.hardwareDetail.systemCurrentIn = 3_250
+        adapterData.hardwareDetail.presentRawFields.formUnion([
+            "PowerTelemetryData.SystemPowerIn",
+            "PowerTelemetryData.VoltageIn",
+            "PowerTelemetryData.CurrentIn",
+            "PowerTelemetryData.AdapterEfficiencyLoss",
+            "AppleRawBatteryVoltage",
+            "InstantAmperage",
+            "Amperage",
+        ])
         adapterData.hardwareDetail.usbHvcMenu = [
             .init(voltage: 5_000, current: 3_000),
             .init(voltage: 9_000, current: 3_000),
@@ -91,13 +110,14 @@ struct OverviewMetricSnapshotHarness {
         let helps = [
             DashboardHelp.power(snapshot),
             DashboardHelp.adapterPower(adapterSnapshot),
+            DashboardHelp.adapterOutputPower(adapterSnapshot),
             DashboardHelp.chargingPower(adapterSnapshot),
             DashboardHelp.temperature(snapshot),
             DashboardHelp.cycleCount(snapshot),
             DashboardHelp.health(snapshot),
             DashboardHelp.runtime(runtimeSnapshot),
         ]
-        guard helps.count == 7, helps.allSatisfy({ !$0.rawFields.isEmpty }) else {
+        guard helps.count == 8, helps.allSatisfy({ !$0.rawFields.isEmpty }) else {
             throw SnapshotError.missingHelpContent
         }
 
@@ -105,7 +125,7 @@ struct OverviewMetricSnapshotHarness {
             .environmentObject(batteryService)
             .environment(appearance)
             .environment(\.colorScheme, mode == .light ? .light : .dark)
-            .frame(width: 1080, height: 800)
+            .frame(width: viewportWidth, height: viewportHeight)
 
         let root = ZStack(alignment: .trailing) {
             page
@@ -113,12 +133,12 @@ struct OverviewMetricSnapshotHarness {
                 MetricHelpDrawer(content: helps[requestedHelp], onClose: {})
             }
         }
-        .frame(width: 1080, height: 800)
+        .frame(width: viewportWidth, height: viewportHeight)
         .environment(appearance)
         .environment(\.colorScheme, mode == .light ? .light : .dark)
 
         let hostingView = NSHostingView(rootView: root)
-        hostingView.frame = NSRect(x: 0, y: 0, width: 1080, height: 800)
+        hostingView.frame = NSRect(x: 0, y: 0, width: viewportWidth, height: viewportHeight)
         let window = NSWindow(
             contentRect: hostingView.frame,
             styleMask: [.borderless],
