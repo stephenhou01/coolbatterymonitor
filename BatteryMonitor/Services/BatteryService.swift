@@ -135,7 +135,8 @@ class BatteryService: ObservableObject {
 
     // MARK: - Native IOKit Data Fetching
 
-    /// 电量计用65535表示尚未就绪/不适用；插电状态也不把它当剩余续航。
+    /// 电量计用65535表示尚未就绪/不适用；产品层也拒绝超过24小时的夸张值。
+    /// 插电状态不把任何电量计时间当作当前放电续航。
     static func preferredSystemTimeRemaining(
         isOnAC: Bool,
         timeRemaining: Int?,

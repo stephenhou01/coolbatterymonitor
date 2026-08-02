@@ -9,6 +9,7 @@ xcuserdata/
 # Build products / artifacts
 build/
 .build/
+QATests/
 DerivedData/
 *.xcarchive
 *.ipa

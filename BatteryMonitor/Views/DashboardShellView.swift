@@ -248,7 +248,9 @@ struct DashboardOverviewPage: View {
                                  minutesRemaining: minutes,
                                  percent: data.percent)
         }
-        return batteryService.runtimeSamples.last
+        return batteryService.runtimeSamples.last(where: {
+            RuntimeSample.isValid(minutes: $0.minutesRemaining)
+        })
     }
     private var observedBatteryUsageHours: Double {
         RuntimeSample.observedUsageDuration(in: batteryService.runtimeSamples) / 3600

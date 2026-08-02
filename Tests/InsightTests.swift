@@ -375,6 +375,11 @@ expect(runtimeData.officialImpliedPower == runtimeData.officialImpliedPowerWatts
        && runtimeData.averageTelemetryPower == runtimeData.averageTelemetryPowerWatts,
        "产品指标API与带单位别名保持同一口径")
 
+var exaggeratedDerivedData = runtimeData
+exaggeratedDerivedData.currentPowerWatts = 0.6
+expect(exaggeratedDerivedData.unplugEstimateMinutes == nil,
+       "推导续航超过24小时也不展示夸张结果")
+
 runtimeData.timeRemainingMinutes = 155
 runtimeData.hardwareDetail.timeRemainingRaw = 155
 runtimeData.hardwareDetail.avgTimeToEmpty = 160
@@ -404,6 +409,9 @@ expect(runtimeHelp.comparisonResults.map(\.id) == [
 ], "续航问号同时展示系统时间、稳健估算和当前负载估算")
 expect(runtimeHelp.comparisonResults.first?.value == "2 h 35 m",
        "macOS系统时间是三项里的主要结果")
+expect(runtimeHelp.comparisonResults.first?.note.contains("10 秒") == true
+       && runtimeHelp.comparisonResults.first?.note.contains("每分钟") == true,
+       "系统时间备注说明读取时间、10秒检查周期与约1分钟历史周期")
 
 let insufficientSnapshot = DashboardMetricSnapshot(
     data: runtimeData,
@@ -426,7 +434,7 @@ pluggedRuntimeData.isOnAC = true
 let pluggedHelp = DashboardHelp.runtime(
     DashboardMetricSnapshot(data: pluggedRuntimeData, realtimeData: stablePoints)
 )
-expect(pluggedHelp.comparisonResults.first?.value == "—"
+expect(pluggedHelp.comparisonResults.first?.value == "不可用"
        && pluggedHelp.comparisonResults.dropFirst().allSatisfy { $0.value != "—" },
        "插电时系统时间明确不可用，但两项拔电计算值仍可对照")
 let pluggedHelpWithSystemHistory = DashboardHelp.runtime(
@@ -440,6 +448,44 @@ let pluggedHelpWithSystemHistory = DashboardHelp.runtime(
 )
 expect(pluggedHelpWithSystemHistory.comparisonResults.first?.value == "3 h 12 m",
        "插电时续航说明保留最近一次有效的Apple系统时间")
+
+var sentinelRuntimeData = pluggedRuntimeData
+sentinelRuntimeData.hardwareDetail.timeRemainingRaw = 65_535
+sentinelRuntimeData.hardwareDetail.avgTimeToEmpty = 65_535
+let sentinelHelp = DashboardHelp.runtime(
+    DashboardMetricSnapshot(
+        data: sentinelRuntimeData,
+        realtimeData: stablePoints,
+        systemRuntimeFallbackSample: RuntimeSample(
+            timestamp: Date(), minutesRemaining: 16, percent: sentinelRuntimeData.percent
+        )
+    )
+)
+expect(sentinelHelp.comparisonResults.first?.value == "0 h 16 m",
+       "无效实时字段与最近有效系统时间不会混为同一个读数")
+expect(sentinelHelp.rawFields.prefix(2).allSatisfy {
+    $0.value == "不可用" && $0.unit.isEmpty
+} && !sentinelHelp.substitution.contains("65535"),
+"极限原始值只显示不可用，不再暴露65535")
+expect(sentinelHelp.comparisonResults.first?.note.contains("最近一次有效读取于") == true,
+       "历史回退值显示最近一次有效读取时间")
+
+let exaggeratedHelp = DashboardHelp.runtime(
+    DashboardMetricSnapshot(
+        data: sentinelRuntimeData,
+        realtimeData: stablePoints,
+        systemRuntimeFallbackSample: RuntimeSample(
+            timestamp: Date(), minutesRemaining: 62_840, percent: sentinelRuntimeData.percent
+        )
+    )
+)
+expect(exaggeratedHelp.comparisonResults.first?.value == "不可用",
+       "超过24小时的历史系统值不显示成夸张时长")
+expect(!exaggeratedHelp.substitution.contains("62840"),
+       "公式代入区也不暴露超过24小时的极端原始数")
+expect(exaggeratedHelp.comparisonResults.first?.note.contains("2 h 28 m") == true
+       && exaggeratedHelp.comparisonResults.first?.note.contains("10 分钟") == true,
+       "系统时间不可用时给出实测功耗预计和拔电等待建议")
 
 // MARK: - 10.1) 四层系统数据的类型与异常规则
 
@@ -562,6 +608,9 @@ expect(BatteryService.preferredSystemTimeRemaining(isOnAC: false,
 expect(BatteryService.preferredSystemTimeRemaining(isOnAC: false,
         timeRemaining: 65_535, avgTimeToEmpty: 150) == 150,
        "TimeRemaining=65535时退到有效AvgTimeToEmpty")
+expect(BatteryService.preferredSystemTimeRemaining(isOnAC: false,
+        timeRemaining: 1_441, avgTimeToEmpty: 150) == 150,
+       "超过24小时的TimeRemaining退到可信AvgTimeToEmpty")
 expect(BatteryService.preferredSystemTimeRemaining(isOnAC: false,
         timeRemaining: 0, avgTimeToEmpty: 65_535) == nil,
        "0与65535都不是有效分钟")
@@ -707,9 +756,10 @@ let t0 = Date(timeIntervalSince1970: 1_000)
 let r0 = RuntimeSample(timestamp: t0, minutesRemaining: 148, percent: 86)
 let r55 = RuntimeSample(timestamp: t0.addingTimeInterval(55), minutesRemaining: 147, percent: 85)
 let r56 = RuntimeSample(timestamp: t0.addingTimeInterval(56), minutesRemaining: 147, percent: 85)
-expect(RuntimeSample.isValid(minutes: 1) && RuntimeSample.isValid(minutes: 65_534)
-       && !RuntimeSample.isValid(minutes: 0) && !RuntimeSample.isValid(minutes: 65_535),
-       "系统剩余时间有效范围严格为1...65534")
+expect(RuntimeSample.isValid(minutes: 1) && RuntimeSample.isValid(minutes: 1_440)
+       && !RuntimeSample.isValid(minutes: 0) && !RuntimeSample.isValid(minutes: 1_441)
+       && !RuntimeSample.isValid(minutes: 65_535),
+       "产品展示的系统剩余时间有效范围严格为1...1440分钟")
 expect(RuntimeSample.shouldAppend(r0, after: nil), "首个有效样本可写入")
 expect(!RuntimeSample.shouldAppend(r55, after: r0), "55秒不重复写入")
 expect(RuntimeSample.shouldAppend(r56, after: r0), "满56秒才写入下一点")

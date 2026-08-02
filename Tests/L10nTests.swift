@@ -67,6 +67,8 @@ let shellAndMenuKeys = [
     "p.help_summary_adapter_output_power", "p.help_source_adapter_output_power",
     "p.help_summary_charging_power", "p.help_source_charging_power",
     "p.help_summary_cycle_count", "p.help_source_cycle_count",
+    "p.runtime_system_read_live", "p.runtime_system_read_last", "p.runtime_raw_unavailable",
+    "p.runtime_unavailable", "p.runtime_system_unavailable_estimate", "p.runtime_system_unavailable_note",
     "p.help_raw", "p.raw_explain_system_power", "p.raw_explain_system_load",
     "p.raw_explain_battery_voltage", "p.raw_explain_battery_current",
     "p.raw_explain_accumulated_load", "p.raw_explain_sample_count",
