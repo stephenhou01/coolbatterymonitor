@@ -9,7 +9,9 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 ROOT=$(pwd)
 BUILD="$ROOT/.build/tests/insight"
-SIGN_IDENTITY=${BATTERYMONITOR_TEST_SIGN_IDENTITY:-Apple Development: ningjun hou (3FAB9WC88G)}
+# 默认使用 ad-hoc 签名，任何开发者或 CI 都能运行；需要指定证书时可通过环境变量覆盖。
+SIGN_IDENTITY=${BATTERYMONITOR_TEST_SIGN_IDENTITY:--}
+TARGET_TRIPLE="$(uname -m)-apple-macos14"
 APP="$BUILD/InsightTests.app"
 mkdir -p "$APP/Contents/MacOS"
 rm -f "$APP/Contents/MacOS/InsightTests" "$APP/Contents/Info.plist"
@@ -24,10 +26,10 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
 </dict></plist>
 PLIST
 
-echo "▸ 编译…"
+echo "▸ 编译（$TARGET_TRIPLE）…"
 cp "$ROOT/Tests/InsightTests.swift" "$BUILD/main.swift"
 # shellcheck disable=SC2046
-swiftc -O -target arm64-apple-macos14 \
+swiftc -O -target "$TARGET_TRIPLE" \
     -framework IOKit -framework AppKit -framework SwiftUI -framework Charts \
     -o "$APP/Contents/MacOS/InsightTests" \
     $(find "$ROOT/BatteryMonitor" -name "*.swift" ! -name "BatteryMonitorApp.swift") \
