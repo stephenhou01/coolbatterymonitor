@@ -45,19 +45,54 @@ enum MenuBarMetric: String, CaseIterable, Identifiable {
     var symbol: String { icon.symbol }
 }
 
+/// Trend rows shown in the expanded menu-bar panel. Keeping this separate from
+/// `MenuBarMetric` prevents non-chartable values from being persisted as live
+/// trends while still giving the three supported series a stable saved order.
+enum MenuBarTrendMetric: String, CaseIterable, Identifiable {
+    case power
+    case runtime
+    case current
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .power:
+            return dashboardText("shell.instant_power", fallback: "瞬时功率")
+        case .runtime:
+            return dashboardText("p.menu_time", fallback: "预计续航")
+        case .current:
+            return dashboardText("shell.current", fallback: "电流")
+        }
+    }
+
+    var icon: BatteryMetricIcon {
+        switch self {
+        case .power: return .power
+        case .runtime: return .runtime
+        case .current: return .current
+        }
+    }
+}
+
 @Observable
 final class MenuBarSettings {
     static let shared = MenuBarSettings()
 
     private static let secondaryMetricKey = "menuBar.secondaryMetric"
     private static let visibleMetricsKey = "menuBar.visibleMetrics"
+    private static let visibleTrendMetricsKey = "menuBar.visibleTrendMetrics"
     static let defaultVisibleMetrics: [MenuBarMetric] = [
         .runtime, .power, .temperature, .cycles, .health
+    ]
+    static let defaultVisibleTrendMetrics: [MenuBarTrendMetric] = [
+        .power, .runtime, .current
     ]
 
     @ObservationIgnored private let defaults: UserDefaults
     private(set) var secondaryMetric: MenuBarMetric
     private(set) var visibleMetrics: [MenuBarMetric]
+    private(set) var visibleTrendMetrics: [MenuBarTrendMetric]
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -69,6 +104,13 @@ final class MenuBarSettings {
         visibleMetrics = Self.uniqued(savedMetrics)
         if savedIDs == nil {
             visibleMetrics = Self.defaultVisibleMetrics
+        }
+
+        let savedTrendIDs = defaults.array(forKey: Self.visibleTrendMetricsKey) as? [String]
+        let savedTrendMetrics = savedTrendIDs?.compactMap(MenuBarTrendMetric.init(rawValue:)) ?? []
+        visibleTrendMetrics = Self.uniqued(savedTrendMetrics)
+        if savedTrendIDs == nil {
+            visibleTrendMetrics = Self.defaultVisibleTrendMetrics
         }
     }
 
@@ -111,19 +153,55 @@ final class MenuBarSettings {
         persistVisibleMetrics()
     }
 
+    func setTrendVisible(_ metric: MenuBarTrendMetric, visible: Bool) {
+        if visible {
+            guard !visibleTrendMetrics.contains(metric) else { return }
+            visibleTrendMetrics.append(metric)
+        } else {
+            guard let index = visibleTrendMetrics.firstIndex(of: metric) else { return }
+            visibleTrendMetrics.remove(at: index)
+        }
+        persistVisibleTrendMetrics()
+    }
+
+    func moveTrend(_ metric: MenuBarTrendMetric, to destination: Int) {
+        guard let source = visibleTrendMetrics.firstIndex(of: metric) else { return }
+        let boundedDestination = min(max(0, destination), visibleTrendMetrics.count - 1)
+        guard source != boundedDestination else { return }
+        let moved = visibleTrendMetrics.remove(at: source)
+        visibleTrendMetrics.insert(moved, at: min(boundedDestination, visibleTrendMetrics.count))
+        persistVisibleTrendMetrics()
+    }
+
+    func resetTrends() {
+        visibleTrendMetrics = Self.defaultVisibleTrendMetrics
+        persistVisibleTrendMetrics()
+    }
+
     func reset() {
         secondaryMetric = .runtime
         visibleMetrics = Self.defaultVisibleMetrics
+        visibleTrendMetrics = Self.defaultVisibleTrendMetrics
         defaults.set(secondaryMetric.rawValue, forKey: Self.secondaryMetricKey)
         persistVisibleMetrics()
+        persistVisibleTrendMetrics()
     }
 
     private func persistVisibleMetrics() {
         defaults.set(visibleMetrics.map(\.rawValue), forKey: Self.visibleMetricsKey)
     }
 
+    private func persistVisibleTrendMetrics() {
+        defaults.set(visibleTrendMetrics.map(\.rawValue), forKey: Self.visibleTrendMetricsKey)
+    }
+
     private static func uniqued(_ metrics: [MenuBarMetric]) -> [MenuBarMetric] {
         var seen = Set<MenuBarMetric>()
+        return metrics.filter { seen.insert($0).inserted }
+    }
+
+    private static func uniqued(_ metrics: [MenuBarTrendMetric]) -> [MenuBarTrendMetric] {
+        var seen = Set<MenuBarTrendMetric>()
         return metrics.filter { seen.insert($0).inserted }
     }
 }
