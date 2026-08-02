@@ -6,13 +6,15 @@ cd "$(dirname "$0")/.."
 ROOT=$(pwd)
 BUILD="$ROOT/.build/tests/icon-alpha"
 BINARY="$BUILD/IconAlphaCheck"
-SIGN_IDENTITY=${BATTERYMONITOR_TEST_SIGN_IDENTITY:-Apple Development: ningjun hou (3FAB9WC88G)}
+# 默认 ad-hoc 签名，避免把作者个人开发证书变成测试前置条件。
+SIGN_IDENTITY=${BATTERYMONITOR_TEST_SIGN_IDENTITY:--}
+TARGET_TRIPLE="$(uname -m)-apple-macos14"
 
 mkdir -p "$BUILD"
 rm -f "$BINARY"
 
-echo "▸ 编译 AppIcon 透明度检查"
-swiftc -O -target arm64-apple-macos14 \
+echo "▸ 编译 AppIcon 透明度检查（$TARGET_TRIPLE）"
+swiftc -O -target "$TARGET_TRIPLE" \
     -framework CoreGraphics -framework ImageIO \
     -o "$BINARY" \
     "$ROOT/Tests/IconAlphaCheck.swift"
