@@ -33,6 +33,30 @@ struct OverviewMetricSnapshotHarness {
             data: batteryService.batteryData,
             realtimeData: batteryService.realtimeData
         )
+        var runtimeData = BatteryData()
+        runtimeData.modelIdentifier = "Mac16,12"
+        runtimeData.percent = 70
+        runtimeData.timeRemainingMinutes = 135
+        runtimeData.currentPowerWatts = 16.68
+        runtimeData.hardwareDetail.designCapacity = 4629
+        runtimeData.hardwareDetail.appleRawMaxCapacity = 4082
+        runtimeData.hardwareDetail.appleRawCurrentCapacity = 3228
+        runtimeData.hardwareDetail.presentRawFields.insert("AppleRawCurrentCapacity")
+        runtimeData.hardwareDetail.timeRemainingRaw = 135
+        runtimeData.hardwareDetail.avgTimeToEmpty = 142
+        runtimeData.hardwareDetail.systemPowerWatts = 16.68
+        let runtimeEnd = Date()
+        let runtimePoints = [14.8, 15.4, 15.9, 16.2, 17.1].enumerated().map { offset, power in
+            RealtimeDataPoint(
+                timestamp: runtimeEnd.addingTimeInterval(Double(-30 * offset)),
+                voltage: 12.4,
+                amperage: -1_200,
+                power: power,
+                temperature: 30.8,
+                percent: 70
+            )
+        }
+        let runtimeSnapshot = DashboardMetricSnapshot(data: runtimeData, realtimeData: runtimePoints)
         let helps = [
             DashboardHelp.power(snapshot),
             DashboardHelp.adapterPower(snapshot),
@@ -40,8 +64,9 @@ struct OverviewMetricSnapshotHarness {
             DashboardHelp.temperature(snapshot),
             DashboardHelp.cycleCount(snapshot),
             DashboardHelp.health(snapshot),
+            DashboardHelp.runtime(runtimeSnapshot),
         ]
-        guard helps.count == 6, helps.allSatisfy({ !$0.rawFields.isEmpty }) else {
+        guard helps.count == 7, helps.allSatisfy({ !$0.rawFields.isEmpty }) else {
             throw SnapshotError.missingHelpContent
         }
 

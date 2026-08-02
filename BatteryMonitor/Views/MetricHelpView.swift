@@ -9,6 +9,31 @@ struct MetricRawField: Identifiable, Equatable {
     var id: String { "\(name)|\(value)|\(unit)" }
 }
 
+enum MetricHelpResultStyle: Equatable {
+    case primary
+    case stable
+    case current
+
+    var tint: Color {
+        switch self {
+        case .primary: return AppTheme.chargingCyan
+        case .stable: return AppTheme.accentPurple
+        case .current: return AppTheme.batteryYellow
+        }
+    }
+}
+
+/// A comparison value shown alongside the primary result. Runtime uses this to
+/// keep the macOS value visually dominant while exposing two clearly-derived
+/// estimates in the same question-mark drawer.
+struct MetricHelpResult: Identifiable, Equatable {
+    let id: String
+    let title: String
+    let value: String
+    let note: String
+    let style: MetricHelpResultStyle
+}
+
 /// Content shared by every question-mark affordance on the final dashboard.
 /// Keeping the explanation as data lets the same drawer serve top-level answers,
 /// formulas, reference rows, and the hardware table.
@@ -21,6 +46,7 @@ struct MetricHelpContent: Identifiable, Equatable {
     let formula: String
     let substitution: String
     let source: String
+    var comparisonResults: [MetricHelpResult] = []
 }
 
 struct MetricHelpButton: View {
@@ -133,18 +159,50 @@ struct MetricHelpDrawer: View {
     }
 
     private var resultBlock: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 9) {
             drawerEyebrow(dashboardText("p.help_current", fallback: "当前结果"))
-            Text(content.result)
-                .font(.system(size: 27, weight: .medium, design: .monospaced))
-                .foregroundStyle(AppTheme.chargingCyan)
-                .minimumScaleFactor(0.75)
-                .lineLimit(2)
+
+            if content.comparisonResults.isEmpty {
+                Text(content.result)
+                    .font(.system(size: 27, weight: .medium, design: .monospaced))
+                    .foregroundStyle(AppTheme.chargingCyan)
+                    .minimumScaleFactor(0.75)
+                    .lineLimit(2)
+            } else {
+                if let primary = content.comparisonResults.first {
+                    comparisonResultCard(primary, primary: true)
+                }
+                HStack(alignment: .top, spacing: 9) {
+                    ForEach(content.comparisonResults.dropFirst()) { item in
+                        comparisonResultCard(item, primary: false)
+                    }
+                }
+            }
         }
-        .padding(15)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 12).fill(AppTheme.chargingCyan.opacity(0.045)))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(AppTheme.chargingCyan.opacity(0.15), lineWidth: 1))
+    }
+
+    private func comparisonResultCard(_ item: MetricHelpResult, primary: Bool) -> some View {
+        let tint = item.style.tint
+        return VStack(alignment: .leading, spacing: primary ? 7 : 5) {
+            Text(item.title)
+                .font(.system(size: primary ? 10.5 : 9.5, weight: .semibold))
+                .foregroundStyle(primary ? tint : AppTheme.textSecondary)
+                .lineLimit(1)
+            Text(item.value)
+                .font(.system(size: primary ? 27 : 18, weight: .medium, design: .monospaced))
+                .foregroundStyle(tint)
+                .minimumScaleFactor(0.72)
+                .lineLimit(1)
+            Text(item.note)
+                .font(.system(size: primary ? 10 : 9))
+                .foregroundStyle(AppTheme.textTertiary)
+                .fixedSize(horizontal: false, vertical: true)
+                .lineSpacing(2)
+        }
+        .padding(primary ? 14 : 11)
+        .frame(maxWidth: .infinity, minHeight: primary ? 94 : 106, alignment: .topLeading)
+        .background(RoundedRectangle(cornerRadius: 11).fill(tint.opacity(0.045)))
+        .overlay(RoundedRectangle(cornerRadius: 11).stroke(tint.opacity(0.16), lineWidth: 1))
     }
 
     @ViewBuilder

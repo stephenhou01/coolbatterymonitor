@@ -188,6 +188,37 @@ struct DashboardMetricSnapshot {
         return max(1, Int((remainingEnergyWh / currentPowerWatts * 60).rounded()))
     }
 
+    /// Valid power readings from the most recent ten minutes. Requiring at
+    /// least three readings prevents one instantaneous value from being
+    /// presented as a stable estimate.
+    var recentStablePowerSamples: [Double] {
+        guard let end = realtimeData.map(\.timestamp).max() else { return [] }
+        let start = end.addingTimeInterval(-10 * 60)
+        return realtimeData
+            .filter { $0.timestamp >= start && $0.timestamp <= end }
+            .map(\.power)
+            .filter { $0.isFinite && $0 > 0.1 }
+    }
+
+    var stablePowerWatts: Double? {
+        let values = recentStablePowerSamples.sorted()
+        guard values.count >= 3 else { return nil }
+        let middle = values.count / 2
+        if values.count.isMultiple(of: 2) {
+            return (values[middle - 1] + values[middle]) / 2
+        }
+        return values[middle]
+    }
+
+    var stableRuntimeMinutes: Int? {
+        guard let remainingEnergyWh,
+              let stablePowerWatts,
+              stablePowerWatts > 0.1 else { return nil }
+        return max(1, Int((remainingEnergyWh / stablePowerWatts * 60).rounded()))
+    }
+
+    var currentLoadRuntimeMinutes: Int? { unplugEstimateMinutes }
+
     var displayedRuntimeMinutes: Int? {
         data.isOnAC ? unplugEstimateMinutes : data.timeRemainingMinutes
     }

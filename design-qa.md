@@ -1,35 +1,33 @@
-# Compact Main Window Design QA
+# Runtime Help Drawer Design QA
 
 ## Source and implementation
 
-- Source visual truth: `/var/folders/6x/5n5xzp595qq6yg5b59ph39vw0000gp/T/codex-clipboard-be483634-4aa0-44cd-93e2-5988537ff504.png`
-- Default-size implementation: `.build/qa/compact-main-window-light.png`
-- Minimum-size implementation: `.build/qa/compact-main-window-minimum-light.png`
-- Full-view comparison: `.build/qa/compact-window-reference-comparison.png`
-- Reference viewport: 2524 × 1820 pixels, light appearance, Overview, AC connected.
-- Implementation viewport: 1040 × 680 points (2080 × 1360 Retina pixels), light appearance, Overview, AC connected.
+- Source visual truth: `/var/folders/6x/5n5xzp595qq6yg5b59ph39vw0000gp/T/codex-clipboard-4c59ecfb-87a3-462a-84fa-1bdbdca80ca5.png`
+- Implementation screenshot: `.build/qa/runtime-help/runtime-help-dark.png`
+- Full-view and focused comparison: `.build/qa/runtime-help/runtime-help-comparison.png`
+- Viewport: source 910 × 1262 pixels; implementation 1080 × 800 points rendered at 2048 × 1434 pixels, dark appearance, runtime help open.
+- State: deterministic Mac16,12 fixture with a valid 135-minute macOS reading, five recent power samples, and a current 16.68 W load.
 
 ## Findings
 
 - P0: none.
 - P1: none.
 - P2: none.
-- P3: the interactive desktop was locked, so the final system traffic-light chrome was not recaptured. The comparison uses the signed production SwiftUI content at the exact configured content size; macOS continues to provide the unchanged native window chrome.
+- P3: none. The source showed one derived result; the implementation intentionally extends the same drawer pattern to the user-requested primary system value plus two derived comparisons.
 
 ## Fidelity checks
 
-- Typography: hierarchy and optical weights are unchanged. The main runtime value now stays on one line and scales down at the 800-point minimum width.
-- Spacing and layout: the default frame changed from 1240 × 860 to 1040 × 680, reducing occupied area by about 34%. The sidebar changed from 218 to 196 points, leaving more width for the dashboard without changing navigation structure.
-- Colors and tokens: no palette, material, border, shadow, or semantic-state token changed.
-- Image and icon quality: the existing SF Symbols and custom metric-icon system are unchanged and remain sharp at both tested sizes.
-- Copy and content: no user-facing information was removed, abbreviated, or reordered. Smaller windows scroll vertically as before.
+- Typography: keeps the rounded title hierarchy, monospaced numeric values, small monospaced field labels, and readable optical weight from the source. The primary system time is visibly dominant.
+- Spacing and layout: preserves the 470-point drawer, section rhythm, header divider, card radius, and scroll behavior. The two derived cards share one row below the full-width system result without clipping.
+- Colors and tokens: retains the existing glass-dark surface and cyan primary accent; purple and yellow distinguish the two calculated values without changing the product palette.
+- Image and icon quality: this drawer contains no raster assets or custom decorative artwork. Existing native controls and SF Symbols remain unchanged and sharp.
+- Copy and content: clearly separates the macOS direct value, ten-minute median-power estimate, and current-load estimate. All three show their inputs and formulas further down the same drawer.
 
-## Patches made
+## Patches made since the previous QA pass
 
-- Added a one-time window-size migration that shrinks an oversized restored window and centers it, while preserving later user resizing.
-- Lowered the resizable minimum to 800 × 560 and verified the Overview at that exact size.
-- Kept manual enlargement available; the change only corrects the initial and legacy oversized frame.
-- Added a one-line safeguard for long runtime values at the minimum width.
-- The signed Universal Release app launched at 1020 × 666 on this Mac because its existing restored frame was already smaller than the new 1040 × 680 default; it was intentionally not enlarged.
+- Replaced the single runtime result block with one primary system card and two derived comparison cards.
+- Added a ten-minute median-power calculation with a minimum of three valid samples.
+- Added raw fields, formulas, substituted values, and trust-boundary copy for all three time values.
+- Added native copy for all ten supported languages and deterministic runtime-help snapshot coverage.
 
 final result: passed

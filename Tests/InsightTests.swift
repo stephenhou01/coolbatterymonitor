@@ -277,6 +277,52 @@ expect(runtimeData.officialImpliedPower == runtimeData.officialImpliedPowerWatts
        && runtimeData.averageTelemetryPower == runtimeData.averageTelemetryPowerWatts,
        "产品指标API与带单位别名保持同一口径")
 
+runtimeData.timeRemainingMinutes = 155
+runtimeData.hardwareDetail.timeRemainingRaw = 155
+runtimeData.hardwareDetail.avgTimeToEmpty = 160
+let runtimeSampleEnd = Date()
+let stablePowers = [10.0, 12.0, 14.0, 40.0]
+let stablePoints = [
+    RealtimeDataPoint(timestamp: runtimeSampleEnd.addingTimeInterval(-700),
+                      voltage: 12.3, amperage: -800, power: 1,
+                      temperature: 30, percent: 72),
+] + stablePowers.enumerated().map { offset, power in
+    RealtimeDataPoint(timestamp: runtimeSampleEnd.addingTimeInterval(Double(-30 * offset)),
+                      voltage: 12.3, amperage: -800, power: power,
+                      temperature: 30, percent: 72)
+}
+let runtimeSnapshot = DashboardMetricSnapshot(data: runtimeData, realtimeData: stablePoints)
+expect(runtimeSnapshot.recentStablePowerSamples.count == 4,
+       "稳健估算只采用最近10分钟的有效功耗样本")
+expect(abs((runtimeSnapshot.stablePowerWatts ?? 0) - 13) < 0.001,
+       "稳健功耗使用中位数，瞬时高负载不会拉偏")
+expect(runtimeSnapshot.stableRuntimeMinutes == 178,
+       "稳健续航 = 剩余能量 ÷ 最近10分钟功耗中位数")
+expect(runtimeSnapshot.currentLoadRuntimeMinutes == 148,
+       "当前负载续航继续使用此刻SystemPower")
+let runtimeHelp = DashboardHelp.runtime(runtimeSnapshot)
+expect(runtimeHelp.comparisonResults.map(\.id) == [
+    "runtime.system", "runtime.stable", "runtime.current-load",
+], "续航问号同时展示系统时间、稳健估算和当前负载估算")
+expect(runtimeHelp.comparisonResults.first?.value == "2 h 35 m",
+       "macOS系统时间是三项里的主要结果")
+
+let insufficientSnapshot = DashboardMetricSnapshot(
+    data: runtimeData,
+    realtimeData: Array(stablePoints.suffix(2))
+)
+expect(insufficientSnapshot.stableRuntimeMinutes == nil,
+       "不足3个样本时不把瞬时读数包装成稳健估算")
+
+var pluggedRuntimeData = runtimeData
+pluggedRuntimeData.isOnAC = true
+let pluggedHelp = DashboardHelp.runtime(
+    DashboardMetricSnapshot(data: pluggedRuntimeData, realtimeData: stablePoints)
+)
+expect(pluggedHelp.comparisonResults.first?.value == "—"
+       && pluggedHelp.comparisonResults.dropFirst().allSatisfy { $0.value != "—" },
+       "插电时系统时间明确不可用，但两项拔电计算值仍可对照")
+
 // MARK: - 10.1) 四层系统数据的类型与异常规则
 
 print("── 10.1) 四层系统数据类型与异常规则")
