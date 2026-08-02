@@ -6,7 +6,6 @@ struct RealtimeMonitorView: View {
     let batteryData: BatteryData
     @State private var selectedMetric: MetricType = .power
     @State private var selectedRange: TimeRange = .oneMinute
-    @State private var appeared = false
 
     enum MetricType: String, CaseIterable {
         case voltage, amperage, power, temperature, percent
@@ -25,7 +24,7 @@ struct RealtimeMonitorView: View {
             switch self {
             case .voltage: return "tip.voltage"
             case .amperage: return "tip.amperage"
-            case .power: return "tip.power"
+            case .power: return "p.help_summary_power"
             case .temperature: return "tip.temperature"
             case .percent: return "tip.percent"
             }
@@ -60,21 +59,18 @@ struct RealtimeMonitorView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            // Header
             HStack {
-                Image(systemName: "waveform.path.ecg")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(AppTheme.chargingCyan)
+                MetricGlyph(
+                    .power,
+                    tint: AppTheme.chargingCyan,
+                    scale: .compact
+                )
                 HStack(spacing: 4) {
                     Text(L("rt.title"))
                         .font(AppTheme.Typography.sectionTitle)
                         .foregroundStyle(AppTheme.textPrimary)
-                        // 不加这两行，德语「Echtzeit-Monitor」会被右侧 segmented Picker
-                        // （metric 名在西文里宽得多）挤成竖排 4 行
                         .lineLimit(1)
                         .fixedSize(horizontal: true, vertical: false)
-                    // Tooltip follows the selected metric — the only surface for tip.percent,
-                    // since "percent" has no mini card in currentStatsRow.
                     Image(systemName: "exclamationmark.circle")
                         .font(.system(size: 9, weight: .medium))
                         .foregroundStyle(AppTheme.textTertiary.opacity(0.5))
@@ -83,12 +79,7 @@ struct RealtimeMonitorView: View {
                 Spacer()
             }
 
-            // Metric selector 独占一行。
-            //
-            // 原来它和标题挤在同一行，两者都 fixedSize 不能压缩：实测法语头部需求
-            // 542pt / 意大利语 558pt，而右栏只有 552pt —— 余量只有几个 pt，任何字体
-            // 度量误差都会让整块内容超出窗口，ScrollView 居中后两侧被裁，左边留白
-            // 直接消失。独占一行后最宽的语言（法语 346pt）也有充裕余量。
+            // Metric selector 独占一行，避免长语言与标题互相挤压。
             Picker("", selection: $selectedMetric) {
                 ForEach(MetricType.allCases, id: \.self) { metric in
                     Text(metric.displayName).tag(metric)
@@ -97,7 +88,6 @@ struct RealtimeMonitorView: View {
             .pickerStyle(.segmented)
             .labelsHidden()
 
-            // Time range selector
             HStack(spacing: 8) {
                 ForEach(TimeRange.allCases, id: \.self) { range in
                     Button {
@@ -118,16 +108,15 @@ struct RealtimeMonitorView: View {
                     .pointerOnHover()
                 }
                 Spacer()
-                Text(L("rt.interval"))
+                // BatteryService 的真实 UI 轮询周期是 10 秒；不要继续显示旧版 3 秒文案。
+                Text(L("p.live_10s"))
                     .font(.system(size: 10))
                     .foregroundStyle(AppTheme.textTertiary)
             }
 
-            // Main chart
             chartView
                 .frame(height: 200)
 
-            // Current stats row
             currentStatsRow
         }
         .padding(AppTheme.Spacing.xl)
@@ -146,7 +135,7 @@ struct RealtimeMonitorView: View {
                 Text(L("rt.collecting"))
                     .font(.system(size: 13))
                     .foregroundStyle(AppTheme.textSecondary)
-                Text(L("rt.collecting_hint"))
+                Text(L("p.live_10s"))
                     .font(.system(size: 11))
                     .foregroundStyle(AppTheme.textTertiary)
             }
@@ -158,7 +147,9 @@ struct RealtimeMonitorView: View {
                     y: .value(selectedMetric.displayName, metricValue(point))
                 )
                 .foregroundStyle(chartColor)
-                .interpolationMethod(.catmullRom)
+                // IOKit 数值在两次真实刷新之间保持不变。阶梯线如实表达采样，
+                // 避免 Catmull-Rom 凭空制造从未观测到的中间峰谷。
+                .interpolationMethod(.stepEnd)
                 .lineStyle(StrokeStyle(lineWidth: 2))
 
                 AreaMark(
@@ -172,7 +163,7 @@ struct RealtimeMonitorView: View {
                         endPoint: .bottom
                     )
                 )
-                .interpolationMethod(.catmullRom)
+                .interpolationMethod(.stepEnd)
             }
             .chartXAxis {
                 AxisMarks(values: .automatic(desiredCount: 5)) { value in
@@ -211,28 +202,28 @@ struct RealtimeMonitorView: View {
     private var currentStatsRow: some View {
         HStack(spacing: 12) {
             StatMiniCard(
-                icon: "bolt.fill",
+                icon: .power,
                 label: L("rt.power"),
                 value: LNum("%.1fW", batteryData.currentPowerWatts),
                 color: AppTheme.chargingBlue,
-                tooltipKey: "tip.power"
+                tooltipKey: "p.help_summary_power"
             )
             StatMiniCard(
-                icon: "gauge.medium",
+                icon: .voltage,
                 label: L("rt.voltage"),
                 value: LNum("%.2fV", batteryData.voltage),
                 color: AppTheme.accentPurple,
                 tooltipKey: "tip.voltage"
             )
             StatMiniCard(
-                icon: "arrow.up.arrow.down",
+                icon: .current,
                 label: L("rt.amperage"),
                 value: "\(batteryData.amperage)mA",
                 color: AppTheme.chargingCyan,
                 tooltipKey: "tip.amperage"
             )
             StatMiniCard(
-                icon: "thermometer.medium",
+                icon: .temperature,
                 label: L("rt.temperature"),
                 value: LNum("%.1f°C", batteryData.temperatureCelsius),
                 color: tempColor,
@@ -283,7 +274,7 @@ struct RealtimeMonitorView: View {
 // MARK: - Mini Stat Card
 
 struct StatMiniCard: View {
-    let icon: String
+    let icon: BatteryMetricIcon
     let label: String
     let value: String
     let color: Color
@@ -292,13 +283,11 @@ struct StatMiniCard: View {
     var body: some View {
         VStack(spacing: 4) {
             HStack(spacing: 4) {
-                Image(systemName: icon)
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(color)
+                MetricGlyph(icon, tint: color, scale: .micro, style: .plain)
                 Text(label)
                     .font(.system(size: 10))
                     .foregroundStyle(AppTheme.textTertiary)
-                    .lineLimit(1)               // 同 StatCard：长语言标签不得换行撑高卡片
+                    .lineLimit(1)
                     .minimumScaleFactor(0.75)
                 if let key = tooltipKey {
                     Image(systemName: "exclamationmark.circle")

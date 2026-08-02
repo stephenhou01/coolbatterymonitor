@@ -14,8 +14,11 @@ struct DailyRecord: Codable, Equatable {
     var minSoc: Int
     var maxSoc: Int
     var maxChargingTemp: Double   // 充电期间观测到的最高温
-    var fullHoldSamples: Int      // 「满充且仍插电」的采样次数
+    var fullHoldSamples: Int      // 约 56 秒一个「满充且仍插电」有效样本
     var cycleCount: Int           // 当天末次观测到的循环数
+    /// 仅用于把 10 秒 UI 轮询节流到电量计约 56 秒的真实采样节奏。
+    /// Optional + 默认值保证旧版 JSON 没有这个字段时仍能直接解码。
+    var lastFullHoldSampleAt: Date? = nil
 }
 
 struct SOCHistory: Codable, Equatable {
@@ -23,7 +26,9 @@ struct SOCHistory: Codable, Equatable {
 
     /// 只保留最近这么多天
     static let retentionDays = 90
-    /// 与电量计约 56 秒的真实刷新节奏一致：32 个满充插电样本约为 30 分钟。
+    /// 与 RuntimeSample 的真实电量计节奏一致，避免 10 秒 UI 轮询重复计算同一状态。
+    static let fullHoldSampleInterval: TimeInterval = 56
+    /// 32 × 56 秒 ≈ 30 分钟；习惯评分按每 30 分钟满充停留计一次事件。
     static let fullHoldSamplesPerEvent = 32
 
     // MARK: - 派生指标
@@ -74,7 +79,7 @@ struct SOCHistory: Codable, Equatable {
 
     func date(from string: String) -> Date? { Self.formatter.date(from: string) }
 
-    /// 每次采样调用。同一天的记录原地更新，不新增。
+    /// 每次 UI 轮询调用。同一天的记录原地更新，不新增。
     mutating func record(percent: Int, cycleCount: Int, temperature: Double,
                          isCharging: Bool, isFullyCharged: Bool, isOnAC: Bool,
                          now: Date = Date()) {
@@ -86,7 +91,21 @@ struct SOCHistory: Codable, Equatable {
         r.maxSoc = max(r.maxSoc, percent)
         r.cycleCount = max(r.cycleCount, cycleCount)
         if isCharging { r.maxChargingTemp = max(r.maxChargingTemp, temperature) }
-        if isFullyCharged && isOnAC { r.fullHoldSamples += 1 }
+
+        if isFullyCharged && isOnAC {
+            let shouldCount: Bool
+            if let previous = r.lastFullHoldSampleAt {
+                let elapsed = now.timeIntervalSince(previous)
+                // 时钟回拨时也允许重新建立基准；否则负间隔会让计数永久卡住。
+                shouldCount = elapsed < 0 || elapsed >= Self.fullHoldSampleInterval
+            } else {
+                shouldCount = true
+            }
+            if shouldCount {
+                r.fullHoldSamples += 1
+                r.lastFullHoldSampleAt = now
+            }
+        }
 
         records.removeAll { $0.date == today }
         records.append(r)

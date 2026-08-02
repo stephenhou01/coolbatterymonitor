@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import AppKit
 import IOKit
 import IOKit.ps
 
@@ -18,6 +19,7 @@ class BatteryService: ObservableObject {
     @Published var insight: BatteryInsight? = nil
 
     private var timer: Timer?
+    private var terminationObserver: NSObjectProtocol?
     /// Live power and process context refresh every ten seconds. Remaining-time
     /// history still applies RuntimeSample's 56-second de-duplication gate, so a
     /// faster UI poll never inflates the system-estimate sample count.
@@ -27,6 +29,13 @@ class BatteryService: ObservableObject {
     private var lastKnownPercentTime: Date? = nil
     private let maxRealtimePoints = 180
     private let maxRuntimeSamples = 10_000
+    /// Runtime history changes at the fuel-gauge cadence, but encoding and
+    /// rewriting up to 10,000 samples every minute is needless disk activity.
+    /// Keep live samples in memory and flush at most once every five minutes,
+    /// plus on pause/termination.
+    static let runtimePersistenceInterval: TimeInterval = 5 * 60
+    private var runtimeHistoryDirty = false
+    private var lastRuntimeHistorySave: Date?
 
     // Self-recording charging history
     private var currentSessionStart: Date? = nil
@@ -35,9 +44,13 @@ class BatteryService: ObservableObject {
 
     // History cache (sandboxed container)
     private let cacheDir: URL = {
-        let dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        let fileManager = FileManager.default
+        let base = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+            ?? URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true)
+                .appendingPathComponent("Library/Application Support", isDirectory: true)
+        let dir = base
             .appendingPathComponent("BatteryMonitor", isDirectory: true)
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        try? fileManager.createDirectory(at: dir, withIntermediateDirectories: true)
         return dir
     }()
     private var historyCacheURL: URL { cacheDir.appendingPathComponent("history_cache.json") }
@@ -55,6 +68,23 @@ class BatteryService: ObservableObject {
     /// 最近一次进程采样，供耗电分析用
     private var latestProcesses: [ProcessPowerInfo] = []
 
+    init() {
+        terminationObserver = NotificationCenter.default.addObserver(
+            forName: NSApplication.willTerminateNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.flushPersistentState()
+        }
+    }
+
+    deinit {
+        timer?.invalidate()
+        if let terminationObserver {
+            NotificationCenter.default.removeObserver(terminationObserver)
+        }
+    }
+
     func startMonitoring() {
         timer?.invalidate()
         loadCachedHistory()
@@ -70,6 +100,9 @@ class BatteryService: ObservableObject {
         let t = Timer(timeInterval: refreshInterval, repeats: true) { [weak self] _ in
             self?.fetchData()
         }
+        // Give macOS room to coalesce this wake-up with process sampling and
+        // other system maintenance without changing the visible 10-second rate.
+        t.tolerance = min(1.5, refreshInterval * 0.15)
         RunLoop.main.add(t, forMode: .common)
         timer = t
     }
@@ -77,6 +110,7 @@ class BatteryService: ObservableObject {
     func stopMonitoring() {
         timer?.invalidate()
         timer = nil
+        flushPersistentState()
     }
 
     func setLiveRefreshEnabled(_ enabled: Bool) {
@@ -233,7 +267,16 @@ class BatteryService: ObservableObject {
             amperage: Double(data.amperage),
             power: data.currentPowerWatts,
             temperature: data.temperatureCelsius,
-            percent: data.percent
+            percent: data.percent,
+            inputPower: data.hardwareDetail.systemPowerIn > 0
+                ? Double(data.hardwareDetail.systemPowerIn) / 1000.0
+                : nil,
+            adapterVoltage: data.hardwareDetail.adapterVoltage > 0
+                ? Double(data.hardwareDetail.adapterVoltage) / 1000.0
+                : nil,
+            adapterCurrent: data.hardwareDetail.adapterCurrent > 0
+                ? Double(data.hardwareDetail.adapterCurrent) / 1000.0
+                : nil
         )
 
         self.batteryData = data
@@ -297,7 +340,7 @@ class BatteryService: ObservableObject {
 
     private func saveSOCHistory() {
         guard let d = try? JSONEncoder().encode(socHistory) else { return }
-        try? d.write(to: socHistoryURL)
+        try? d.write(to: socHistoryURL, options: .atomic)
     }
 
     // MARK: - System Runtime History
@@ -313,7 +356,8 @@ class BatteryService: ObservableObject {
         if runtimeSamples.count > maxRuntimeSamples {
             runtimeSamples.removeFirst(runtimeSamples.count - maxRuntimeSamples)
         }
-        saveRuntimeHistory()
+        runtimeHistoryDirty = true
+        saveRuntimeHistoryIfNeeded()
     }
 
     private func loadRuntimeHistory() {
@@ -326,11 +370,42 @@ class BatteryService: ObservableObject {
             .filter { RuntimeSample.isValid(minutes: $0.minutesRemaining) }
             .sorted { $0.timestamp < $1.timestamp }
             .suffix(maxRuntimeSamples))
+        runtimeHistoryDirty = false
+        lastRuntimeHistorySave = (try? FileManager.default.attributesOfItem(atPath: runtimeHistoryURL.path)[.modificationDate]) as? Date
     }
 
-    private func saveRuntimeHistory() {
+    static func shouldPersistRuntimeHistory(
+        dirty: Bool,
+        lastSaved: Date?,
+        now: Date,
+        force: Bool = false
+    ) -> Bool {
+        guard dirty else { return false }
+        guard !force else { return true }
+        guard let lastSaved else { return true }
+        return now.timeIntervalSince(lastSaved) >= runtimePersistenceInterval
+    }
+
+    private func saveRuntimeHistoryIfNeeded(force: Bool = false, now: Date = Date()) {
+        guard Self.shouldPersistRuntimeHistory(
+            dirty: runtimeHistoryDirty,
+            lastSaved: lastRuntimeHistorySave,
+            now: now,
+            force: force
+        ) else { return }
         guard let data = try? JSONEncoder().encode(runtimeSamples) else { return }
-        try? data.write(to: runtimeHistoryURL, options: .atomic)
+        do {
+            try data.write(to: runtimeHistoryURL, options: .atomic)
+            runtimeHistoryDirty = false
+            lastRuntimeHistorySave = now
+        } catch {
+            // Preserve the dirty flag so the next scheduled or terminal flush
+            // can retry instead of silently losing the pending samples.
+        }
+    }
+
+    private func flushPersistentState() {
+        saveRuntimeHistoryIfNeeded(force: true)
     }
 
     // MARK: - IOKit Battery Properties
@@ -466,6 +541,6 @@ class BatteryService: ObservableObject {
 
     private func saveCachedHistory(_ sessions: [ChargingSession]) {
         guard let data = try? JSONEncoder().encode(sessions) else { return }
-        try? data.write(to: historyCacheURL)
+        try? data.write(to: historyCacheURL, options: .atomic)
     }
 }

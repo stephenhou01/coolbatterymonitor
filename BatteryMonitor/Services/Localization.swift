@@ -7,7 +7,7 @@ import Observation
 // reference 打进 bundle 的 Contents/Resources/Languages/。加一种语言 = 丢一个
 // JSON 文件，这里一行都不用改。
 //
-// 装载有两个来源，后者覆盖前者：
+// 装载有两个来源，后者按 key 覆盖前者：
 //   1. bundle 内的 Languages/
 //   2. Application Support/BatteryMonitor/Languages/（沙盒容器内，与 history_cache.json
 //      同目录）—— 往这里丢 JSON 可以改译文/加语言而不用重新构建。
@@ -44,6 +44,11 @@ final class L10n {
 
     private static let prefKey = "app.language.override"
     private static let fallback = "en"
+    private static let maxPackBytes = 2 * 1_024 * 1_024
+    private static let maxStringCount = 5_000
+    private static let maxKeyLength = 200
+    private static let maxValueLength = 20_000
+    private static let maxLanguageNameLength = 100
 
     // MARK: - Derived state
 
@@ -72,7 +77,7 @@ final class L10n {
 
     /// 直接展示用。把 `%%` 还原成 `%` —— 语言包里的字面百分号统一写成 `%%`
     /// （否则散文里的裸 `%` 会被格式符校验器当成说明符：`"100% overnight"` 的
-    /// `%` 后面跟空格再跟 `o`，`o` 是八进制说明符，签名算出 ['o']，而中文
+    /// `%` 后面跟空格再跟 `o`，`o` 是八进制说明符，签名算出 ["o"]，而中文
     /// 「80% 左右」后面是汉字签名为空 —— 签名不一致会导致该 key 被丢弃回落英文）。
     /// 这条路径不走 String(format:)，所以必须自己还原。
     func string(_ key: String) -> String {
@@ -118,53 +123,131 @@ final class L10n {
     }
 
     private static func loadPacks() -> [String: LanguagePack] {
-        var result: [String: LanguagePack] = [:]
+        var bundled: [String: LanguagePack] = [:]
 
-        // 1) bundle 内置
+        // 1) bundle 内置。单独保存，外部 en.json 不能取代格式参数的可信基准。
         if let urls = Bundle.main.urls(forResourcesWithExtension: "json", subdirectory: "Languages") {
-            for url in urls { insert(url, into: &result) }
-        }
-        // 2) 用户目录覆盖同 code 的包
-        if let dir = userLanguagesDir,
-           let urls = try? FileManager.default.contentsOfDirectory(at: dir,
-                                                                   includingPropertiesForKeys: nil) {
-            for url in urls where url.pathExtension == "json" { insert(url, into: &result) }
+            let sortedURLs = urls.map { $0 as URL }
+                .sorted(by: { $0.lastPathComponent < $1.lastPathComponent })
+            for url in sortedURLs {
+                guard let pack = decodePack(url) else { continue }
+                bundled[pack.meta.code] = pack
+            }
         }
 
-        // 校验格式符签名。语言包是外部输入，而 String(format:) 是 C 变参 ——
-        // 格式串与实参类型不匹配是内存不安全的（把 %.1f 写成 %d 会去读 Double
-        // 的位模式）。以 en 为基准，签名不符的 key 丢弃，查询时自动回落 en。
-        if let base = result[fallback] {
-            for (code, pack) in result where code != fallback {
-                let safe = pack.strings.filter { key, value in
-                    guard let ref = base.strings[key] else { return true }
-                    return formatSignature(value) == formatSignature(ref)
-                }
-                if safe.count != pack.strings.count {
-                    result[code] = LanguagePack(meta: pack.meta, strings: safe)
+        guard let trustedEnglish = bundled[fallback] else {
+            // 没有可信英文基准时仍允许 app 启动，但不装载外部语言包。
+            return bundled
+        }
+
+        var result: [String: LanguagePack] = [:]
+        for (code, pack) in bundled {
+            if code == fallback {
+                result[code] = pack
+            } else {
+                result[code] = LanguagePack(
+                    meta: pack.meta,
+                    strings: validatedStrings(pack.strings, against: trustedEnglish.strings)
+                )
+            }
+        }
+
+        // 2) 用户目录按 key 合并。同 code 的部分包只覆盖它提供的键，未提供的键
+        // 保留内置译文；坏格式符只丢弃对应键，不牵连同包其他安全译文。
+        if let dir = userLanguagesDir,
+           let urls = try? FileManager.default.contentsOfDirectory(
+               at: dir,
+               includingPropertiesForKeys: [.fileSizeKey],
+               options: [.skipsHiddenFiles]
+           ) {
+            for url in urls
+                .filter({ $0.pathExtension.lowercased() == "json" })
+                .sorted(by: { $0.lastPathComponent < $1.lastPathComponent }) {
+                guard let userPack = decodePack(url) else { continue }
+                let safeOverrides = validatedStrings(
+                    userPack.strings,
+                    against: trustedEnglish.strings
+                )
+                guard !safeOverrides.isEmpty else { continue }
+
+                if let current = result[userPack.meta.code] {
+                    var merged = current.strings
+                    merged.merge(safeOverrides) { _, replacement in replacement }
+                    // 对内置语言保留稳定的名称和菜单顺序，只覆盖文案。
+                    result[userPack.meta.code] = LanguagePack(meta: current.meta, strings: merged)
+                } else {
+                    // 新语言允许是部分包；缺失键按查询规则回落到英文。
+                    result[userPack.meta.code] = LanguagePack(
+                        meta: userPack.meta,
+                        strings: safeOverrides
+                    )
                 }
             }
         }
+
         return result
     }
 
-    private static func insert(_ url: URL, into result: inout [String: LanguagePack]) {
-        guard let data = try? Data(contentsOf: url),
+    private static func decodePack(_ url: URL) -> LanguagePack? {
+        guard let fileSize = try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize,
+              fileSize <= maxPackBytes,
+              let data = try? Data(contentsOf: url, options: .mappedIfSafe),
+              data.count <= maxPackBytes,
               let pack = try? JSONDecoder().decode(LanguagePack.self, from: data),
-              pack.meta.code == url.deletingPathExtension().lastPathComponent
-        else { return }     // 解码失败或 code 与文件名不符 → 忽略该包，不影响其余
-        result[pack.meta.code] = pack
+              pack.meta.code == url.deletingPathExtension().lastPathComponent,
+              !pack.meta.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              pack.meta.name.count <= maxLanguageNameLength,
+              pack.strings.count <= maxStringCount,
+              pack.strings.allSatisfy({ key, value in
+                  !key.isEmpty && key.count <= maxKeyLength && value.count <= maxValueLength
+              })
+        else { return nil }
+        return pack
     }
 
-    private static let specifier = try! NSRegularExpression(
-        pattern: #"%(?:\d+\$)?[-+ #0]*[\d.]*(?:hh|h|ll|l|L|z|j|t)?([diouxXeEfgGaAcspn@%])"#)
+    private static func validatedStrings(
+        _ strings: [String: String],
+        against trustedEnglish: [String: String]
+    ) -> [String: String] {
+        strings.filter { key, value in
+            guard let reference = trustedEnglish[key] else {
+                // 未知 key 没有可信的调用点参数定义；只接受不消耗 C 变参的文本。
+                return formatSignature(value).isEmpty
+            }
+            return formatSignature(value) == formatSignature(reference)
+        }
+    }
 
-    /// 提取格式符序列，`%%` 是转义的百分号不计入。
+    // 位置参数和长度修饰符都是 ABI 的一部分，不能只比较最终的 d/f/@。
+    // 例如英文 `%.1f … %d` 若被改成 `%2$.1f … %1$d`，说明符序列仍是 f,d，
+    // 但第一个位置实际会按 Double 读取传入的 Int，必须在装载时拒绝。
+    private static let specifier = try? NSRegularExpression(
+        pattern: #"%(?:(\d+)\$)?[-+ #0']*[\d.]*(hh|h|ll|l|L|z|j|t)?([diouxXeEfgGaAcspn@%])"#
+    )
+
+    /// 提取格式参数契约。`%%` 是转义的百分号不计入。
+    /// 返回项示例：`f`、`d`、`2$f`、`lld`。
     private static func formatSignature(_ s: String) -> [String] {
+        guard let specifier else { return [] }
         let ns = s as NSString
         return specifier.matches(in: s, range: NSRange(location: 0, length: ns.length))
-            .map { ns.substring(with: $0.range(at: 1)) }
-            .filter { $0 != "%" }
+            .compactMap { match in
+                let conversion = ns.substring(with: match.range(at: 3))
+                guard conversion != "%" else { return nil }
+                let position: String
+                if match.range(at: 1).location != NSNotFound {
+                    position = ns.substring(with: match.range(at: 1)) + "$"
+                } else {
+                    position = ""
+                }
+                let length: String
+                if match.range(at: 2).location != NSNotFound {
+                    length = ns.substring(with: match.range(at: 2))
+                } else {
+                    length = ""
+                }
+                return position + length + conversion
+            }
     }
 
     // MARK: - System language negotiation
@@ -182,7 +265,7 @@ final class L10n {
 }
 
 // MARK: - Global accessors
-// 签名与重写前逐字节一致，所以 81 处调用点无需改动。
+// 签名与重写前逐字节一致，所以调用点无需改动。
 
 func L(_ key: String) -> String { L10n.shared.string(key) }
 

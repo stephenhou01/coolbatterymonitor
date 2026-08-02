@@ -41,7 +41,7 @@ struct BatteryGaugeView: View {
 
             VStack(spacing: 2) {
                 if batteryData.isCharging {
-                    Image(systemName: "bolt.fill")
+                    Image(systemName: BatteryMetricIcon.charging.symbol)
                         .font(.system(size: 26, weight: .bold))
                         .foregroundStyle(AppTheme.chargingGradient)
                         .scaleEffect(boltScale)
@@ -75,10 +75,10 @@ struct BatteryGaugeView: View {
                 }
 
                 HStack(spacing: 12) {
-                    MiniMetric(icon: "bolt.fill", value: LNum("%.1fW", batteryData.currentPowerWatts), color: AppTheme.chargingBlue)
-                    MiniMetric(icon: "thermometer.medium", value: LNum("%.0f°", batteryData.temperatureCelsius), color: tempColor)
+                    MiniMetric(icon: .power, value: LNum("%.1fW", batteryData.currentPowerWatts), color: AppTheme.chargingBlue)
+                    MiniMetric(icon: .temperature, value: LNum("%.0f°", batteryData.temperatureCelsius), color: tempColor)
                     // 数字与单位的拼接方式交给语言包决定（「210次」无空格，「210 Zyklen」有）
-                    MiniMetric(icon: "arrow.triangle.2.circlepath", value: L("gauge.cycles_value", batteryData.cycleCount), color: AppTheme.textSecondary)
+                    MiniMetric(icon: .cycles, value: L("gauge.cycles_value", batteryData.cycleCount), color: AppTheme.accentPurple)
                 }
                 .padding(.top, 8)
             }
@@ -101,14 +101,12 @@ struct BatteryGaugeView: View {
 }
 
 struct MiniMetric: View {
-    let icon: String
+    let icon: BatteryMetricIcon
     let value: String
     let color: Color
     var body: some View {
         HStack(spacing: 3) {
-            Image(systemName: icon)
-                .font(.system(size: 9, weight: .semibold))
-                .foregroundStyle(color)
+            MetricGlyph(icon, tint: color, scale: .micro, style: .plain)
             Text(value)
                 .font(.system(size: 11, weight: .semibold, design: .rounded))
                 .foregroundStyle(AppTheme.textSecondary)
@@ -123,27 +121,27 @@ struct BatteryStatsGrid: View {
         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
             StatCard(title: batteryData.isCharging ? L("stat.charge_power") : L("stat.discharge_power"),
                      value: LNum("%.1fW", batteryData.currentPowerWatts),
-                     icon: "bolt.fill", color: batteryData.isCharging ? AppTheme.chargingBlue : AppTheme.textSecondary,
+                     icon: .power, color: batteryData.isCharging ? AppTheme.chargingBlue : AppTheme.textSecondary,
                      subtitle: batteryData.isCharging ? L("stat.realtime_charging") : (batteryData.isOnAC ? L("stat.not_charging") : L("stat.on_battery")),
                      tooltipKey: "tip.charge_power")
             StatCard(title: L("stat.adapter"), value: batteryData.isOnAC && batteryData.chargerWattage > 0 ? "\(batteryData.chargerWattage)W" : L("stat.not_connected"),
-                     icon: "powerplug.fill", color: batteryData.isOnAC ? AppTheme.accentPurple : AppTheme.textSecondary,
+                     icon: .adapter, color: batteryData.isOnAC ? AppTheme.accentPurple : AppTheme.textSecondary,
                      subtitle: batteryData.isOnAC ? L("stat.usbc") : L("stat.unplugged"),
                      tooltipKey: "tip.adapter")
             StatCard(title: L("stat.temperature"), value: LNum("%.1f°C", batteryData.temperatureCelsius),
-                     icon: "thermometer.medium", color: tempColor,
+                     icon: .temperature, color: tempColor,
                      subtitle: batteryData.temperatureCelsius > 38 ? L("stat.temp_high") : L("stat.temp_normal"),
                      tooltipKey: "tip.temperature")
             StatCard(title: L("stat.cycles"), value: "\(batteryData.cycleCount)",
-                     icon: "arrow.triangle.2.circlepath", color: AppTheme.textSecondary,
+                     icon: .cycles, color: AppTheme.accentPurple,
                      subtitle: cycleHealth,
                      tooltipKey: "tip.cycles")
             StatCard(title: L("stat.health"), value: "\(batteryData.maxCapacityPercent)%",
-                     icon: "heart.fill", color: healthColor,
+                     icon: .health, color: healthColor,
                      subtitle: batteryData.maxCapacityPercent >= 90 ? L("stat.health_excellent") : L("stat.health_good"),
                      tooltipKey: "tip.health")
             StatCard(title: L("stat.condition"), value: batteryData.condition.localizedDescription,
-                     icon: "checkmark.shield.fill", color: batteryData.condition == .normal ? AppTheme.batteryGreen : AppTheme.batteryYellow,
+                     icon: .status, color: batteryData.condition == .normal ? AppTheme.batteryGreen : AppTheme.batteryYellow,
                      subtitle: L("stat.system_check"),
                      tooltipKey: "tip.condition")
         }
@@ -169,7 +167,7 @@ struct BatteryStatsGrid: View {
 struct StatCard: View {
     let title: String
     let value: String
-    let icon: String
+    let icon: BatteryMetricIcon
     let color: Color
     let subtitle: String
     var tooltipKey: String? = nil
@@ -178,9 +176,7 @@ struct StatCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
-                Image(systemName: icon)
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(color)
+                MetricGlyph(icon, tint: color, scale: .compact)
                 Text(title)
                     .font(.system(size: 11))
                     .foregroundStyle(AppTheme.textTertiary)

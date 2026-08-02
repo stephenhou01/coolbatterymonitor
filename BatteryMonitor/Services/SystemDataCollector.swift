@@ -56,11 +56,17 @@ enum SystemDataCollector {
                 path: path,
                 declaredType: flat.type,
                 unit: "",
-                meaning: "macOS 本次返回的新字段；尚未在字段字典中定义，只用于本机核验与趋势观察。",
+                meaning: dashboardText(
+                    "system.field.new.meaning",
+                    fallback: "macOS 本次返回的新字段；尚未在字段字典中定义，只用于本机核验与趋势观察。"
+                ),
                 reliability: sourceReliability(source),
-                recommendation: "诊断/补充",
+                recommendation: dashboardText("system.field.new.recommendation", fallback: "诊断/补充"),
                 valueStars: 1,
-                note: "不要跨系统版本或机型直接比较，也不要单独据此得出健康结论。"
+                note: dashboardText(
+                    "system.field.new.note",
+                    fallback: "不要跨系统版本或机型直接比较，也不要单独据此得出健康结论。"
+                )
             )
             let anomaly = anomaly(for: metadata, value: flat)
             readings.append(SystemFieldReading(
@@ -266,35 +272,47 @@ enum SystemDataCollector {
         let lowerText = value.text?.lowercased() ?? ""
 
         if path.hasSuffix("PermanentFailureStatus"), let number = value.number, number != 0 {
-            return (.critical, "电池控制器报告了非零永久故障状态。")
+            return (.critical, dashboardText("system.anomaly.permanent_failure", fallback: "电池控制器报告了非零永久故障状态。"))
         }
         if path.hasSuffix("BatteryHealth"), !["good", "normal"].contains(lowerText) {
-            return (.critical, "系统电池健康状态不是 Good / Normal。")
+            return (.critical, dashboardText("system.anomaly.health_not_normal", fallback: "系统电池健康状态不是 Good / Normal。"))
         }
         if path == "thermalState" {
-            if lowerText == "critical" { return (.critical, "系统热状态已到 critical。") }
-            if lowerText == "serious" { return (.warning, "系统热状态已到 serious。") }
+            if lowerText == "critical" {
+                return (.critical, dashboardText("system.anomaly.thermal_critical", fallback: "系统热状态已到 critical。"))
+            }
+            if lowerText == "serious" {
+                return (.warning, dashboardText("system.anomaly.thermal_serious", fallback: "系统热状态已到 serious。"))
+            }
         }
         if path.hasSuffix("BatteryWarningLevel"), let number = value.number, number >= 3 {
-            return (.critical, "系统进入最终低电量警告。")
+            return (.critical, dashboardText("system.anomaly.battery_warning_final", fallback: "系统进入最终低电量警告。"))
         }
         if path.hasSuffix("BatteryWarningLevel"), let number = value.number, number >= 2 {
-            return (.warning, "系统进入提前低电量警告。")
+            return (.warning, dashboardText("system.anomaly.battery_warning_early", fallback: "系统进入提前低电量警告。"))
         }
         if path.hasSuffix("CellVoltage"), let numbers = value.numbers,
            let minimum = numbers.min(), let maximum = numbers.max() {
             let spread = maximum - minimum
-            if spread > 50 { return (.warning, "电芯压差超过 50 mV，需要结合负载和趋势复核。") }
-            if spread > 20 { return (.attention, "电芯压差超过 20 mV，建议继续观察同机趋势。") }
+            if spread > 50 {
+                return (.warning, dashboardText("system.anomaly.cell_spread_warning", fallback: "电芯压差超过 50 mV，需要结合负载和趋势复核。"))
+            }
+            if spread > 20 {
+                return (.attention, dashboardText("system.anomaly.cell_spread_attention", fallback: "电芯压差超过 20 mV，建议继续观察同机趋势。"))
+            }
         }
         if path == "Temperature", let raw = value.number {
             let celsius = raw > 1000 ? raw / 100 : raw > 100 ? raw / 10 : raw
-            if celsius >= 45 { return (.warning, "电池温度达到 45°C 以上。") }
-            if celsius < 0 { return (.attention, "低温会暂时压缩可用续航。") }
+            if celsius >= 45 {
+                return (.warning, dashboardText("system.anomaly.temperature_high", fallback: "电池温度达到 45°C 以上。"))
+            }
+            if celsius < 0 {
+                return (.attention, dashboardText("system.anomaly.temperature_low", fallback: "低温会暂时压缩可用续航。"))
+            }
         }
         if (path.hasSuffix("BatteryCellDisconnectCount") || path.hasSuffix("QmaxDisqualificationReason")),
            let number = value.number, number != 0 {
-            return (.attention, "诊断计数或原因码非零，建议结合历史与其他指标复核。")
+            return (.attention, dashboardText("system.anomaly.diagnostic_nonzero", fallback: "诊断计数或原因码非零，建议结合历史与其他指标复核。"))
         }
         return (.none, "")
     }
@@ -308,20 +326,28 @@ enum SystemDataCollector {
     private static func sourceReliability(_ source: String) -> String {
         switch source {
         case SystemDataLayer.powerSources.sourceName, SystemDataLayer.processInfo.sourceName:
-            return "Apple 官方公开接口"
+            return dashboardText("system.reliability.public", fallback: "Apple 官方公开接口")
         case SystemDataLayer.legacyIOPM.sourceName:
-            return "Apple 官方支持但不推荐"
+            return dashboardText("system.reliability.legacy", fallback: "Apple 官方支持但不推荐")
         default:
-            return "实测可读；字段协议未公开保证"
+            return dashboardText("system.reliability.private", fallback: "实测可读；字段协议未公开保证")
         }
     }
 
     private static func inferredGroup(_ path: String) -> String {
         let lower = path.lowercased()
-        if lower.contains("temperature") || lower.contains("thermal") { return "温度/热状态" }
-        if lower.contains("capacity") || lower.contains("soc") { return "容量/充电" }
-        if lower.contains("power") || lower.contains("current") || lower.contains("voltage") { return "电气/功耗" }
-        if lower.contains("fail") || lower.contains("error") { return "故障/状态" }
-        return "原始/诊断"
+        if lower.contains("temperature") || lower.contains("thermal") {
+            return dashboardText("system.group.temperature", fallback: "温度/热状态")
+        }
+        if lower.contains("capacity") || lower.contains("soc") {
+            return dashboardText("system.group.capacity", fallback: "容量/充电")
+        }
+        if lower.contains("power") || lower.contains("current") || lower.contains("voltage") {
+            return dashboardText("system.group.power", fallback: "电气/功耗")
+        }
+        if lower.contains("fail") || lower.contains("error") {
+            return dashboardText("system.group.fault", fallback: "故障/状态")
+        }
+        return dashboardText("system.group.raw", fallback: "原始/诊断")
     }
 }

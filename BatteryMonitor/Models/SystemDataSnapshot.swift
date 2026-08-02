@@ -36,7 +36,12 @@ struct SystemFieldMetadata: Codable, Equatable, Identifiable {
     /// stars. Identifiers stay out of the first view so screenshots do not leak
     /// serial numbers; they remain visible under their source and “all” tabs.
     var isMeaningfulByDefault: Bool {
-        valueStars >= 2 && group != "标识"
+        let lowerPath = path.lowercased()
+        let isPrivateIdentifier = ["serial", "uuid", "machineid", "hardwareid"]
+            .contains(where: lowerPath.contains)
+        return valueStars >= 2
+            && !isPrivateIdentifier
+            && !["标识", "身份", "Identity"].contains(group)
     }
 }
 

@@ -108,6 +108,10 @@ struct FinalDashboardView: View {
 struct DashboardMetricSnapshot {
     let data: BatteryData
     let realtimeData: [RealtimeDataPoint]
+    /// The latest persisted Apple system estimate. Overview uses this while on
+    /// AC because the live gauge returns 65535 there; derived power estimates
+    /// are never written into this fallback.
+    var systemRuntimeFallbackSample: RuntimeSample? = nil
 
     var detail: BatteryHardwareDetail { data.hardwareDetail }
     var modelIdentifier: String {
@@ -121,6 +125,43 @@ struct DashboardMetricSnapshot {
         if detail.systemPowerWatts > 0.1 { return detail.systemPowerWatts }
         if detail.systemLoad > 0 { return Double(detail.systemLoad) / 1000.0 }
         return max(0, data.currentPowerWatts)
+    }
+
+    /// Real-time power crossing from the external adapter into the whole Mac.
+    /// This is not battery charging power: part (or all) of it can be consumed
+    /// directly by the running computer.
+    var adapterOutputPowerWatts: Double? {
+        guard data.isOnAC,
+              detail.presentRawFields.contains("PowerTelemetryData.SystemPowerIn") else { return nil }
+        let watts = Double(detail.systemPowerIn) / 1000.0
+        guard watts.isFinite, watts >= 0 else { return nil }
+        return watts
+    }
+
+    /// Positive battery-side current only. `InstantAmperage` is preferred for
+    /// the live card; `Amperage` is the compatible smoothed fallback. A Mac can
+    /// be on AC while this remains exactly zero because the adapter is powering
+    /// the system without adding charge to the battery.
+    var batteryChargingCurrentMilliamps: Int? {
+        guard data.isCharging else { return 0 }
+        if detail.presentRawFields.contains("InstantAmperage") {
+            return max(0, detail.instantAmperage)
+        }
+        if detail.presentRawFields.contains("Amperage") {
+            return max(0, detail.smoothedAmperage)
+        }
+        guard data.amperage != 0 else { return nil }
+        return max(0, data.amperage)
+    }
+
+    /// Battery charging power = pack voltage × positive battery current.
+    /// When IsCharging is false the physical flow into the battery is 0 W,
+    /// regardless of the adapter's whole-Mac input power.
+    var batteryChargingPowerWatts: Double? {
+        guard data.isCharging else { return 0 }
+        guard voltageVolts.isFinite, voltageVolts > 0,
+              let milliamps = batteryChargingCurrentMilliamps else { return nil }
+        return voltageVolts * Double(milliamps) / 1000.0
     }
 
     var usualPowerWatts: Double {
@@ -188,6 +229,53 @@ struct DashboardMetricSnapshot {
         return max(1, Int((remainingEnergyWh / currentPowerWatts * 60).rounded()))
     }
 
+    /// Valid power readings from the most recent ten minutes. Requiring at
+    /// least five readings prevents a few instantaneous values from being
+    /// presented as a stable estimate.
+    var recentStablePowerSamples: [Double] {
+        guard let end = realtimeData.map(\.timestamp).max() else { return [] }
+        let start = end.addingTimeInterval(-10 * 60)
+        return realtimeData
+            .filter { $0.timestamp >= start && $0.timestamp <= end }
+            .map(\.power)
+            .filter { $0.isFinite && $0 > 0.1 }
+    }
+
+    var stablePowerWatts: Double? {
+        let values = recentStablePowerSamples.sorted()
+        guard values.count >= 5 else { return nil }
+        let middle = values.count / 2
+        if values.count.isMultiple(of: 2) {
+            return (values[middle - 1] + values[middle]) / 2
+        }
+        return values[middle]
+    }
+
+    var stableRuntimeMinutes: Int? {
+        guard let remainingEnergyWh,
+              let stablePowerWatts,
+              stablePowerWatts > 0.1 else { return nil }
+        return max(1, Int((remainingEnergyWh / stablePowerWatts * 60).rounded()))
+    }
+
+    var currentPowerAgeSeconds: Int {
+        max(0, Int(Date().timeIntervalSince(data.lastUpdated).rounded()))
+    }
+
+    var currentLoadRuntimeMinutes: Int? {
+        guard currentPowerAgeSeconds <= 120 else { return nil }
+        return unplugEstimateMinutes
+    }
+
+    var systemRuntimeMinutes: Int? {
+        if !data.isOnAC,
+           let minutes = data.timeRemainingMinutes,
+           RuntimeSample.isValid(minutes: minutes) {
+            return minutes
+        }
+        return systemRuntimeFallbackSample?.minutesRemaining
+    }
+
     var displayedRuntimeMinutes: Int? {
         data.isOnAC ? unplugEstimateMinutes : data.timeRemainingMinutes
     }
@@ -222,7 +310,7 @@ private struct RemainingTimeHeroSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 17) {
             DashboardSectionHeader(
-                icon: "clock",
+                icon: BatteryMetricIcon.runtime.symbol,
                 title: dashboardText("p.remaining", fallback: "还能用多久"),
                 color: AppTheme.chargingCyan,
                 help: DashboardHelp.runtime(snapshot),
@@ -336,7 +424,11 @@ private struct RemainingTimeHeroSection: View {
             .lineLimit(1)
             .minimumScaleFactor(0.68)
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("\(minutes / 60) 小时 \(minutes % 60) 分钟")
+            .accessibilityLabel(dashboardText(
+                "p.duration_accessibility",
+                fallback: "{hours} 小时 {minutes} 分钟",
+                replacements: ["hours": "\(minutes / 60)", "minutes": "\(minutes % 60)"]
+            ))
         } else {
             VStack(alignment: .leading, spacing: 4) {
                 Text("—")
@@ -353,7 +445,7 @@ private struct RemainingTimeHeroSection: View {
         let gridItems = Array(repeating: GridItem(.flexible(), spacing: 10), count: columns)
         return LazyVGrid(columns: gridItems, alignment: .leading, spacing: 10) {
             PriorityMetricCard(
-                icon: "heart",
+                icon: .health,
                 title: dashboardText("p.priority_health", fallback: "整块电池的健康状况"),
                 value: LNum("%.0f", snapshot.healthPercent), unit: "%",
                 status: snapshot.healthPercent >= 90 ? L("stat.health_excellent") : L("stat.health_good"),
@@ -366,7 +458,7 @@ private struct RemainingTimeHeroSection: View {
                 selection: $selectedHelp
             )
             PriorityMetricCard(
-                icon: "bolt.fill",
+                icon: .power,
                 title: dashboardText("p.priority_power", fallback: "当前电脑的使用功率"),
                 value: LNum("%.1f", snapshot.currentPowerWatts), unit: "W",
                 status: LNum("%.0f%% %@", snapshot.currentPowerWatts / max(snapshot.usualPowerWatts, 0.1) * 100,
@@ -380,7 +472,7 @@ private struct RemainingTimeHeroSection: View {
                 selection: $selectedHelp
             )
             PriorityMetricCard(
-                icon: "thermometer.medium",
+                icon: .temperature,
                 title: dashboardText("p.priority_temp", fallback: "当前电池温度"),
                 value: LNum("%.1f", snapshot.data.temperatureCelsius), unit: "°C",
                 status: snapshot.data.temperatureCelsius < 35 ? L("stat.temp_normal") : L("stat.temp_high"),
@@ -397,7 +489,7 @@ private struct RemainingTimeHeroSection: View {
 }
 
 private struct PriorityMetricCard: View {
-    let icon: String
+    let icon: BatteryMetricIcon
     let title: String
     let value: String
     let unit: String
@@ -413,9 +505,7 @@ private struct PriorityMetricCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 9) {
             HStack(spacing: 6) {
-                Image(systemName: icon)
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(color)
+                MetricGlyph(icon, tint: color, scale: .compact)
                 Text(title)
                     .font(.system(size: 10.5, weight: .medium))
                     .foregroundStyle(AppTheme.textTertiary)
@@ -758,7 +848,7 @@ private struct RemainingTimeHistorySection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 15) {
             DashboardSectionHeader(
-                icon: "waveform.path.ecg",
+                icon: BatteryMetricIcon.runtime.symbol,
                 title: isForecast
                     ? dashboardText("p.unplug_trend", fallback: "拔电后的预计续航")
                     : dashboardText("p.remaining_trend", fallback: "系统剩余时间记录"),
@@ -968,10 +1058,8 @@ struct DashboardSectionHeader: View {
     var trailing: AnyView? = nil
 
     var body: some View {
-        HStack(spacing: 7) {
-            Image(systemName: icon)
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(color)
+        HStack(spacing: 9) {
+            MetricGlyph(systemName: icon, tint: color, scale: .compact)
             Text(title)
                 .font(.system(size: 13, weight: .semibold, design: .rounded))
                 .foregroundStyle(AppTheme.textPrimary)

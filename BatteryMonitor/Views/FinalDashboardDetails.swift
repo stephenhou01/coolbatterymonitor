@@ -20,7 +20,7 @@ struct CapacityBreakdownSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             DashboardSectionHeader(
-                icon: "battery.100",
+                icon: BatteryMetricIcon.designCapacity.symbol,
                 title: dashboardText("p.where_title", fallback: "你买的容量去哪了"),
                 color: AppTheme.batteryYellow,
                 help: DashboardHelp.capacityOverview(snapshot),
@@ -61,13 +61,13 @@ struct CapacityBreakdownSection: View {
                     subtitle: dashboardText("p.eq_capacity_sub", fallback: "出厂设计减去长期容量损失"),
                     terms: [
                         .init(label: dashboardText("p.design_capacity", fallback: "设计容量"), value: design,
-                              icon: "shippingbox", color: AppTheme.batteryYellow,
+                              icon: .designCapacity, color: AppTheme.batteryYellow,
                               help: DashboardHelp.designCapacity(snapshot)),
                         .init(label: dashboardText("p.capacity_gap", fallback: "长期容量总差额"), value: gap,
-                              icon: "arrow.triangle.2.circlepath", color: AppTheme.batteryRed,
+                              icon: .capacityGap, color: AppTheme.batteryRed,
                               help: DashboardHelp.capacityGap(snapshot)),
                         .init(label: dashboardText("p.current_max", fallback: "目前最大容量"), value: full,
-                              icon: "shield", color: AppTheme.chargingCyan,
+                              icon: .capacity, color: AppTheme.chargingCyan,
                               help: DashboardHelp.currentMax(snapshot)),
                     ],
                     operators: ["−", "="],
@@ -79,13 +79,13 @@ struct CapacityBreakdownSection: View {
                     subtitle: dashboardText("p.eq_usage_sub", fallback: "目前最大容量减去本次已用，就是此刻还剩"),
                     terms: [
                         .init(label: dashboardText("p.current_max", fallback: "目前最大容量"), value: full,
-                              icon: "shield", color: AppTheme.chargingCyan,
+                              icon: .capacity, color: AppTheme.chargingCyan,
                               help: DashboardHelp.currentMax(snapshot)),
                         .init(label: dashboardText("p.used_since_full", fallback: "本次已经用掉"), value: used,
-                              icon: "bolt", color: AppTheme.chargingBlue,
+                              icon: .usedCapacity, color: AppTheme.chargingBlue,
                               help: DashboardHelp.usedSinceFull(snapshot)),
                         .init(label: dashboardText("p.current_actual", fallback: "此刻还剩"), value: current,
-                              icon: "battery.75", color: AppTheme.chargingCyan,
+                              icon: .stateOfCharge, color: AppTheme.chargingCyan,
                               help: DashboardHelp.currentActual(snapshot)),
                     ],
                     operators: ["−", "="],
@@ -109,13 +109,13 @@ struct CapacityBreakdownSection: View {
                         ),
                         terms: [
                             .init(label: dashboardText("p.capacity_gap", fallback: "长期容量总差额"), value: gap,
-                                  icon: "arrow.triangle.2.circlepath", color: AppTheme.batteryYellow,
+                                  icon: .capacityGap, color: AppTheme.batteryYellow,
                                   help: DashboardHelp.capacityGap(snapshot)),
                             .init(label: dashboardText("p.seg_un", fallback: "暂时够不到"), value: inaccessible,
-                                  icon: "drop.triangle", color: AppTheme.batteryYellow,
+                                  icon: .inaccessibleCapacity, color: AppTheme.batteryYellow,
                                   help: DashboardHelp.inaccessibleCapacity(snapshot)),
                             .init(label: dashboardText("p.seg_age", fallback: "真正老化"), value: permanent,
-                                  icon: "arrow.down.heart", color: AppTheme.batteryRed,
+                                  icon: .permanentLoss, color: AppTheme.batteryRed,
                                   help: DashboardHelp.permanentLoss(snapshot)),
                         ],
                         operators: ["=", "+"],
@@ -213,7 +213,7 @@ struct CapacityBreakdownSection: View {
     @ViewBuilder
     private var capacityCards: some View {
         CapacityLegendCard(
-            icon: "shippingbox.fill",
+            icon: .designCapacity,
             title: dashboardText("p.design_capacity", fallback: "出厂设计容量"),
             value: design,
             percentage: 100,
@@ -224,7 +224,7 @@ struct CapacityBreakdownSection: View {
             selection: $selectedHelp
         )
         CapacityLegendCard(
-            icon: "shield.fill",
+            icon: .capacity,
             title: dashboardText("p.current_max", fallback: "目前充满能装"),
             value: full,
             percentage: ratio(full),
@@ -234,7 +234,7 @@ struct CapacityBreakdownSection: View {
             selection: $selectedHelp
         )
         CapacityLegendCard(
-            icon: "battery.75",
+            icon: .stateOfCharge,
             title: dashboardText("p.current_actual", fallback: "此刻还剩"),
             value: current,
             percentage: ratio(current),
@@ -244,7 +244,7 @@ struct CapacityBreakdownSection: View {
             selection: $selectedHelp
         )
         CapacityLegendCard(
-            icon: "bolt.fill",
+            icon: .usedCapacity,
             title: dashboardText("p.used_since_full", fallback: "本次已经用掉"),
             value: used,
             percentage: ratio(used),
@@ -256,7 +256,7 @@ struct CapacityBreakdownSection: View {
         )
         if let inaccessible, let permanent {
             CapacityLegendCard(
-                icon: "drop.triangle.fill",
+                icon: .inaccessibleCapacity,
                 title: dashboardText("p.seg_un", fallback: "暂时够不到"),
                 value: inaccessible,
                 percentage: ratio(inaccessible),
@@ -266,7 +266,7 @@ struct CapacityBreakdownSection: View {
                 selection: $selectedHelp
             )
             CapacityLegendCard(
-                icon: "arrow.down.heart.fill",
+                icon: .permanentLoss,
                 title: dashboardText("p.seg_age", fallback: "真正老化"),
                 value: permanent,
                 percentage: ratio(permanent),
@@ -277,7 +277,7 @@ struct CapacityBreakdownSection: View {
             )
         } else {
             CapacityLegendCard(
-                icon: "arrow.triangle.2.circlepath",
+                icon: .capacityGap,
                 title: dashboardText("p.capacity_gap", fallback: "长期容量总差额"),
                 value: gap,
                 percentage: ratio(gap),
@@ -306,9 +306,24 @@ struct CapacityBreakdownSection: View {
 
     private var capacityAccessibilityLabel: String {
         if let inaccessible, let permanent {
-            return "\(current) mAh 此刻还剩，\(used) mAh 本次已用，\(inaccessible) mAh 暂时够不到，\(permanent) mAh 真正老化；FCC 边界 \(full) mAh"
+            return dashboardText(
+                "p.capacity_accessibility_four",
+                fallback: "{current} mAh 此刻还剩，{used} mAh 本次已用，{unusable} mAh 暂时够不到，{aged} mAh 真正老化；FCC 边界 {full} mAh",
+                replacements: [
+                    "current": formatted(current), "used": formatted(used),
+                    "unusable": formatted(inaccessible), "aged": formatted(permanent),
+                    "full": formatted(full),
+                ]
+            )
         }
-        return "\(current) mAh 此刻还剩，\(used) mAh 本次已用，\(gap) mAh 长期容量差额；FCC 边界 \(full) mAh"
+        return dashboardText(
+            "p.capacity_accessibility_gap",
+            fallback: "{current} mAh 此刻还剩，{used} mAh 本次已用，{gap} mAh 长期容量差额；FCC 边界 {full} mAh",
+            replacements: [
+                "current": formatted(current), "used": formatted(used),
+                "gap": formatted(gap), "full": formatted(full),
+            ]
+        )
     }
 
     private func ratio(_ value: Int) -> Double {
@@ -319,7 +334,7 @@ struct CapacityBreakdownSection: View {
 }
 
 private struct CapacityLegendCard: View {
-    let icon: String
+    let icon: BatteryMetricIcon
     let title: String
     let value: Int
     let percentage: Double
@@ -331,12 +346,7 @@ private struct CapacityLegendCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 9) {
             HStack(alignment: .top, spacing: 9) {
-                Image(systemName: icon)
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(color)
-                    .frame(width: 36, height: 36)
-                    .background(RoundedRectangle(cornerRadius: 10).fill(color.opacity(0.10)))
-                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(color.opacity(0.24)))
+                MetricGlyph(icon, tint: color, scale: .card)
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 4) {
                         Text(title)
@@ -379,7 +389,7 @@ private struct CapacityLegendCard: View {
 private struct CapacityEquationTerm {
     let label: String
     let value: Int
-    let icon: String
+    let icon: BatteryMetricIcon
     let color: Color
     let help: MetricHelpContent
 }
@@ -418,11 +428,7 @@ private struct CapacityEquation: View {
         HStack(spacing: 7) {
             ForEach(Array(terms.enumerated()), id: \.offset) { index, term in
                 HStack(spacing: 6) {
-                    Image(systemName: term.icon)
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(term.color)
-                        .frame(width: 28, height: 28)
-                        .background(RoundedRectangle(cornerRadius: 8).fill(term.color.opacity(0.08)))
+                    MetricGlyph(term.icon, tint: term.color, scale: .compact)
                     VStack(alignment: .leading, spacing: 1) {
                         HStack(spacing: 3) {
                             Text(term.label)
@@ -464,6 +470,7 @@ struct MetricReferenceSection: View {
 
         return [
             ReferenceMetric(
+                icon: .balance,
                 title: dashboardText("insight.factor.balance", fallback: "各单元均衡度"),
                 current: "\(delta) mV",
                 range: "0–20 mV",
@@ -477,6 +484,7 @@ struct MetricReferenceSection: View {
                 help: DashboardHelp.cellBalance(snapshot)
             ),
             ReferenceMetric(
+                icon: .resistance,
                 title: dashboardText("insight.factor.resistance", fallback: "电池内部阻力"),
                 current: "\(maxResistance) mΩ",
                 range: "0–130 mΩ",
@@ -490,6 +498,7 @@ struct MetricReferenceSection: View {
                 help: DashboardHelp.resistance(snapshot)
             ),
             ReferenceMetric(
+                icon: .cycles,
                 title: dashboardText("insight.factor.cycles", fallback: "循环使用率"),
                 current: LNum("%.1f%%", cycleUsage),
                 range: "0–50%",
@@ -501,6 +510,7 @@ struct MetricReferenceSection: View {
                 help: DashboardHelp.cycles(snapshot)
             ),
             ReferenceMetric(
+                icon: .voltage,
                 title: dashboardText("hw.m.pack_voltage", fallback: "电池组电压"),
                 current: LNum("%.2f V", packVoltage),
                 range: detail.minimumPackVoltage > 0 && detail.maximumPackVoltage > 0
@@ -582,6 +592,7 @@ struct MetricReferenceSection: View {
 }
 
 private struct ReferenceMetric: Identifiable {
+    let icon: BatteryMetricIcon
     let title: String
     let current: String
     let range: String
@@ -654,6 +665,7 @@ private struct ReferenceMetricRow: View {
 
     private var metricLabel: some View {
         HStack(spacing: 4) {
+            MetricGlyph(metric.icon, tint: metric.color, scale: .micro, style: .plain)
             Text(metric.title)
                 .font(.system(size: 9, weight: .semibold))
                 .foregroundStyle(AppTheme.textPrimary)
@@ -678,6 +690,7 @@ private struct ReferenceMetricCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
+                MetricGlyph(metric.icon, tint: metric.color, scale: .compact)
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 4) {
                         Text(metric.title)
@@ -831,38 +844,59 @@ private struct ExplanationCard: View {
 enum DashboardHelp {
     static func runtime(_ s: DashboardMetricSnapshot) -> MetricHelpContent {
         let detail = s.detail
-        if s.data.isOnAC {
-            let minutes = s.unplugEstimateMinutes ?? 0
-            return content(
-                id: "runtime.unplug",
-                title: dashboardText("p.unplug_badge", fallback: "拔电预计"),
-                summary: dashboardText("p.unplug_note", fallback: "插电时系统不提供放电剩余时间，因此用这台电脑当前储能和当前功率做清晰标注的预计。"),
-                result: runtime(minutes),
-                fields: [
-                    field("ModelDesignEnergy", f(s.designEnergyWh), "Wh"),
-                    field("AppleRawCurrentCapacity", s.currentCapacity, "mAh"),
-                    field("DesignCapacity", s.designCapacity, "mAh"),
-                    field("BatteryData.SystemPower", f(s.currentPowerWatts), "W"),
-                ],
-                formula: "remainingWh = designWh × currentCapacity ÷ designCapacity\nunplugMinutes = remainingWh ÷ systemPower × 60",
-                substitution: "\(f(s.designEnergyWh)) × \(s.currentCapacity) ÷ \(s.designCapacity) = \(f(s.remainingEnergyWh)) Wh\n\(f(s.remainingEnergyWh)) ÷ \(f(s.currentPowerWatts)) × 60 = \(minutes) min",
-                source: "IOKit live capacity and BatteryData.SystemPower + Apple model specification. Derived forecast; it is never stored as macOS runtime history."
-            )
-        }
+        let systemMinutes = s.systemRuntimeMinutes
+        let stableMinutes = s.stableRuntimeMinutes
+        let currentMinutes = s.currentLoadRuntimeMinutes
+        let systemNote = s.data.isOnAC && s.systemRuntimeFallbackSample != nil
+            ? dashboardText("shell.apple_runtime_last_note", fallback: "接电状态下保留最近一次有效的 Apple 官方系统预估")
+            : (s.data.isOnAC
+               ? dashboardText("p.no_estimate_ac", fallback: "已连接电源，macOS 暂不估算放电剩余时间")
+            : (systemMinutes == nil
+               ? dashboardText("p.chart_waiting", fallback: "等待电量计给出续航预测")
+               : dashboardText("p.runtime_system_note", fallback: "直接读取 TimeRemaining；无效时回退 AvgTimeToEmpty")))
 
-        let minutes = s.data.timeRemainingMinutes ?? 0
         return content(
-            id: "runtime.system",
-            title: dashboardText("p.remaining", fallback: "还能用多久"),
-            summary: dashboardText("p.src_note", fallback: "电池供电时优先显示 macOS 电量计直接给出的剩余时间；页面不再根据功率另算一个相互矛盾的数字。"),
-            result: runtime(minutes),
+            id: "runtime.comparison",
+            title: dashboardText("p.runtime_compare_title", fallback: "三种续航口径"),
+            summary: dashboardText("p.runtime_compare_summary", fallback: "主结果以 macOS 系统时间为准；下面两项是同一份剩余电量分别按稳健功耗和当前功耗换算的参考值。"),
+            result: runtime(systemMinutes),
             fields: [
                 field("TimeRemaining", detail.timeRemainingRaw, "min"),
                 field("AvgTimeToEmpty", detail.avgTimeToEmpty, "min"),
+                field("ModelDesignEnergy", f(s.designEnergyWh), "Wh"),
+                field("AppleRawCurrentCapacity", s.currentCapacity, "mAh"),
+                field("DesignCapacity", s.designCapacity, "mAh"),
+                field("Derived.Recent10mMedianPower", f(s.stablePowerWatts), "W"),
+                field("Derived.Recent10mValidSamples", s.recentStablePowerSamples.count),
+                field("BatteryData.SystemPower", f(s.currentPowerWatts), "W"),
+                field("Derived.CurrentPowerSampleAge", s.currentPowerAgeSeconds, "s"),
             ],
-            formula: dashboardText("p.help_direct", fallback: "无公式：直接读取系统字段。"),
-            substitution: "TimeRemaining / AvgTimeToEmpty → \(optional(detail.timeRemainingRaw)) / \(optional(detail.avgTimeToEmpty)) min → \(minutes) min",
-            source: "AppleSmartBattery IOKit fields. 65,535 is treated as unavailable, never as minutes."
+            formula: "systemMinutes = valid(TimeRemaining) ?? valid(AvgTimeToEmpty) ?? latestPersistedSystemSample\nremainingWh = designWh × currentCapacity ÷ designCapacity\nstableMinutes = remainingWh ÷ median(last10mPower) × 60\ncurrentLoadMinutes = remainingWh ÷ currentSystemPower × 60",
+            substitution: "system: \(optional(detail.timeRemainingRaw)) / \(optional(detail.avgTimeToEmpty)) min; latest persisted \(optional(s.systemRuntimeFallbackSample?.minutesRemaining)) min → \(runtime(systemMinutes))\nremaining: \(f(s.designEnergyWh)) × \(s.currentCapacity) ÷ \(s.designCapacity) = \(f(s.remainingEnergyWh)) Wh\nstable: \(f(s.remainingEnergyWh)) ÷ \(f(s.stablePowerWatts)) × 60 = \(optional(stableMinutes)) min\ncurrent: \(f(s.remainingEnergyWh)) ÷ \(f(s.currentPowerWatts)) × 60 = \(optional(currentMinutes)) min",
+            source: dashboardText("p.runtime_compare_source", fallback: "macOS 系统时间来自 AppleSmartBattery；两项计算值由本机剩余能量和实测功耗推导，只作对照，不写入系统续航历史。"),
+            results: [
+                MetricHelpResult(
+                    id: "runtime.system",
+                    title: dashboardText("p.runtime_system_label", fallback: "macOS 系统时间"),
+                    value: runtime(systemMinutes),
+                    note: systemNote,
+                    style: .primary
+                ),
+                MetricHelpResult(
+                    id: "runtime.stable",
+                    title: dashboardText("p.runtime_stable_label", fallback: "稳健估算"),
+                    value: runtime(stableMinutes),
+                    note: dashboardText("p.runtime_stable_note", fallback: "最近 10 分钟功耗中位数；至少 5 个有效样本"),
+                    style: .stable
+                ),
+                MetricHelpResult(
+                    id: "runtime.current-load",
+                    title: dashboardText("p.runtime_current_label", fallback: "当前负载估算"),
+                    value: runtime(currentMinutes),
+                    note: dashboardText("p.runtime_current_note", fallback: "假设此刻功耗保持不变；样本超过 120 秒就等待新数据"),
+                    style: .current
+                ),
+            ]
         )
     }
 
@@ -937,53 +971,188 @@ enum DashboardHelp {
     static func adapterPower(_ s: DashboardMetricSnapshot) -> MetricHelpContent {
         let detail = s.detail
         let watts = detail.adapterWatts > 0 ? detail.adapterWatts : s.data.chargerWattage
-        let displayedWatts = watts > 0 ? "\(watts) W" : "unavailable"
+        let rawWatts: Int? = watts > 0 ? watts : nil
+        let rawVoltage: Int? = detail.adapterVoltage > 0 ? detail.adapterVoltage : nil
+        let rawCurrent: Int? = detail.adapterCurrent > 0 ? detail.adapterCurrent : nil
+        let rawSystemPowerIn: Int? = detail.systemPowerIn > 0 ? detail.systemPowerIn : nil
+        let rawProfileCount: Int? = detail.usbHvcMenu.isEmpty ? nil : detail.usbHvcMenu.count
+        let voltage = rawVoltage.map { Double($0) / 1000.0 }
+        let current = rawCurrent.map { Double($0) / 1000.0 }
+        let calculatedWatts = voltage.flatMap { voltage in current.map { voltage * $0 } }
+        let displayedWatts = watts > 0 ? "\(watts) W" : calculatedWatts.map { LNum("%.1f W", $0) } ?? "—"
+        let connected = s.data.isOnAC || detail.hasAdapterData
+        let negotiated = voltage != nil && current != nil
+        let adapterType = InsightEngine.localizedAdapterType(
+            detail.adapterDescription,
+            hasPD: !detail.usbHvcMenu.isEmpty || negotiated
+        )
+        let stateTitle: String
+        let stateDetail: String
+        if !connected {
+            stateTitle = dashboardText("p.adapter_status_disconnected", fallback: "未连接充电器")
+            stateDetail = dashboardText("p.adapter_status_disconnected_note", fallback: "插入电源后会读取协商电压、电流和额定功率")
+        } else if negotiated {
+            stateTitle = dashboardText("p.adapter_status_negotiated", fallback: "已连接 · 协商成功")
+            stateDetail = "\(adapterType) · \(LNum("%.1f V", voltage ?? 0)) / \(LNum("%.2f A", current ?? 0))"
+        } else {
+            stateTitle = dashboardText("p.adapter_status_waiting", fallback: "已连接 · 等待协商字段")
+            stateDetail = adapterType
+        }
+
+        let equation = if let voltage, let current, let calculatedWatts {
+            "\(LNum("%.1f V", voltage)) × \(LNum("%.2f A", current)) = \(LNum("%.1f W", calculatedWatts))"
+        } else {
+            dashboardText("p.adapter_equation_waiting", fallback: "等待电压和电流字段")
+        }
+        let equationNote: String
+        if let calculatedWatts, watts > 0 {
+            let tolerance = max(1.0, Double(watts) * 0.03)
+            equationNote = abs(calculatedWatts - Double(watts)) <= tolerance
+                ? dashboardText("p.adapter_contract_match", fallback: "三个字段相互吻合；这是充电器能力上限，不是实时耗电。")
+                : dashboardText("p.adapter_contract_diff", fallback: "系统报告的额定功率与电压×电流略有差异；分别保留原始值，避免强行改写。")
+        } else {
+            equationNote = dashboardText("p.adapter_contract_partial", fallback: "字段不完整时不反推缺失值。")
+        }
+
+        let trendEnd = s.realtimeData.map(\.timestamp).max()
+        let trendStart = trendEnd?.addingTimeInterval(-10 * 60)
+        let trendPoints = s.realtimeData.suffix(60).compactMap { point -> MetricHelpTrendPoint? in
+            guard trendStart.map({ point.timestamp >= $0 }) ?? true,
+                  let input = point.inputPower, input.isFinite, input > 0.1 else { return nil }
+            return MetricHelpTrendPoint(timestamp: point.timestamp, watts: input)
+        }
+        let currentInput = connected
+            ? (detail.systemPowerIn > 0
+                ? Double(detail.systemPowerIn) / 1000.0
+                : trendPoints.last?.watts)
+            : nil
         return content(
             id: "power.adapter",
-            title: dashboardText("shell.adapter", fallback: "适配器功率"),
+            title: dashboardText("p.adapter_status_title", fallback: "充电器状态"),
             summary: dashboardText(
                 "p.help_summary_adapter_power",
                 fallback: "这是充电器与电脑协商出的额定功率，不是电脑此刻一定正在消耗这么多。拔掉电源后，这组字段通常会消失。"
             ),
-            result: watts > 0 ? "\(watts) W" : "—",
+            result: displayedWatts,
             fields: [
-                field("AdapterDetails.Watts", watts, "W"),
-                field("AdapterDetails.AdapterVoltage", detail.adapterVoltage, "mV"),
-                field("AdapterDetails.Current", detail.adapterCurrent, "mA"),
+                field("AdapterDetails.Watts", rawWatts, "W"),
+                field("AdapterDetails.AdapterVoltage", rawVoltage, "mV"),
+                field("AdapterDetails.Current", rawCurrent, "mA"),
+                field("Derived.NegotiatedPower", f(calculatedWatts), "W"),
+                field("PowerTelemetryData.SystemPowerIn", rawSystemPowerIn, "mW"),
+                field("AdapterDetails.UsbHvcMenu", rawProfileCount, "profiles"),
                 field("AdapterDetails.Description", detail.adapterDescription),
             ],
-            formula: dashboardText("p.help_direct", fallback: "无公式：直接读取系统字段。"),
-            substitution: "AdapterDetails.Watts → \(displayedWatts)",
+            formula: "voltageV = AdapterVoltage ÷ 1000\ncurrentA = Current ÷ 1000\nnegotiatedPowerW = voltageV × currentA\nactualInputW = SystemPowerIn ÷ 1000",
+            substitution: "\(optional(rawVoltage)) ÷ 1000 = \(f(voltage)) V\n\(optional(rawCurrent)) ÷ 1000 = \(f(current)) A\n\(f(voltage)) × \(f(current)) = \(f(calculatedWatts)) W\nSystemPowerIn: \(optional(rawSystemPowerIn)) ÷ 1000 = \(f(currentInput)) W",
             source: dashboardText(
                 "p.help_source_adapter_power",
                 fallback: "IOKit AppleSmartBattery.AdapterDetails。它表示当前电源协商档位；实际输入功率请看 SystemPowerIn。"
+            ),
+            powerContract: MetricPowerContract(
+                stateTitle: stateTitle,
+                stateDetail: stateDetail,
+                isConnected: connected,
+                isNegotiated: negotiated,
+                voltageLabel: dashboardText("p.adapter_voltage", fallback: "协商电压"),
+                voltageText: voltage.map { LNum("%.1f V", $0) } ?? "—",
+                currentLabel: dashboardText("p.adapter_current", fallback: "协商电流"),
+                currentText: current.map { LNum("%.2f A", $0) } ?? "—",
+                powerLabel: dashboardText("p.adapter_rated_power", fallback: "额定功率"),
+                powerText: displayedWatts,
+                equationText: equation,
+                equationNote: equationNote,
+                trendTitle: dashboardText("p.adapter_input_trend", fallback: "整机实际输入功率"),
+                trendValue: currentInput.map { LNum("%.1f W", $0) } ?? "—",
+                trendNote: dashboardText("p.adapter_input_trend_note", fallback: "青线是 SystemPowerIn 实测值；黄色虚线是协商上限。两者不同很正常，剩余能力没有被浪费。"),
+                trendPoints: trendPoints,
+                ceilingWatts: watts > 0 ? Double(watts) : calculatedWatts
             )
         )
     }
 
     static func chargingPower(_ s: DashboardMetricSnapshot) -> MetricHelpContent {
-        let detail = s.detail
-        let watts = max(0, Double(detail.systemPowerIn) / 1000.0)
-        let displayedWatts = LNum("%.1f W", watts)
+        let voltage = s.voltageVolts
+        let currentMilliamps = s.batteryChargingCurrentMilliamps
+        let currentAmps = currentMilliamps.map { Double($0) / 1000.0 }
+        let watts = s.batteryChargingPowerWatts
+        let displayedWatts = watts.map { $0 < 0.05 ? "0 W" : LNum("%.1f W", $0) } ?? "—"
+        let rawVoltage = s.detail.packVoltage > 0 ? s.detail.packVoltage : nil
+        let rawSmoothedCurrent: Int? = if s.detail.presentRawFields.contains("Amperage") {
+            s.detail.smoothedAmperage
+        } else if s.data.amperage != 0 {
+            s.data.amperage
+        } else {
+            nil
+        }
         return content(
             id: "power.charging",
             title: dashboardText("shell.charge_power", fallback: "充电功率"),
             summary: dashboardText(
                 "p.help_summary_charging_power",
-                fallback: "这里展示电源送进整机的实时输入功率。它包含电脑当下运行所需的电，因此不等于全部进入电池的功率。"
+                fallback: "这是实际流进电池的功率：电池电压 × 正向充电电流。电脑插着电但电池没有充电时，这里就是 0 W。"
             ),
             result: displayedWatts,
             fields: [
-                field("PowerTelemetryData.SystemPowerIn", detail.systemPowerIn, "mW"),
-                field("PowerTelemetryData.VoltageIn", detail.systemVoltageIn, "mV"),
-                field("PowerTelemetryData.CurrentIn", detail.systemCurrentIn, "mA"),
-                field("PowerTelemetryData.AdapterEfficiencyLoss", detail.adapterEfficiencyLoss, "mW"),
+                field("AppleRawBatteryVoltage", s.detail.appleRawBatteryVoltage, "mV"),
+                field("Voltage", s.detail.voltageRaw, "mV"),
+                field("Derived.BatteryPackVoltage", rawVoltage, "mV"),
+                field("InstantAmperage", s.detail.presentRawFields.contains("InstantAmperage") ? s.detail.instantAmperage : nil, "mA"),
+                field("Amperage", rawSmoothedCurrent, "mA"),
+                field("IsCharging", s.data.isCharging ? "true" : "false"),
             ],
-            formula: "inputPowerW = SystemPowerIn ÷ 1000",
-            substitution: "\(detail.systemPowerIn) ÷ 1000 = \(displayedWatts)",
+            formula: "batteryVoltageV = batteryVoltageMillivolts ÷ 1000\nbatteryChargingCurrentA = IsCharging ? max(batteryCurrentMilliamps, 0) ÷ 1000 : 0\nbatteryChargingPowerW = batteryVoltageV × batteryChargingCurrentA",
+            substitution: "\(optional(rawVoltage)) ÷ 1000 = \(LNum("%.3f V", voltage))\nIsCharging = \(s.data.isCharging) → \(optional(currentMilliamps)) ÷ 1000 = \(f(currentAmps)) A\n\(LNum("%.3f", voltage)) × \(f(currentAmps)) = \(displayedWatts)",
             source: dashboardText(
                 "p.help_source_charging_power",
-                fallback: "IOKit PowerTelemetryData.SystemPowerIn。该字段只在连接电源且系统提供实时遥测时有效。"
+                fallback: "由 AppleSmartBattery 的电池组电压与带符号电池电流推导；放电方向的负电流不会被算作充电。"
+            )
+        )
+    }
+
+    static func adapterOutputPower(_ s: DashboardMetricSnapshot) -> MetricHelpContent {
+        let detail = s.detail
+        let watts = s.adapterOutputPowerWatts
+        let displayedWatts = watts.map { LNum("%.1f W", $0) } ?? "—"
+        return content(
+            id: "power.adapter-output",
+            title: dashboardText("shell.adapter_output_power", fallback: "适配器输出功率"),
+            summary: dashboardText(
+                "p.help_summary_adapter_output_power",
+                fallback: "这是适配器送进整台电脑的实时功率，既包含电脑当前使用的部分，也可能包含给电池充电的部分；它不是电池充电功率。"
+            ),
+            result: displayedWatts,
+            fields: [
+                field(
+                    "PowerTelemetryData.SystemPowerIn",
+                    detail.presentRawFields.contains("PowerTelemetryData.SystemPowerIn") ? detail.systemPowerIn : nil,
+                    "mW",
+                    dashboardText("p.raw_power_in_explain", fallback: "充电器实际送入 Mac 的功率")
+                ),
+                field(
+                    "PowerTelemetryData.VoltageIn",
+                    detail.presentRawFields.contains("PowerTelemetryData.VoltageIn") ? detail.systemVoltageIn : nil,
+                    "mV",
+                    dashboardText("p.raw_voltage_in_explain", fallback: "进入 Mac 的实时电压")
+                ),
+                field(
+                    "PowerTelemetryData.CurrentIn",
+                    detail.presentRawFields.contains("PowerTelemetryData.CurrentIn") ? detail.systemCurrentIn : nil,
+                    "mA",
+                    dashboardText("p.raw_current_in_explain", fallback: "进入 Mac 的实时电流")
+                ),
+                field(
+                    "PowerTelemetryData.AdapterEfficiencyLoss",
+                    detail.presentRawFields.contains("PowerTelemetryData.AdapterEfficiencyLoss") ? detail.adapterEfficiencyLoss : nil,
+                    "mW",
+                    dashboardText("p.raw_adapter_loss_explain", fallback: "适配器效率损耗原始值")
+                ),
+            ],
+            formula: "adapterOutputPowerW = SystemPowerIn ÷ 1000",
+            substitution: "\(optional(detail.presentRawFields.contains("PowerTelemetryData.SystemPowerIn") ? detail.systemPowerIn : nil)) ÷ 1000 = \(displayedWatts)",
+            source: dashboardText(
+                "p.help_source_adapter_output_power",
+                fallback: "直接读取 IOKit PowerTelemetryData.SystemPowerIn；只有连接外部电源且该帧包含实时输入遥测时才展示。"
             )
         )
     }
@@ -1302,7 +1471,9 @@ enum DashboardHelp {
         fields: [MetricRawField],
         formula: String,
         substitution: String,
-        source: String
+        source: String,
+        results: [MetricHelpResult] = [],
+        powerContract: MetricPowerContract? = nil
     ) -> MetricHelpContent {
         MetricHelpContent(
             id: id,
@@ -1312,16 +1483,28 @@ enum DashboardHelp {
             rawFields: fields,
             formula: formula,
             substitution: substitution,
-            source: source
+            source: source,
+            comparisonResults: results,
+            powerContract: powerContract
         )
     }
 
-    private static func field(_ name: String, _ value: String, _ unit: String = "") -> MetricRawField {
-        MetricRawField(name: name, value: value.isEmpty ? "—" : value, unit: unit)
+    private static func field(
+        _ name: String,
+        _ value: String,
+        _ unit: String = "",
+        _ explanation: String = ""
+    ) -> MetricRawField {
+        MetricRawField(name: name, value: value.isEmpty ? "—" : value, unit: unit, explanation: explanation)
     }
 
-    private static func field<T: BinaryInteger>(_ name: String, _ value: T?, _ unit: String = "") -> MetricRawField {
-        MetricRawField(name: name, value: value.map { String($0) } ?? "—", unit: unit)
+    private static func field<T: BinaryInteger>(
+        _ name: String,
+        _ value: T?,
+        _ unit: String = "",
+        _ explanation: String = ""
+    ) -> MetricRawField {
+        MetricRawField(name: name, value: value.map { String($0) } ?? "—", unit: unit, explanation: explanation)
     }
 
     private static func f(_ value: Double?) -> String {
@@ -1331,8 +1514,8 @@ enum DashboardHelp {
 
     private static func optional<T>(_ value: T?) -> String { value.map(String.init(describing:)) ?? "—" }
 
-    private static func runtime(_ minutes: Int) -> String {
-        guard minutes > 0 else { return "—" }
+    private static func runtime(_ minutes: Int?) -> String {
+        guard let minutes, minutes > 0 else { return "—" }
         return "\(minutes / 60) h \(String(format: "%02d", minutes % 60)) m"
     }
 }

@@ -38,6 +38,7 @@ let shellAndMenuKeys = [
     "shell.overview", "shell.technical", "shell.trends", "shell.diagnostics", "shell.settings",
     "shell.sidebar_subtitle", "shell.local_only", "shell.power_connected", "shell.on_battery",
     "shell.power_hint", "shell.adapter", "shell.adapter_connected", "shell.not_connected",
+    "shell.adapter_output_power", "shell.whole_mac_input",
     "shell.charge_power", "shell.charging", "shell.not_charging", "shell.temp_range",
     "shell.cycle_reference", "shell.health_good", "shell.health_fair", "shell.health_attention",
     "shell.status_attention", "shell.status_good", "shell.status_subtitle",
@@ -45,7 +46,11 @@ let shellAndMenuKeys = [
     "shell.diagnosing", "shell.system_anomalies", "shell.settings_subtitle", "shell.appearance",
     "shell.live_refresh", "shell.privacy_note", "shell.dynamic_trends", "shell.last_minutes",
     "shell.instant_power", "shell.current", "shell.top_processes", "shell.cpu_context",
-    "menu.config.title", "menu.config.second_metric", "menu.config.customize", "menu.config.empty",
+    "shell.runtime_comparison", "shell.instant_runtime", "shell.instant_runtime_note",
+    "shell.instant_runtime_waiting", "shell.apple_runtime", "shell.apple_runtime_unavailable",
+    "shell.apple_runtime_collecting", "shell.apple_runtime_last_note",
+    "shell.apple_runtime_recent", "shell.apple_runtime_recent_last",
+    "menu.config.title", "menu.config.second_metric", "menu.config.status_hint", "menu.config.metric_choice", "menu.config.customize", "menu.config.empty",
     "menu.config.drag_to_reorder", "menu.config.add_more", "menu.config.manage_in_dashboard",
     "menu.config.show", "menu.config.hide", "menu.config.move_up", "menu.config.move_down",
     "menu.config.restore_defaults", "menu.metric.runtime", "menu.metric.power",
@@ -53,8 +58,33 @@ let shellAndMenuKeys = [
     "menu.process.none", "menu.process.latest_real_sample", "p.menu_settings",
     "p.menu_close", "p.menu_language", "p.menu_quit",
     "p.help_summary_adapter_power", "p.help_source_adapter_power",
+    "p.adapter_status_title", "p.adapter_status_disconnected", "p.adapter_status_disconnected_note",
+    "p.adapter_status_negotiated", "p.adapter_status_waiting", "p.adapter_status_ready_badge",
+    "p.adapter_status_waiting_badge", "p.adapter_equation_waiting", "p.adapter_contract_match",
+    "p.adapter_contract_diff", "p.adapter_contract_partial", "p.adapter_voltage",
+    "p.adapter_current", "p.adapter_rated_power", "p.adapter_input_trend",
+    "p.adapter_input_trend_note", "p.adapter_trend_waiting",
+    "p.help_summary_adapter_output_power", "p.help_source_adapter_output_power",
     "p.help_summary_charging_power", "p.help_source_charging_power",
     "p.help_summary_cycle_count", "p.help_source_cycle_count",
+    "p.help_raw", "p.raw_explain_system_power", "p.raw_explain_system_load",
+    "p.raw_explain_battery_voltage", "p.raw_explain_battery_current",
+    "p.raw_explain_accumulated_load", "p.raw_explain_sample_count",
+    "p.raw_explain_capacity", "p.raw_explain_time", "p.raw_explain_temperature",
+    "p.raw_explain_cell", "p.raw_explain_resistance", "p.raw_explain_adapter",
+    "p.raw_explain_cycle", "p.raw_explain_state", "p.raw_explain_reference",
+    "p.raw_explain_derived", "p.raw_explain_generic",
+    "p.current_max_desc", "p.capacity_accessibility_four", "p.capacity_accessibility_gap",
+    "p.duration_accessibility", "system.field.new.meaning",
+    "system.field.new.recommendation", "system.field.new.note",
+    "system.reliability.public", "system.reliability.legacy", "system.reliability.private",
+    "system.group.temperature", "system.group.capacity", "system.group.power",
+    "system.group.fault", "system.group.raw", "system.anomaly.permanent_failure",
+    "system.anomaly.health_not_normal", "system.anomaly.thermal_critical",
+    "system.anomaly.thermal_serious", "system.anomaly.battery_warning_final",
+    "system.anomaly.battery_warning_early", "system.anomaly.cell_spread_warning",
+    "system.anomaly.cell_spread_attention", "system.anomaly.temperature_high",
+    "system.anomaly.temperature_low", "system.anomaly.diagnostic_nonzero",
 ]
 let bundledPackURLs = Bundle.main.urls(forResourcesWithExtension: "json", subdirectory: "Languages") ?? []
 let bundledPacks = bundledPackURLs.compactMap { try? JSONDecoder().decode(LanguagePack.self, from: Data(contentsOf: $0)) }
@@ -63,15 +93,34 @@ for pack in bundledPacks.sorted(by: { $0.meta.order < $1.meta.order }) {
     let missing = shellAndMenuKeys.filter { pack.strings[$0]?.isEmpty != false }
     expect(missing.isEmpty, "\(pack.meta.code): 外观/主壳/菜单栏配置 key 齐全\(missing.isEmpty ? "" : "，缺少 \(missing)")")
 }
+let rawExplanationKeys = shellAndMenuKeys.filter { $0.hasPrefix("p.raw_explain_") }
+if let english = bundledPacks.first(where: { $0.meta.code == "en" }) {
+    for pack in bundledPacks where pack.meta.code != "en" {
+        let untranslated = rawExplanationKeys.filter { pack.strings[$0] == english.strings[$0] }
+        expect(untranslated.isEmpty,
+               "\(pack.meta.code): 底层字段说明使用本土语言\(untranslated.isEmpty ? "" : "，仍为英文 \(untranslated)")")
+    }
+}
 l.select("zh-Hans")
-expect(l.string("menu.config.title") == "显示指标"
-       && l.string("menu.config.second_metric") == "顶部第二项"
+expect(l.string("menu.config.title") == "弹出面板指标"
+       && l.string("menu.config.second_metric") == "顶部状态栏"
+       && l.string("menu.config.status_hint") == "固定显示电量，再选择一个实时指标"
+       && l.string("menu.config.metric_choice") == "第二项显示"
        && l.string("menu.process.latest_real_sample") == "使用最近一次真实采样",
        "简体中文菜单栏配置文案准确")
 l.select("fr")
 expect(l.string("menu.config.restore_defaults") == "Rétablir les réglages par défaut"
        && l.string("menu.metric.runtime") == "Autonomie restante",
        "新增菜单配置提供法语原生译文")
+l.select("ja")
+expect(l.string("system.group.temperature") == "温度／熱状態"
+       && l.string("p.duration_accessibility").contains("時間"),
+       "动态系统字段与辅助功能说明提供日语原生译文")
+l.select("zh-Hans")
+expect(l.string("p.help_raw") == "字段说明与原始值"
+       && l.string("p.raw_explain_battery_voltage").contains("电池组")
+       && l.string("p.raw_explain_sample_count").contains("采样次数"),
+       "展开指标的字段说明使用易懂的简体中文")
 
 print("── 3) 数字格式化带 locale")
 l.select("de")
@@ -128,10 +177,15 @@ if phase2 {
     expect(l.string("app.title") == "IT-OVERRIDE-OK", "签名合法的 key 被保留: \(l.string("app.title"))")
     let bad = l.string("status.charging")
     expect(!bad.hasPrefix("ROTTO"), "签名非法的 status.charging 被丢弃")
-    expect(bad == "Charging at %.1fW · Adapter %dW", "并回落到 en: \(bad)")
+    expect(bad == "Carica %.1fW · Adattatore %dW", "并保留可信内置意大利语: \(bad)")
     // 真正的安全性验证：用 Double+Int 实参调用，若坏格式串没被拦会读错位模式
     let out = l.format("status.charging", [17.25, 65])
     expect(out.contains("17,2") && out.contains("65"), "带 Double 实参格式化安全，且数字仍按用户选的 it locale: \(out)")
+
+    print("── 8) 超大外部语言包护栏")
+    l.select("pt")
+    expect(l.string("app.title") == "Monitor de Bateria",
+           "超过大小限制的外部 pt.json 被拒绝并保留内置语言包")
 
     print(failures == 0 ? "\n✅ 第二阶段全部通过" : "\n❌ 第二阶段 \(failures) 项失败")
     exit(failures == 0 ? 0 : 1)

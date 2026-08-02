@@ -27,7 +27,7 @@ struct ContentView: View {
                     get: { navigation.destination },
                     set: { navigation.destination = $0 }
                 ))
-                    .frame(width: 218)
+                    .frame(width: 196)
 
                 Rectangle()
                     .fill(AppTheme.divider)

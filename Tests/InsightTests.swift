@@ -1,4 +1,5 @@
 import Foundation
+import AppKit
 
 // InsightEngine / BatteryAgeEstimator / 硬件解析的边界测试。
 // 由 Tests/run-insight-tests.sh 编译运行，不依赖 Xcode 也不依赖界面截图。
@@ -179,6 +180,7 @@ plugged.adapterWatts = 65
 plugged.adapterVoltage = 20000
 plugged.adapterCurrent = 3250
 plugged.adapterDescription = "pd charger"
+plugged.systemPowerIn = 16_200
 plugged.usbHvcMenu = [.init(voltage: 5000, current: 3000), .init(voltage: 9000, current: 3000),
                       .init(voltage: 15000, current: 3000), .init(voltage: 20000, current: 3250)]
 let on = InsightEngine.accessory(data: data(from: plugged, onAC: true), d: plugged)
@@ -191,6 +193,103 @@ var weak = plugged
 weak.adapterWatts = 30
 let low = InsightEngine.accessory(data: data(from: weak, onAC: true), d: weak)
 expect(low.suggestion != nil, "充电器功率低于 PD 菜单上限时给出建议")
+
+let adapterPointEnd = Date()
+let adapterPoints = [12.4, 15.8, 16.2].enumerated().map { offset, inputPower in
+    RealtimeDataPoint(
+        timestamp: adapterPointEnd.addingTimeInterval(Double(-20 + offset * 10)),
+        voltage: 12.9,
+        amperage: 1_000,
+        power: 8.4,
+        temperature: 30.8,
+        percent: 86,
+        inputPower: inputPower,
+        adapterVoltage: 20.0,
+        adapterCurrent: 3.25
+    )
+}
+let adapterHelp = DashboardHelp.adapterPower(
+    DashboardMetricSnapshot(data: data(from: plugged, onAC: true), realtimeData: adapterPoints)
+)
+expect(adapterHelp.powerContract?.isConnected == true
+       && adapterHelp.powerContract?.isNegotiated == true,
+       "充电器弹窗区分已连接与 PD 协商成功")
+expect(adapterHelp.powerContract?.equationText.contains("20.0 V") == true
+       && adapterHelp.powerContract?.equationText.contains("3.25 A") == true
+       && adapterHelp.powerContract?.equationText.contains("65.0 W") == true,
+       "充电器弹窗拆解 20.0V × 3.25A = 65.0W")
+expect(adapterHelp.powerContract?.trendPoints.count == 3
+       && adapterHelp.powerContract?.trendValue.contains("16.2 W") == true,
+       "充电器弹窗使用 SystemPowerIn 实测值绘制输入功率趋势")
+expect(adapterHelp.rawFields.contains { $0.name == "Derived.NegotiatedPower" && $0.value.contains("65") },
+       "额定功率既保留系统 Watts，也提供电压×电流校验值")
+
+let explainedPowerFields = DashboardHelp.power(
+    DashboardMetricSnapshot(data: data(from: d, onAC: false), realtimeData: adapterPoints)
+).rawFields
+expect(explainedPowerFields.count == 6
+       && explainedPowerFields.allSatisfy { !$0.localizedExplanation.isEmpty }
+       && explainedPowerFields.first(where: { $0.name == "Voltage" })?.localizedExplanation.contains("电压") == true
+       && explainedPowerFields.first(where: { $0.name == "Amperage" })?.localizedExplanation.contains("电流") == true
+       && explainedPowerFields.first(where: { $0.name == "SystemLoadAccumulatorCount" })?.localizedExplanation.contains("采样") == true,
+       "功率抽屉的每个底层字段都有易懂中文解释，同时保留系统字段名")
+let uncommonRawField = MetricRawField(name: "VendorDiagnosticCode", value: "7")
+expect(!uncommonRawField.localizedExplanation.isEmpty
+       && uncommonRawField.localizedExplanation != uncommonRawField.name,
+       "新增或冷门诊断字段也会显示本地化兜底说明")
+
+var wholeMacInputData = data(from: plugged, onAC: true)
+wholeMacInputData.hardwareDetail.presentRawFields.formUnion([
+    "PowerTelemetryData.SystemPowerIn",
+    "PowerTelemetryData.VoltageIn",
+    "PowerTelemetryData.CurrentIn",
+    "PowerTelemetryData.AdapterEfficiencyLoss",
+    "AppleRawBatteryVoltage",
+    "InstantAmperage",
+    "Amperage",
+])
+wholeMacInputData.hardwareDetail.packVoltage = 12_466
+wholeMacInputData.hardwareDetail.appleRawBatteryVoltage = 12_466
+wholeMacInputData.hardwareDetail.instantAmperage = 0
+wholeMacInputData.hardwareDetail.smoothedAmperage = 0
+wholeMacInputData.hardwareDetail.systemVoltageIn = 20_000
+wholeMacInputData.hardwareDetail.systemCurrentIn = 3_250
+wholeMacInputData.isCharging = false
+wholeMacInputData.amperage = 0
+let powerFlowSnapshot = DashboardMetricSnapshot(data: wholeMacInputData, realtimeData: adapterPoints)
+let adapterOutputHelp = DashboardHelp.adapterOutputPower(powerFlowSnapshot)
+expect(abs((powerFlowSnapshot.adapterOutputPowerWatts ?? -1) - 16.2) < 0.001
+       && adapterOutputHelp.result.contains("16.2 W"),
+       "SystemPowerIn 16200mW 只作为适配器输出/整机输入 16.2W")
+expect(adapterOutputHelp.rawFields.contains { $0.name == "PowerTelemetryData.SystemPowerIn" },
+       "适配器输出功率抽屉保留 SystemPowerIn 底层字段")
+
+let idleChargingHelp = DashboardHelp.chargingPower(powerFlowSnapshot)
+expect(powerFlowSnapshot.batteryChargingPowerWatts == 0
+       && idleChargingHelp.result == "0 W",
+       "12.466V × 0A = 0W；插电但未充电时明确显示零")
+expect(!idleChargingHelp.rawFields.contains { $0.name == "PowerTelemetryData.SystemPowerIn" }
+       && idleChargingHelp.rawFields.contains { $0.name == "AppleRawBatteryVoltage" }
+       && idleChargingHelp.rawFields.contains { $0.name == "InstantAmperage" },
+       "充电功率只使用电池侧电压和电流，不再混入 SystemPowerIn")
+
+var chargingData = wholeMacInputData
+chargingData.isCharging = true
+chargingData.amperage = 2_000
+chargingData.hardwareDetail.instantAmperage = 2_000
+chargingData.hardwareDetail.smoothedAmperage = 1_950
+let chargingSnapshot = DashboardMetricSnapshot(data: chargingData, realtimeData: adapterPoints)
+expect(abs((chargingSnapshot.batteryChargingPowerWatts ?? -1) - 24.932) < 0.001,
+       "正向充电时按 12.466V × 2.000A = 24.932W 计算电池侧功率")
+
+let disconnectedAdapterHelp = DashboardHelp.adapterPower(
+    DashboardMetricSnapshot(data: data(from: d, onAC: false), realtimeData: adapterPoints)
+)
+expect(disconnectedAdapterHelp.powerContract?.isConnected == false
+       && disconnectedAdapterHelp.powerContract?.trendValue == "—",
+       "拔电时充电器状态明确显示未连接，不把旧输入样本当成当前值")
+expect(disconnectedAdapterHelp.rawFields.allSatisfy { $0.value == "—" },
+       "拔电时消失的 AdapterDetails 字段显示不可用，不把默认0伪装成实测值")
 
 // MARK: - 7) 耗电分析
 
@@ -276,6 +375,72 @@ expect(runtimeData.officialImpliedPower == runtimeData.officialImpliedPowerWatts
        && runtimeData.averageTelemetryPower == runtimeData.averageTelemetryPowerWatts,
        "产品指标API与带单位别名保持同一口径")
 
+runtimeData.timeRemainingMinutes = 155
+runtimeData.hardwareDetail.timeRemainingRaw = 155
+runtimeData.hardwareDetail.avgTimeToEmpty = 160
+let runtimeSampleEnd = Date()
+let stablePowers = [10.0, 12.0, 13.0, 14.0, 40.0]
+let stablePoints = [
+    RealtimeDataPoint(timestamp: runtimeSampleEnd.addingTimeInterval(-700),
+                      voltage: 12.3, amperage: -800, power: 1,
+                      temperature: 30, percent: 72),
+] + stablePowers.enumerated().map { offset, power in
+    RealtimeDataPoint(timestamp: runtimeSampleEnd.addingTimeInterval(Double(-30 * offset)),
+                      voltage: 12.3, amperage: -800, power: power,
+                      temperature: 30, percent: 72)
+}
+let runtimeSnapshot = DashboardMetricSnapshot(data: runtimeData, realtimeData: stablePoints)
+expect(runtimeSnapshot.recentStablePowerSamples.count == 5,
+       "稳健估算只采用最近10分钟的有效功耗样本")
+expect(abs((runtimeSnapshot.stablePowerWatts ?? 0) - 13) < 0.001,
+       "稳健功耗使用中位数，瞬时高负载不会拉偏")
+expect(runtimeSnapshot.stableRuntimeMinutes == 178,
+       "稳健续航 = 剩余能量 ÷ 最近10分钟功耗中位数")
+expect(runtimeSnapshot.currentLoadRuntimeMinutes == 148,
+       "当前负载续航继续使用此刻SystemPower")
+let runtimeHelp = DashboardHelp.runtime(runtimeSnapshot)
+expect(runtimeHelp.comparisonResults.map(\.id) == [
+    "runtime.system", "runtime.stable", "runtime.current-load",
+], "续航问号同时展示系统时间、稳健估算和当前负载估算")
+expect(runtimeHelp.comparisonResults.first?.value == "2 h 35 m",
+       "macOS系统时间是三项里的主要结果")
+
+let insufficientSnapshot = DashboardMetricSnapshot(
+    data: runtimeData,
+    realtimeData: Array(stablePoints.suffix(4))
+)
+expect(insufficientSnapshot.stableRuntimeMinutes == nil,
+       "不足5个样本时不把瞬时读数包装成稳健估算")
+
+var staleRuntimeData = runtimeData
+staleRuntimeData.lastUpdated = Date().addingTimeInterval(-121)
+let staleRuntimeSnapshot = DashboardMetricSnapshot(
+    data: staleRuntimeData,
+    realtimeData: stablePoints
+)
+expect(staleRuntimeSnapshot.currentLoadRuntimeMinutes == nil,
+       "当前功耗样本超过120秒时停止当前负载预测")
+
+var pluggedRuntimeData = runtimeData
+pluggedRuntimeData.isOnAC = true
+let pluggedHelp = DashboardHelp.runtime(
+    DashboardMetricSnapshot(data: pluggedRuntimeData, realtimeData: stablePoints)
+)
+expect(pluggedHelp.comparisonResults.first?.value == "—"
+       && pluggedHelp.comparisonResults.dropFirst().allSatisfy { $0.value != "—" },
+       "插电时系统时间明确不可用，但两项拔电计算值仍可对照")
+let pluggedHelpWithSystemHistory = DashboardHelp.runtime(
+    DashboardMetricSnapshot(
+        data: pluggedRuntimeData,
+        realtimeData: stablePoints,
+        systemRuntimeFallbackSample: RuntimeSample(
+            timestamp: Date(), minutesRemaining: 192, percent: pluggedRuntimeData.percent
+        )
+    )
+)
+expect(pluggedHelpWithSystemHistory.comparisonResults.first?.value == "3 h 12 m",
+       "插电时续航说明保留最近一次有效的Apple系统时间")
+
 // MARK: - 10.1) 四层系统数据的类型与异常规则
 
 print("── 10.1) 四层系统数据类型与异常规则")
@@ -315,6 +480,11 @@ let mixedApps = idleApps + [
 ]
 expect(ProcessPowerInfo.rankedForDisplay(mixedApps, limit: 3).first?.displayName == "Google Chrome",
        "真实CPU较高的可识别应用排在首位")
+expect(ProcessMonitorService.sanitizedCPUPercent(.nan) == 0
+       && ProcessMonitorService.sanitizedCPUPercent(-12) == 0,
+       "进程采样遇到非有限值或负CPU时归零")
+expect(ProcessMonitorService.sanitizedCPUPercent(9_999, logicalCoreCount: 8) == 800,
+       "进程CPU按逻辑核心数限制异常上界")
 
 print("── 10b) 外观与菜单栏配置持久化")
 let preferenceSuiteName = "com.stephen.BatteryMonitor.tests.presentation"
@@ -335,10 +505,14 @@ expect(menuPreferences.secondaryMetric == .runtime,
        "顶部状态栏默认显示电量 + 剩余时间")
 expect(menuPreferences.visibleMetrics == MenuBarSettings.defaultVisibleMetrics,
        "菜单栏弹层默认指标顺序稳定")
+expect(menuPreferences.visibleTrendMetrics == MenuBarSettings.defaultVisibleTrendMetrics,
+       "动态趋势默认显示功率、续航和电流")
 menuPreferences.selectSecondaryMetric(.power)
 menuPreferences.setVisible(.runtime, visible: false)
 menuPreferences.move(.health, by: -2)
 menuPreferences.move(.cycles, to: 0)
+menuPreferences.setTrendVisible(.runtime, visible: false)
+menuPreferences.moveTrend(.current, to: 0)
 let restoredMenuPreferences = MenuBarSettings(defaults: preferenceDefaults)
 expect(restoredMenuPreferences.secondaryMetric == .power,
        "顶部第二指标可切换为当前功率并持久化")
@@ -346,12 +520,38 @@ expect(!restoredMenuPreferences.visibleMetrics.contains(.runtime)
        && restoredMenuPreferences.visibleMetrics.first == .cycles
        && restoredMenuPreferences.visibleMetrics.firstIndex(of: .health) == 2,
        "弹层指标可隐藏、按钮移动与拖放移动，并保持用户顺序")
+expect(restoredMenuPreferences.visibleTrendMetrics == [.current, .power],
+       "动态趋势可删除、拖放调整顺序，并保持用户设置")
+restoredMenuPreferences.setTrendVisible(.current, visible: false)
+restoredMenuPreferences.setTrendVisible(.power, visible: false)
+expect(MenuBarSettings(defaults: preferenceDefaults).visibleTrendMetrics.isEmpty,
+       "删除全部动态趋势后仍保持空列表，不会在下次打开时意外恢复")
+restoredMenuPreferences.resetTrends()
+expect(MenuBarSettings(defaults: preferenceDefaults).visibleTrendMetrics == MenuBarSettings.defaultVisibleTrendMetrics,
+       "动态趋势为空时可恢复默认列表")
 
 DashboardNavigation.shared.destination = .settings
 expect(DashboardNavigation.shared.destination == .settings,
        "添加更多指标可把完整看板直接导航到设置页")
 DashboardNavigation.shared.destination = .overview
 preferenceDefaults.removePersistentDomain(forName: preferenceSuiteName)
+
+print("── 10c) 主指标图标语义与系统兼容")
+let metricIcons = BatteryMetricIcon.allCases
+expect(metricIcons.count == Set(metricIcons.map(\.symbol)).count,
+       "主指标各自使用可辨识的独立 SF Symbol")
+let unavailableMetricSymbols = metricIcons.filter {
+    NSImage(systemSymbolName: $0.symbol, accessibilityDescription: nil) == nil
+}
+expect(unavailableMetricSymbols.isEmpty,
+       "所有主指标图标均能由当前 macOS 解析\(unavailableMetricSymbols.isEmpty ? "" : "：\(unavailableMetricSymbols.map(\.rawValue))")")
+let unavailableFallbackSymbols = metricIcons.filter {
+    NSImage(systemSymbolName: $0.fallbackSymbol, accessibilityDescription: nil) == nil
+}
+expect(unavailableFallbackSymbols.isEmpty,
+       "macOS 14 兼容回退图标不会留下空白占位\(unavailableFallbackSymbols.isEmpty ? "" : "：\(unavailableFallbackSymbols.map(\.rawValue))")")
+expect(MenuBarMetric.allCases.allSatisfy { $0.symbol == $0.icon.symbol },
+       "菜单栏、总览与详情页共用同一套指标图标映射")
 
 // MARK: - 11) 系统时间与功耗口径
 
@@ -368,6 +568,23 @@ expect(BatteryService.preferredSystemTimeRemaining(isOnAC: false,
 expect(BatteryService.preferredSystemTimeRemaining(isOnAC: true,
         timeRemaining: 148, avgTimeToEmpty: 150) == nil,
        "插电时不把电量计值作为系统剩余续航")
+
+let persistenceBase = Date(timeIntervalSince1970: 1_000)
+expect(!BatteryService.shouldPersistRuntimeHistory(
+    dirty: false, lastSaved: nil, now: persistenceBase),
+       "没有新续航样本时不落盘")
+expect(BatteryService.shouldPersistRuntimeHistory(
+    dirty: true, lastSaved: nil, now: persistenceBase),
+       "首次有效续航样本及时落盘")
+expect(!BatteryService.shouldPersistRuntimeHistory(
+    dirty: true, lastSaved: persistenceBase, now: persistenceBase.addingTimeInterval(299)),
+       "五分钟内的新样本只留在内存，避免频繁写盘")
+expect(BatteryService.shouldPersistRuntimeHistory(
+    dirty: true, lastSaved: persistenceBase, now: persistenceBase.addingTimeInterval(300)),
+       "累计五分钟后批量持久化续航历史")
+expect(BatteryService.shouldPersistRuntimeHistory(
+    dirty: true, lastSaved: persistenceBase, now: persistenceBase, force: true),
+       "暂停或退出时强制冲刷未保存续航历史")
 
 var powerDetail = BatteryHardwareDetail()
 powerDetail.systemPowerWatts = 15.67
@@ -496,6 +713,20 @@ expect(RuntimeSample.isValid(minutes: 1) && RuntimeSample.isValid(minutes: 65_53
 expect(RuntimeSample.shouldAppend(r0, after: nil), "首个有效样本可写入")
 expect(!RuntimeSample.shouldAppend(r55, after: r0), "55秒不重复写入")
 expect(RuntimeSample.shouldAppend(r56, after: r0), "满56秒才写入下一点")
+let usageNow = t0.addingTimeInterval(70 * 60)
+let usageSamples = [
+    RuntimeSample(timestamp: usageNow.addingTimeInterval(-70 * 60), minutesRemaining: 180, percent: 80),
+    RuntimeSample(timestamp: usageNow.addingTimeInterval(-69 * 60), minutesRemaining: 179, percent: 80),
+    RuntimeSample(timestamp: usageNow.addingTimeInterval(-60 * 60), minutesRemaining: 170, percent: 76),
+    RuntimeSample(timestamp: usageNow.addingTimeInterval(-59 * 60), minutesRemaining: 169, percent: 76),
+    RuntimeSample(timestamp: usageNow.addingTimeInterval(-58 * 60), minutesRemaining: 168, percent: 75),
+]
+expect(RuntimeSample.observedUsageDuration(in: usageSamples, now: usageNow) == 3 * 60,
+       "实际使用时长只累计连续采样区间，不把9分钟空档算作电池使用")
+expect(RuntimeSample.observedUsageDuration(
+    in: usageSamples,
+    now: usageNow.addingTimeInterval(25 * 60 * 60)
+) == 0, "近24小时之外的旧系统读数不计入近期实际使用")
 expect(SOCHistory.fullHoldSamplesPerEvent == 32,
        "56秒采样下约32个满充样本对应30分钟")
 if let encoded = try? JSONEncoder().encode([r0, r56]),
@@ -514,6 +745,22 @@ expect(menuPresentation.runtimeMinutes == 248 && !menuPresentation.isForecast,
        "电池供电时菜单栏直接采用macOS的248分钟，不被当前功率二次改写")
 expect(MenuBarPresentation.durationText(menuPresentation.runtimeMinutes) == "4h 08m",
        "菜单栏分钟数格式化为小时和分钟")
+var textOnlyStatusBattery = menuBattery
+textOnlyStatusBattery.percent = 60
+textOnlyStatusBattery.timeRemainingMinutes = 246
+let textOnlyStatus = MenuBarPresentation(data: textOnlyStatusBattery)
+    .menuBarText(secondaryMetric: .runtime)
+expect(textOnlyStatus == "60% (4h 06m)",
+       "顶部状态项只展示电量与所选指标文字，不混入电池或充电图标")
+let choicePreviews = MenuBarMetric.allCases.map {
+    MenuBarPresentation(data: textOnlyStatusBattery).choicePreviewText(for: $0)
+}
+expect(zip(MenuBarMetric.allCases, choicePreviews).allSatisfy { pair in
+    let (metric, preview) = pair
+    return preview.contains(metric.title)
+        && preview.contains(MenuBarPresentation(data: textOnlyStatusBattery)
+            .menuBarText(secondaryMetric: metric))
+}, "顶部指标下拉的每一项同时展示指标名称与对应状态栏预览")
 
 var menuAC = menuBattery
 menuAC.isOnAC = true

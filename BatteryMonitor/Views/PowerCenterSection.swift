@@ -35,7 +35,7 @@ struct PowerCenterSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             DashboardSectionHeader(
-                icon: "bolt.horizontal.circle",
+                icon: BatteryMetricIcon.power.symbol,
                 title: dashboardText("p.power_center_title", fallback: "当前功耗与程序活动"),
                 color: AppTheme.chargingBlue,
                 help: DashboardHelp.power(snapshot),
