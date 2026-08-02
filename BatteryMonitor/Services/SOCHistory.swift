@@ -93,9 +93,15 @@ struct SOCHistory: Codable, Equatable {
         if isCharging { r.maxChargingTemp = max(r.maxChargingTemp, temperature) }
 
         if isFullyCharged && isOnAC {
-            let elapsed = r.lastFullHoldSampleAt.map { now.timeIntervalSince($0) }
-            // 时钟回拨时也允许重新建立基准；否则负间隔会让计数永久卡住。
-            if elapsed == nil || elapsed! < 0 || elapsed! >= Self.fullHoldSampleInterval {
+            let shouldCount: Bool
+            if let previous = r.lastFullHoldSampleAt {
+                let elapsed = now.timeIntervalSince(previous)
+                // 时钟回拨时也允许重新建立基准；否则负间隔会让计数永久卡住。
+                shouldCount = elapsed < 0 || elapsed >= Self.fullHoldSampleInterval
+            } else {
+                shouldCount = true
+            }
+            if shouldCount {
                 r.fullHoldSamples += 1
                 r.lastFullHoldSampleAt = now
             }
