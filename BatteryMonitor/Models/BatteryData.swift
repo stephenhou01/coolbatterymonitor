@@ -197,4 +197,31 @@ struct RealtimeDataPoint: Identifiable {
     let power: Double        // W
     let temperature: Double  // °C
     let percent: Int
+    /// Whole-Mac input power reported by PowerTelemetryData while connected to AC.
+    /// This is intentionally separate from `power`, which is the Mac's load.
+    let inputPower: Double?  // W
+    let adapterVoltage: Double? // negotiated V
+    let adapterCurrent: Double? // negotiated A
+
+    init(
+        timestamp: Date,
+        voltage: Double,
+        amperage: Double,
+        power: Double,
+        temperature: Double,
+        percent: Int,
+        inputPower: Double? = nil,
+        adapterVoltage: Double? = nil,
+        adapterCurrent: Double? = nil
+    ) {
+        self.timestamp = timestamp
+        self.voltage = voltage
+        self.amperage = amperage
+        self.power = power
+        self.temperature = temperature
+        self.percent = percent
+        self.inputPower = inputPower
+        self.adapterVoltage = adapterVoltage
+        self.adapterCurrent = adapterCurrent
+    }
 }

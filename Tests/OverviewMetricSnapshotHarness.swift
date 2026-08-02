@@ -57,10 +57,41 @@ struct OverviewMetricSnapshotHarness {
             )
         }
         let runtimeSnapshot = DashboardMetricSnapshot(data: runtimeData, realtimeData: runtimePoints)
+
+        var adapterData = runtimeData
+        adapterData.isOnAC = true
+        adapterData.isCharging = true
+        adapterData.chargerWattage = 65
+        adapterData.hardwareDetail.adapterWatts = 65
+        adapterData.hardwareDetail.adapterVoltage = 20_000
+        adapterData.hardwareDetail.adapterCurrent = 3_250
+        adapterData.hardwareDetail.adapterDescription = "pd charger"
+        adapterData.hardwareDetail.systemPowerIn = 16_200
+        adapterData.hardwareDetail.usbHvcMenu = [
+            .init(voltage: 5_000, current: 3_000),
+            .init(voltage: 9_000, current: 3_000),
+            .init(voltage: 20_000, current: 3_250),
+        ]
+        let adapterEnd = Date()
+        let adapterInputPowers = [12.4, 13.1, 14.8, 16.2, 18.0, 17.4, 15.8, 16.2, 19.6, 18.1, 16.9, 16.2]
+        let adapterPoints = adapterInputPowers.enumerated().map { offset, inputPower in
+            RealtimeDataPoint(
+                timestamp: adapterEnd.addingTimeInterval(Double(-10 * (adapterInputPowers.count - offset))),
+                voltage: 12.4,
+                amperage: 1_100,
+                power: 8.4,
+                temperature: 30.8,
+                percent: 70,
+                inputPower: inputPower,
+                adapterVoltage: 20.0,
+                adapterCurrent: 3.25
+            )
+        }
+        let adapterSnapshot = DashboardMetricSnapshot(data: adapterData, realtimeData: adapterPoints)
         let helps = [
             DashboardHelp.power(snapshot),
-            DashboardHelp.adapterPower(snapshot),
-            DashboardHelp.chargingPower(snapshot),
+            DashboardHelp.adapterPower(adapterSnapshot),
+            DashboardHelp.chargingPower(adapterSnapshot),
             DashboardHelp.temperature(snapshot),
             DashboardHelp.cycleCount(snapshot),
             DashboardHelp.health(snapshot),

@@ -1,4 +1,5 @@
 import SwiftUI
+import Charts
 
 /// A lowest-level field that participates in a displayed metric.
 struct MetricRawField: Identifiable, Equatable {
@@ -34,6 +35,37 @@ struct MetricHelpResult: Identifiable, Equatable {
     let style: MetricHelpResultStyle
 }
 
+struct MetricHelpTrendPoint: Identifiable, Equatable {
+    let timestamp: Date
+    let watts: Double
+
+    var id: Date { timestamp }
+}
+
+/// Consumer-facing explanation of an adapter's negotiated PD contract. The
+/// rated contract and the Mac's live input are deliberately kept separate:
+/// 20V × 3.25A describes what the adapter can provide, not what the Mac is
+/// necessarily drawing at this instant.
+struct MetricPowerContract: Equatable {
+    let stateTitle: String
+    let stateDetail: String
+    let isConnected: Bool
+    let isNegotiated: Bool
+    let voltageLabel: String
+    let voltageText: String
+    let currentLabel: String
+    let currentText: String
+    let powerLabel: String
+    let powerText: String
+    let equationText: String
+    let equationNote: String
+    let trendTitle: String
+    let trendValue: String
+    let trendNote: String
+    let trendPoints: [MetricHelpTrendPoint]
+    let ceilingWatts: Double?
+}
+
 /// Content shared by every question-mark affordance on the final dashboard.
 /// Keeping the explanation as data lets the same drawer serve top-level answers,
 /// formulas, reference rows, and the hardware table.
@@ -47,6 +79,7 @@ struct MetricHelpContent: Identifiable, Equatable {
     let substitution: String
     let source: String
     var comparisonResults: [MetricHelpResult] = []
+    var powerContract: MetricPowerContract? = nil
 }
 
 struct MetricHelpButton: View {
@@ -103,6 +136,7 @@ struct MetricHelpDrawer: View {
                     }
 
                     resultBlock
+                    adapterTrendBlock
                     rawFieldsBlock
                     formulaBlock
                     sourceBlock
@@ -162,7 +196,9 @@ struct MetricHelpDrawer: View {
         VStack(alignment: .leading, spacing: 9) {
             drawerEyebrow(dashboardText("p.help_current", fallback: "当前结果"))
 
-            if content.comparisonResults.isEmpty {
+            if let contract = content.powerContract {
+                adapterContractBlock(contract)
+            } else if content.comparisonResults.isEmpty {
                 Text(content.result)
                     .font(.system(size: 27, weight: .medium, design: .monospaced))
                     .foregroundStyle(AppTheme.chargingCyan)
@@ -179,6 +215,183 @@ struct MetricHelpDrawer: View {
                 }
             }
         }
+    }
+
+    private func adapterContractBlock(_ contract: MetricPowerContract) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 11) {
+                Image(systemName: contract.isConnected ? "powerplug.fill" : "powerplug")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(contract.isConnected ? AppTheme.chargingCyan : AppTheme.textTertiary)
+                    .frame(width: 40, height: 40)
+                    .background(
+                        RoundedRectangle(cornerRadius: 11)
+                            .fill((contract.isConnected ? AppTheme.chargingCyan : AppTheme.textTertiary).opacity(0.08))
+                    )
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(contract.stateTitle)
+                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                        .foregroundStyle(AppTheme.textPrimary)
+                    Text(contract.stateDetail)
+                        .font(.system(size: 9.5))
+                        .foregroundStyle(AppTheme.textTertiary)
+                        .lineLimit(2)
+                }
+                Spacer(minLength: 8)
+                Text(contract.isNegotiated
+                     ? dashboardText("p.adapter_status_ready_badge", fallback: "PD READY")
+                     : dashboardText("p.adapter_status_waiting_badge", fallback: "WAITING"))
+                    .font(.system(size: 8, weight: .bold, design: .monospaced))
+                    .tracking(0.8)
+                    .foregroundStyle(contract.isNegotiated ? AppTheme.batteryGreen : AppTheme.textTertiary)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 5)
+                    .background(Capsule().fill((contract.isNegotiated ? AppTheme.batteryGreen : AppTheme.textTertiary).opacity(0.08)))
+            }
+
+            HStack(spacing: 7) {
+                contractMetric(icon: "bolt.circle.fill", label: contract.voltageLabel,
+                               value: contract.voltageText, tint: AppTheme.chargingBlue)
+                equationOperator("×")
+                contractMetric(icon: "waveform.path.ecg", label: contract.currentLabel,
+                               value: contract.currentText, tint: AppTheme.batteryGreen)
+                equationOperator("=")
+                contractMetric(icon: "bolt.fill", label: contract.powerLabel,
+                               value: contract.powerText, tint: AppTheme.batteryYellow)
+            }
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(contract.equationText)
+                    .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                    .foregroundStyle(AppTheme.textPrimary)
+                    .textSelection(.enabled)
+                Text(contract.equationNote)
+                    .font(.system(size: 9.5))
+                    .foregroundStyle(AppTheme.textTertiary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .lineSpacing(2)
+            }
+            .padding(11)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(RoundedRectangle(cornerRadius: 9).fill(AppTheme.chargingCyan.opacity(0.045)))
+            .overlay(RoundedRectangle(cornerRadius: 9).stroke(AppTheme.chargingCyan.opacity(0.13), lineWidth: 1))
+        }
+        .padding(14)
+        .background(RoundedRectangle(cornerRadius: 12).fill(AppTheme.contrastOverlay(0.025)))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(AppTheme.contrastOverlay(0.08), lineWidth: 1))
+    }
+
+    private func contractMetric(icon: String, label: String, value: String, tint: Color) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Image(systemName: icon)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(tint)
+            Text(label)
+                .font(.system(size: 8.5, weight: .medium))
+                .foregroundStyle(AppTheme.textTertiary)
+                .lineLimit(1)
+            Text(value)
+                .font(.system(size: 14, weight: .semibold, design: .monospaced))
+                .foregroundStyle(AppTheme.textPrimary)
+                .minimumScaleFactor(0.72)
+                .lineLimit(1)
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, minHeight: 78, alignment: .topLeading)
+        .background(RoundedRectangle(cornerRadius: 9).fill(tint.opacity(0.045)))
+        .overlay(RoundedRectangle(cornerRadius: 9).stroke(tint.opacity(0.13), lineWidth: 1))
+    }
+
+    private func equationOperator(_ value: String) -> some View {
+        Text(value)
+            .font(.system(size: 13, weight: .bold, design: .rounded))
+            .foregroundStyle(AppTheme.textTertiary)
+            .frame(width: 10)
+    }
+
+    @ViewBuilder
+    private var adapterTrendBlock: some View {
+        if let contract = content.powerContract {
+            VStack(alignment: .leading, spacing: 9) {
+                HStack(alignment: .firstTextBaseline) {
+                    drawerEyebrow(contract.trendTitle)
+                    Spacer()
+                    Text(contract.trendValue)
+                        .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                        .foregroundStyle(AppTheme.chargingCyan)
+                }
+
+                if contract.trendPoints.count >= 2 {
+                    Chart {
+                        ForEach(contract.trendPoints) { point in
+                            AreaMark(
+                                x: .value("Time", point.timestamp),
+                                yStart: .value("Zero", 0),
+                                yEnd: .value("Input power", point.watts)
+                            )
+                            .foregroundStyle(AppTheme.chargingCyan.opacity(0.08))
+
+                            LineMark(
+                                x: .value("Time", point.timestamp),
+                                y: .value("Input power", point.watts)
+                            )
+                            .foregroundStyle(AppTheme.chargingCyan)
+                            .lineStyle(StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
+                        }
+
+                        if let ceiling = contract.ceilingWatts, ceiling > 0 {
+                            RuleMark(y: .value("Contract ceiling", ceiling))
+                                .foregroundStyle(AppTheme.batteryYellow.opacity(0.7))
+                                .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
+                        }
+                    }
+                    .chartXAxis {
+                        AxisMarks(values: .automatic(desiredCount: 3)) { value in
+                            AxisGridLine().foregroundStyle(AppTheme.contrastOverlay(0.04))
+                            AxisValueLabel(format: .dateTime.hour().minute())
+                                .foregroundStyle(AppTheme.textTertiary)
+                        }
+                    }
+                    .chartYAxis {
+                        AxisMarks(position: .leading, values: .automatic(desiredCount: 3)) { value in
+                            AxisGridLine().foregroundStyle(AppTheme.contrastOverlay(0.05))
+                            AxisValueLabel {
+                                if let watts = value.as(Double.self) {
+                                    Text("\(Int(watts.rounded()))W")
+                                }
+                            }
+                            .foregroundStyle(AppTheme.textTertiary)
+                        }
+                    }
+                    .chartYScale(domain: adapterChartDomain(contract))
+                    .frame(height: 132)
+                } else {
+                    HStack(spacing: 9) {
+                        Image(systemName: "chart.xyaxis.line")
+                            .foregroundStyle(AppTheme.textTertiary)
+                        Text(dashboardText("p.adapter_trend_waiting", fallback: "正在积累输入功率历史"))
+                            .font(.system(size: 10.5))
+                            .foregroundStyle(AppTheme.textTertiary)
+                    }
+                    .frame(maxWidth: .infinity, minHeight: 72, alignment: .center)
+                }
+
+                Text(contract.trendNote)
+                    .font(.system(size: 9.5))
+                    .foregroundStyle(AppTheme.textTertiary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .lineSpacing(2)
+            }
+            .padding(13)
+            .background(RoundedRectangle(cornerRadius: 11).fill(AppTheme.contrastOverlay(0.02)))
+            .overlay(RoundedRectangle(cornerRadius: 11).stroke(AppTheme.contrastOverlay(0.07), lineWidth: 1))
+        }
+    }
+
+    private func adapterChartDomain(_ contract: MetricPowerContract) -> ClosedRange<Double> {
+        let peak = contract.trendPoints.map(\.watts).max() ?? 0
+        let upper = max(max(contract.ceilingWatts ?? 0, peak), 1) * 1.08
+        return 0...upper
     }
 
     private func comparisonResultCard(_ item: MetricHelpResult, primary: Bool) -> some View {

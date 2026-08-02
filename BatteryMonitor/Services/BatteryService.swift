@@ -267,7 +267,16 @@ class BatteryService: ObservableObject {
             amperage: Double(data.amperage),
             power: data.currentPowerWatts,
             temperature: data.temperatureCelsius,
-            percent: data.percent
+            percent: data.percent,
+            inputPower: data.hardwareDetail.systemPowerIn > 0
+                ? Double(data.hardwareDetail.systemPowerIn) / 1000.0
+                : nil,
+            adapterVoltage: data.hardwareDetail.adapterVoltage > 0
+                ? Double(data.hardwareDetail.adapterVoltage) / 1000.0
+                : nil,
+            adapterCurrent: data.hardwareDetail.adapterCurrent > 0
+                ? Double(data.hardwareDetail.adapterCurrent) / 1000.0
+                : nil
         )
 
         self.batteryData = data

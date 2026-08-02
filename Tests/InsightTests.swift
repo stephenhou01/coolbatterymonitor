@@ -180,6 +180,7 @@ plugged.adapterWatts = 65
 plugged.adapterVoltage = 20000
 plugged.adapterCurrent = 3250
 plugged.adapterDescription = "pd charger"
+plugged.systemPowerIn = 16_200
 plugged.usbHvcMenu = [.init(voltage: 5000, current: 3000), .init(voltage: 9000, current: 3000),
                       .init(voltage: 15000, current: 3000), .init(voltage: 20000, current: 3250)]
 let on = InsightEngine.accessory(data: data(from: plugged, onAC: true), d: plugged)
@@ -192,6 +193,45 @@ var weak = plugged
 weak.adapterWatts = 30
 let low = InsightEngine.accessory(data: data(from: weak, onAC: true), d: weak)
 expect(low.suggestion != nil, "充电器功率低于 PD 菜单上限时给出建议")
+
+let adapterPointEnd = Date()
+let adapterPoints = [12.4, 15.8, 16.2].enumerated().map { offset, inputPower in
+    RealtimeDataPoint(
+        timestamp: adapterPointEnd.addingTimeInterval(Double(-20 + offset * 10)),
+        voltage: 12.9,
+        amperage: 1_000,
+        power: 8.4,
+        temperature: 30.8,
+        percent: 86,
+        inputPower: inputPower,
+        adapterVoltage: 20.0,
+        adapterCurrent: 3.25
+    )
+}
+let adapterHelp = DashboardHelp.adapterPower(
+    DashboardMetricSnapshot(data: data(from: plugged, onAC: true), realtimeData: adapterPoints)
+)
+expect(adapterHelp.powerContract?.isConnected == true
+       && adapterHelp.powerContract?.isNegotiated == true,
+       "充电器弹窗区分已连接与 PD 协商成功")
+expect(adapterHelp.powerContract?.equationText.contains("20.0 V") == true
+       && adapterHelp.powerContract?.equationText.contains("3.25 A") == true
+       && adapterHelp.powerContract?.equationText.contains("65.0 W") == true,
+       "充电器弹窗拆解 20.0V × 3.25A = 65.0W")
+expect(adapterHelp.powerContract?.trendPoints.count == 3
+       && adapterHelp.powerContract?.trendValue.contains("16.2 W") == true,
+       "充电器弹窗使用 SystemPowerIn 实测值绘制输入功率趋势")
+expect(adapterHelp.rawFields.contains { $0.name == "Derived.NegotiatedPower" && $0.value.contains("65") },
+       "额定功率既保留系统 Watts，也提供电压×电流校验值")
+
+let disconnectedAdapterHelp = DashboardHelp.adapterPower(
+    DashboardMetricSnapshot(data: data(from: d, onAC: false), realtimeData: adapterPoints)
+)
+expect(disconnectedAdapterHelp.powerContract?.isConnected == false
+       && disconnectedAdapterHelp.powerContract?.trendValue == "—",
+       "拔电时充电器状态明确显示未连接，不把旧输入样本当成当前值")
+expect(disconnectedAdapterHelp.rawFields.allSatisfy { $0.value == "—" },
+       "拔电时消失的 AdapterDetails 字段显示不可用，不把默认0伪装成实测值")
 
 // MARK: - 7) 耗电分析
 

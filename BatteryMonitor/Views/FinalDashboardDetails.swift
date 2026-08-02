@@ -969,26 +969,102 @@ enum DashboardHelp {
     static func adapterPower(_ s: DashboardMetricSnapshot) -> MetricHelpContent {
         let detail = s.detail
         let watts = detail.adapterWatts > 0 ? detail.adapterWatts : s.data.chargerWattage
-        let displayedWatts = watts > 0 ? "\(watts) W" : "unavailable"
+        let rawWatts: Int? = watts > 0 ? watts : nil
+        let rawVoltage: Int? = detail.adapterVoltage > 0 ? detail.adapterVoltage : nil
+        let rawCurrent: Int? = detail.adapterCurrent > 0 ? detail.adapterCurrent : nil
+        let rawSystemPowerIn: Int? = detail.systemPowerIn > 0 ? detail.systemPowerIn : nil
+        let rawProfileCount: Int? = detail.usbHvcMenu.isEmpty ? nil : detail.usbHvcMenu.count
+        let voltage = rawVoltage.map { Double($0) / 1000.0 }
+        let current = rawCurrent.map { Double($0) / 1000.0 }
+        let calculatedWatts = voltage.flatMap { voltage in current.map { voltage * $0 } }
+        let displayedWatts = watts > 0 ? "\(watts) W" : calculatedWatts.map { LNum("%.1f W", $0) } ?? "—"
+        let connected = s.data.isOnAC || detail.hasAdapterData
+        let negotiated = voltage != nil && current != nil
+        let adapterType = InsightEngine.localizedAdapterType(
+            detail.adapterDescription,
+            hasPD: !detail.usbHvcMenu.isEmpty || negotiated
+        )
+        let stateTitle: String
+        let stateDetail: String
+        if !connected {
+            stateTitle = dashboardText("p.adapter_status_disconnected", fallback: "未连接充电器")
+            stateDetail = dashboardText("p.adapter_status_disconnected_note", fallback: "插入电源后会读取协商电压、电流和额定功率")
+        } else if negotiated {
+            stateTitle = dashboardText("p.adapter_status_negotiated", fallback: "已连接 · 协商成功")
+            stateDetail = "\(adapterType) · \(LNum("%.1f V", voltage ?? 0)) / \(LNum("%.2f A", current ?? 0))"
+        } else {
+            stateTitle = dashboardText("p.adapter_status_waiting", fallback: "已连接 · 等待协商字段")
+            stateDetail = adapterType
+        }
+
+        let equation = if let voltage, let current, let calculatedWatts {
+            "\(LNum("%.1f V", voltage)) × \(LNum("%.2f A", current)) = \(LNum("%.1f W", calculatedWatts))"
+        } else {
+            dashboardText("p.adapter_equation_waiting", fallback: "等待电压和电流字段")
+        }
+        let equationNote: String
+        if let calculatedWatts, watts > 0 {
+            let tolerance = max(1.0, Double(watts) * 0.03)
+            equationNote = abs(calculatedWatts - Double(watts)) <= tolerance
+                ? dashboardText("p.adapter_contract_match", fallback: "三个字段相互吻合；这是充电器能力上限，不是实时耗电。")
+                : dashboardText("p.adapter_contract_diff", fallback: "系统报告的额定功率与电压×电流略有差异；分别保留原始值，避免强行改写。")
+        } else {
+            equationNote = dashboardText("p.adapter_contract_partial", fallback: "字段不完整时不反推缺失值。")
+        }
+
+        let trendEnd = s.realtimeData.map(\.timestamp).max()
+        let trendStart = trendEnd?.addingTimeInterval(-10 * 60)
+        let trendPoints = s.realtimeData.suffix(60).compactMap { point -> MetricHelpTrendPoint? in
+            guard trendStart.map({ point.timestamp >= $0 }) ?? true,
+                  let input = point.inputPower, input.isFinite, input > 0.1 else { return nil }
+            return MetricHelpTrendPoint(timestamp: point.timestamp, watts: input)
+        }
+        let currentInput = connected
+            ? (detail.systemPowerIn > 0
+                ? Double(detail.systemPowerIn) / 1000.0
+                : trendPoints.last?.watts)
+            : nil
         return content(
             id: "power.adapter",
-            title: dashboardText("shell.adapter", fallback: "适配器功率"),
+            title: dashboardText("p.adapter_status_title", fallback: "充电器状态"),
             summary: dashboardText(
                 "p.help_summary_adapter_power",
                 fallback: "这是充电器与电脑协商出的额定功率，不是电脑此刻一定正在消耗这么多。拔掉电源后，这组字段通常会消失。"
             ),
-            result: watts > 0 ? "\(watts) W" : "—",
+            result: displayedWatts,
             fields: [
-                field("AdapterDetails.Watts", watts, "W"),
-                field("AdapterDetails.AdapterVoltage", detail.adapterVoltage, "mV"),
-                field("AdapterDetails.Current", detail.adapterCurrent, "mA"),
+                field("AdapterDetails.Watts", rawWatts, "W"),
+                field("AdapterDetails.AdapterVoltage", rawVoltage, "mV"),
+                field("AdapterDetails.Current", rawCurrent, "mA"),
+                field("Derived.NegotiatedPower", f(calculatedWatts), "W"),
+                field("PowerTelemetryData.SystemPowerIn", rawSystemPowerIn, "mW"),
+                field("AdapterDetails.UsbHvcMenu", rawProfileCount, "profiles"),
                 field("AdapterDetails.Description", detail.adapterDescription),
             ],
-            formula: dashboardText("p.help_direct", fallback: "无公式：直接读取系统字段。"),
-            substitution: "AdapterDetails.Watts → \(displayedWatts)",
+            formula: "voltageV = AdapterVoltage ÷ 1000\ncurrentA = Current ÷ 1000\nnegotiatedPowerW = voltageV × currentA\nactualInputW = SystemPowerIn ÷ 1000",
+            substitution: "\(optional(rawVoltage)) ÷ 1000 = \(f(voltage)) V\n\(optional(rawCurrent)) ÷ 1000 = \(f(current)) A\n\(f(voltage)) × \(f(current)) = \(f(calculatedWatts)) W\nSystemPowerIn: \(optional(rawSystemPowerIn)) ÷ 1000 = \(f(currentInput)) W",
             source: dashboardText(
                 "p.help_source_adapter_power",
                 fallback: "IOKit AppleSmartBattery.AdapterDetails。它表示当前电源协商档位；实际输入功率请看 SystemPowerIn。"
+            ),
+            powerContract: MetricPowerContract(
+                stateTitle: stateTitle,
+                stateDetail: stateDetail,
+                isConnected: connected,
+                isNegotiated: negotiated,
+                voltageLabel: dashboardText("p.adapter_voltage", fallback: "协商电压"),
+                voltageText: voltage.map { LNum("%.1f V", $0) } ?? "—",
+                currentLabel: dashboardText("p.adapter_current", fallback: "协商电流"),
+                currentText: current.map { LNum("%.2f A", $0) } ?? "—",
+                powerLabel: dashboardText("p.adapter_rated_power", fallback: "额定功率"),
+                powerText: displayedWatts,
+                equationText: equation,
+                equationNote: equationNote,
+                trendTitle: dashboardText("p.adapter_input_trend", fallback: "整机实际输入功率"),
+                trendValue: currentInput.map { LNum("%.1f W", $0) } ?? "—",
+                trendNote: dashboardText("p.adapter_input_trend_note", fallback: "青线是 SystemPowerIn 实测值；黄色虚线是协商上限。两者不同很正常，剩余能力没有被浪费。"),
+                trendPoints: trendPoints,
+                ceilingWatts: watts > 0 ? Double(watts) : calculatedWatts
             )
         )
     }
@@ -1335,7 +1411,8 @@ enum DashboardHelp {
         formula: String,
         substitution: String,
         source: String,
-        results: [MetricHelpResult] = []
+        results: [MetricHelpResult] = [],
+        powerContract: MetricPowerContract? = nil
     ) -> MetricHelpContent {
         MetricHelpContent(
             id: id,
@@ -1346,7 +1423,8 @@ enum DashboardHelp {
             formula: formula,
             substitution: substitution,
             source: source,
-            comparisonResults: results
+            comparisonResults: results,
+            powerContract: powerContract
         )
     }
 

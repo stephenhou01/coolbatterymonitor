@@ -1,33 +1,34 @@
-# Runtime Help Drawer Design QA
+# Charger Status Drawer Design QA
 
 ## Source and implementation
 
-- Source visual truth: `/var/folders/6x/5n5xzp595qq6yg5b59ph39vw0000gp/T/codex-clipboard-4c59ecfb-87a3-462a-84fa-1bdbdca80ca5.png`
-- Implementation screenshot: `.build/qa/runtime-help/runtime-help-dark.png`
-- Full-view and focused comparison: `.build/qa/runtime-help/runtime-help-comparison.png`
-- Viewport: source 910 × 1262 pixels; implementation 1080 × 800 points rendered at 2048 × 1434 pixels, dark appearance, runtime help open.
-- State: deterministic Mac16,12 fixture with a valid 135-minute macOS reading, five recent power samples, and a current 16.68 W load.
+- Source visual truth: `/var/folders/6x/5n5xzp595qq6yg5b59ph39vw0000gp/T/codex-clipboard-82676634-f31f-4b2f-a627-1aefe2786ba4.png`
+- Dark implementation screenshot: `.build/qa/adapter-help/adapter-help-dark.png`
+- Light implementation screenshot: `.build/qa/adapter-help/adapter-help-light.png`
+- Focused side-by-side comparison: `.build/qa/adapter-help/adapter-help-comparison.png`
+- Viewport: implementation 1080 × 800 points rendered at 2160 × 1600 pixels; the focused dark comparison normalizes both drawer crops to 888 × 918 pixels at 1:1 density.
+- State: deterministic USB-C PD fixture with a 65 W contract, 20,000 mV, 3,250 mA, 16.2 W live `SystemPowerIn`, and twelve recent input-power samples.
 
 ## Findings
 
 - P0: none.
 - P1: none.
 - P2: none.
-- P3: none. The source showed one derived result; the implementation intentionally extends the same drawer pattern to the user-requested primary system value plus two derived comparisons.
+- P3: none. The source exposed raw values only; the implementation intentionally adds the user-requested negotiated-state card and actual-input chart while preserving the drawer's existing hierarchy and technical evidence below.
 
 ## Fidelity checks
 
-- Typography: keeps the rounded title hierarchy, monospaced numeric values, small monospaced field labels, and readable optical weight from the source. The primary system time is visibly dominant.
-- Spacing and layout: preserves the 470-point drawer, section rhythm, header divider, card radius, and scroll behavior. The two derived cards share one row below the full-width system result without clipping.
-- Colors and tokens: retains the existing glass-dark surface and cyan primary accent; purple and yellow distinguish the two calculated values without changing the product palette.
-- Image and icon quality: this drawer contains no raster assets or custom decorative artwork. Existing native controls and SF Symbols remain unchanged and sharp.
-- Copy and content: clearly separates the macOS direct value, ten-minute median-power estimate, and current-load estimate. All three show their inputs and formulas further down the same drawer.
+- Typography: keeps the source's rounded title, monospaced electrical values, small field labels, and clear numeric hierarchy. Voltage, current, and power remain readable within the 470-point drawer.
+- Spacing and layout: preserves the drawer width, header divider, card radii, scroll behavior, and vertical rhythm. The three contract metrics form one balanced row with no clipping in either appearance.
+- Colors and tokens: uses the existing adaptive glass surfaces and semantic cyan, blue, green, and yellow tokens. Both dark and light screenshots maintain legible state and chart contrast.
+- Image and icon quality: no raster assets or custom-drawn substitutes were introduced. Native SF Symbols remain sharp and consistently sized.
+- Copy and content: distinguishes the negotiated 65 W ceiling from the live 16.2 W Mac input. The equation `20.0 V × 3.25 A = 65.0 W`, raw millivolt/milliamp fields, derived check, and `SystemPowerIn` remain available in one drawer.
+- Interaction: the existing question-mark button, scrollable drawer, backdrop dismissal, close control, keyboard Escape handling, and text selection remain functional.
 
-## Patches made since the previous QA pass
+## Comparison history
 
-- Replaced the single runtime result block with one primary system card and two derived comparison cards.
-- Added a ten-minute median-power calculation with a minimum of five valid samples, plus a 120-second freshness limit for the current-load estimate.
-- Added raw fields, formulas, substituted values, and trust-boundary copy for all three time values.
-- Added native copy for all ten supported languages and deterministic runtime-help snapshot coverage.
+- Earlier state: the source drawer displayed only the 65 W result and raw fields, with no status or visualization.
+- Implemented fix: added connected/negotiated states, a three-part power-contract visualization, live input-power history, and explicit ceiling-versus-consumption copy.
+- Post-fix evidence: the normalized comparison shows the same glass drawer language with the new information hierarchy fitting without overflow or truncation.
 
 final result: passed
