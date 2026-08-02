@@ -45,6 +45,7 @@ for size in 16 32 64 128 256 512 1024; do
     test "$height" = "$size"
     test "$alpha" = "yes"
 done
+./Tests/run-icon-alpha-test.sh
 
 echo "▸ 检查 plist 与语言包"
 plutil -lint ExportOptions.plist BatteryMonitor/BatteryMonitor.entitlements \
