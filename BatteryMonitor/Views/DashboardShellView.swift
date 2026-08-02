@@ -753,6 +753,40 @@ struct DashboardSettingsPage: View {
                     .overlay(RoundedRectangle(cornerRadius: 9).stroke(AppTheme.cardBorder))
                 }
             }
+
+            Divider().overlay(AppTheme.cardBorder)
+
+            HStack(spacing: 8) {
+                Image(systemName: "chart.xyaxis.line")
+                    .foregroundStyle(AppTheme.chargingCyan)
+                Text(dashboardText("shell.dynamic_trends", fallback: "动态趋势"))
+                    .font(.system(size: 11.5, weight: .semibold))
+                    .foregroundStyle(AppTheme.textPrimary)
+                Spacer()
+            }
+
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 9) {
+                ForEach(MenuBarTrendMetric.allCases) { metric in
+                    Toggle(isOn: Binding(
+                        get: { menuSettings.visibleTrendMetrics.contains(metric) },
+                        set: { menuSettings.setTrendVisible(metric, visible: $0) }
+                    )) {
+                        HStack(spacing: 8) {
+                            Image(systemName: metric.icon.symbol)
+                                .foregroundStyle(menuTrendMetricColor(metric))
+                                .frame(width: 18)
+                            Text(metric.title)
+                                .font(.system(size: 10.5, weight: .medium))
+                                .foregroundStyle(AppTheme.textPrimary)
+                        }
+                    }
+                    .toggleStyle(.switch)
+                    .padding(.horizontal, 11)
+                    .frame(height: 40)
+                    .background(RoundedRectangle(cornerRadius: 9).fill(AppTheme.contrastOverlay(0.025)))
+                    .overlay(RoundedRectangle(cornerRadius: 9).stroke(AppTheme.cardBorder))
+                }
+            }
         }
         .padding(18)
         .modifier(AppTheme.card(radius: 14))
@@ -785,6 +819,14 @@ struct DashboardSettingsPage: View {
         case .temperature, .health: return AppTheme.batteryGreen
         case .cycles: return AppTheme.accentPurple
         case .current: return AppTheme.batteryYellow
+        }
+    }
+
+    private func menuTrendMetricColor(_ metric: MenuBarTrendMetric) -> Color {
+        switch metric {
+        case .power: return AppTheme.chargingCyan
+        case .runtime: return AppTheme.chargingBlue
+        case .current: return AppTheme.batteryGreen
         }
     }
 }

@@ -279,6 +279,8 @@ struct MenuBarDashboardView: View {
     @State private var isCustomizing = false
     @State private var draggedMetric: MenuBarMetric?
     @State private var dragOriginIndex: Int?
+    @State private var draggedTrendMetric: MenuBarTrendMetric?
+    @State private var trendDragOriginIndex: Int?
 
     private let customizableMetricRowHeight: CGFloat = 44
 
@@ -319,8 +321,10 @@ struct MenuBarDashboardView: View {
                 Divider().overlay(AppTheme.cardBorder)
                 meters
                 values
-                if !isCustomizing {
+                if isCustomizing || !menuSettings.visibleTrendMetrics.isEmpty {
                     trendSection
+                }
+                if !isCustomizing {
                     processSection
                 }
                 footer
@@ -502,7 +506,7 @@ struct MenuBarDashboardView: View {
                     withAnimation(.easeInOut(duration: 0.18)) {
                         isCustomizing.toggle()
                         if !isCustomizing {
-                            resetMetricDrag()
+                            resetAllMetricDrags()
                         }
                     }
                 } label: {
@@ -641,6 +645,11 @@ struct MenuBarDashboardView: View {
         dragOriginIndex = nil
     }
 
+    private func resetAllMetricDrags() {
+        resetMetricDrag()
+        resetTrendMetricDrag()
+    }
+
     private var addMoreMetricsButton: some View {
         Button(action: showMetricSettings) {
             HStack(spacing: 10) {
@@ -688,53 +697,174 @@ struct MenuBarDashboardView: View {
                     .font(.system(size: 11.5, weight: .semibold))
                     .foregroundStyle(AppTheme.textPrimary)
                 Spacer()
-                Text(dashboardText("shell.last_minutes", fallback: "最近采样"))
+                Text(dashboardText(
+                    isCustomizing ? "menu.config.drag_to_reorder" : "shell.last_minutes",
+                    fallback: isCustomizing ? "拖动调整顺序" : "最近采样"
+                ))
                     .font(.system(size: 9))
                     .foregroundStyle(AppTheme.textTertiary)
             }
 
-            trendRow(
-                icon: .power,
-                title: dashboardText("shell.instant_power", fallback: "瞬时功率"),
-                values: batteryService.realtimeData.suffix(32).map(\.power),
-                value: presentation.powerText,
-                color: AppTheme.chargingCyan
-            )
-            trendRow(
-                icon: .runtime,
-                title: dashboardText("p.menu_time", fallback: "预计续航"),
-                values: batteryService.runtimeSamples.suffix(32).map { Double($0.minutesRemaining) },
-                value: presentation.runtimeText,
-                color: AppTheme.chargingBlue
-            )
-            trendRow(
-                icon: .current,
-                title: dashboardText("shell.current", fallback: "电流"),
-                values: batteryService.realtimeData.suffix(32).map(\.amperage),
-                value: LNum("%.2f A", Double(data.amperage) / 1000),
-                color: AppTheme.batteryGreen
-            )
+            if menuSettings.visibleTrendMetrics.isEmpty {
+                Button {
+                    withAnimation(.easeOut(duration: 0.15)) {
+                        menuSettings.resetTrends()
+                    }
+                } label: {
+                    Label(
+                        dashboardText("menu.config.restore_defaults", fallback: "恢复默认"),
+                        systemImage: "arrow.counterclockwise"
+                    )
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(AppTheme.chargingBlue)
+                    .frame(maxWidth: .infinity, minHeight: 38)
+                }
+                .buttonStyle(.plain)
+                .pointerOnHover()
+            } else {
+                VStack(spacing: isCustomizing ? 0 : 8) {
+                    ForEach(menuSettings.visibleTrendMetrics) { metric in
+                        trendRow(metric)
+                    }
+                }
+            }
         }
         .padding(.vertical, 13)
         .overlay(alignment: .top) { Divider().overlay(AppTheme.cardBorder) }
     }
 
-    private func trendRow(icon: BatteryMetricIcon, title: String, values: [Double], value: String, color: Color) -> some View {
-        HStack(spacing: 9) {
-            MetricGlyph(icon, tint: color, scale: .micro, style: .plain)
-            Text(title)
+    private func trendRow(_ metric: MenuBarTrendMetric) -> some View {
+        let color = trendColor(metric)
+        return HStack(spacing: 9) {
+            MetricGlyph(metric.icon, tint: color, scale: .micro, style: .plain)
+            Text(metric.title)
                 .font(.system(size: 10.5))
                 .foregroundStyle(AppTheme.textSecondary)
                 .frame(width: 76, alignment: .leading)
-            MenuSparkline(values: values, color: color)
+            MenuSparkline(values: trendValues(metric), color: color)
                 .frame(maxWidth: .infinity)
                 .frame(height: 27)
-            Text(value)
+            Text(trendValue(metric))
                 .font(.system(size: 10.5, weight: .medium, design: .monospaced))
                 .foregroundStyle(AppTheme.textSecondary)
                 .frame(width: 72, alignment: .trailing)
+
+            if isCustomizing {
+                Button {
+                    withAnimation(.easeOut(duration: 0.15)) {
+                        menuSettings.setTrendVisible(metric, visible: false)
+                    }
+                } label: {
+                    Image(systemName: "minus.circle")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(AppTheme.batteryRed)
+                        .frame(width: 24, height: 24)
+                        .background(Circle().fill(AppTheme.batteryRed.opacity(0.08)))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("\(dashboardText("menu.config.hide", fallback: "隐藏")) \(metric.title)")
+                .help(dashboardText("menu.config.hide", fallback: "隐藏"))
+                .pointerOnHover()
+
+                Image(systemName: "line.3.horizontal")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(draggedTrendMetric == metric ? AppTheme.chargingCyan : AppTheme.textSecondary)
+                    .frame(width: 26, height: 26)
+                    .background(
+                        Circle().fill(
+                            draggedTrendMetric == metric
+                                ? AppTheme.chargingCyan.opacity(0.12)
+                                : AppTheme.contrastOverlay(0.045)
+                        )
+                    )
+                    .contentShape(Circle())
+                    .highPriorityGesture(trendMetricReorderGesture(for: metric))
+                    .accessibilityLabel("\(dashboardText("menu.config.drag_to_reorder", fallback: "拖动调整顺序")) \(metric.title)")
+                    .help(dashboardText("menu.config.drag_to_reorder", fallback: "拖动调整顺序"))
+                    .pointerOnHover()
+            }
         }
-        .frame(height: 32)
+        .padding(.horizontal, isCustomizing ? 7 : 0)
+        .frame(height: isCustomizing ? customizableMetricRowHeight : 32)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(draggedTrendMetric == metric ? AppTheme.chargingCyan.opacity(0.09) : .clear)
+        )
+        .overlay {
+            if isCustomizing {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .stroke(
+                        draggedTrendMetric == metric ? AppTheme.chargingCyan.opacity(0.52) : AppTheme.cardBorder,
+                        lineWidth: 1
+                    )
+            }
+        }
+        .zIndex(draggedTrendMetric == metric ? 1 : 0)
+    }
+
+    private func trendMetricReorderGesture(for metric: MenuBarTrendMetric) -> some Gesture {
+        DragGesture(minimumDistance: 1, coordinateSpace: .global)
+            .onChanged { value in
+                guard isCustomizing else { return }
+
+                if draggedTrendMetric == nil {
+                    draggedTrendMetric = metric
+                    trendDragOriginIndex = menuSettings.visibleTrendMetrics.firstIndex(of: metric)
+                }
+
+                guard draggedTrendMetric == metric,
+                      let originIndex = trendDragOriginIndex,
+                      !menuSettings.visibleTrendMetrics.isEmpty else { return }
+
+                let crossedRows = Int((value.translation.height / customizableMetricRowHeight).rounded())
+                let targetIndex = min(
+                    max(0, originIndex + crossedRows),
+                    menuSettings.visibleTrendMetrics.count - 1
+                )
+                guard menuSettings.visibleTrendMetrics.firstIndex(of: metric) != targetIndex else { return }
+
+                withAnimation(.easeInOut(duration: 0.14)) {
+                    menuSettings.moveTrend(metric, to: targetIndex)
+                }
+            }
+            .onEnded { _ in
+                resetTrendMetricDrag()
+            }
+    }
+
+    private func resetTrendMetricDrag() {
+        draggedTrendMetric = nil
+        trendDragOriginIndex = nil
+    }
+
+    private func trendValues(_ metric: MenuBarTrendMetric) -> [Double] {
+        switch metric {
+        case .power:
+            return batteryService.realtimeData.suffix(32).map(\.power)
+        case .runtime:
+            return batteryService.runtimeSamples.suffix(32).map { Double($0.minutesRemaining) }
+        case .current:
+            return batteryService.realtimeData.suffix(32).map(\.amperage)
+        }
+    }
+
+    private func trendValue(_ metric: MenuBarTrendMetric) -> String {
+        switch metric {
+        case .power:
+            return presentation.powerText
+        case .runtime:
+            return presentation.runtimeText
+        case .current:
+            return LNum("%.2f A", Double(data.amperage) / 1000)
+        }
+    }
+
+    private func trendColor(_ metric: MenuBarTrendMetric) -> Color {
+        switch metric {
+        case .power: return AppTheme.chargingCyan
+        case .runtime: return AppTheme.chargingBlue
+        case .current: return AppTheme.batteryGreen
+        }
     }
 
     private var processSection: some View {

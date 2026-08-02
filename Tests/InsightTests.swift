@@ -494,10 +494,14 @@ expect(menuPreferences.secondaryMetric == .runtime,
        "顶部状态栏默认显示电量 + 剩余时间")
 expect(menuPreferences.visibleMetrics == MenuBarSettings.defaultVisibleMetrics,
        "菜单栏弹层默认指标顺序稳定")
+expect(menuPreferences.visibleTrendMetrics == MenuBarSettings.defaultVisibleTrendMetrics,
+       "动态趋势默认显示功率、续航和电流")
 menuPreferences.selectSecondaryMetric(.power)
 menuPreferences.setVisible(.runtime, visible: false)
 menuPreferences.move(.health, by: -2)
 menuPreferences.move(.cycles, to: 0)
+menuPreferences.setTrendVisible(.runtime, visible: false)
+menuPreferences.moveTrend(.current, to: 0)
 let restoredMenuPreferences = MenuBarSettings(defaults: preferenceDefaults)
 expect(restoredMenuPreferences.secondaryMetric == .power,
        "顶部第二指标可切换为当前功率并持久化")
@@ -505,6 +509,15 @@ expect(!restoredMenuPreferences.visibleMetrics.contains(.runtime)
        && restoredMenuPreferences.visibleMetrics.first == .cycles
        && restoredMenuPreferences.visibleMetrics.firstIndex(of: .health) == 2,
        "弹层指标可隐藏、按钮移动与拖放移动，并保持用户顺序")
+expect(restoredMenuPreferences.visibleTrendMetrics == [.current, .power],
+       "动态趋势可删除、拖放调整顺序，并保持用户设置")
+restoredMenuPreferences.setTrendVisible(.current, visible: false)
+restoredMenuPreferences.setTrendVisible(.power, visible: false)
+expect(MenuBarSettings(defaults: preferenceDefaults).visibleTrendMetrics.isEmpty,
+       "删除全部动态趋势后仍保持空列表，不会在下次打开时意外恢复")
+restoredMenuPreferences.resetTrends()
+expect(MenuBarSettings(defaults: preferenceDefaults).visibleTrendMetrics == MenuBarSettings.defaultVisibleTrendMetrics,
+       "动态趋势为空时可恢复默认列表")
 
 DashboardNavigation.shared.destination = .settings
 expect(DashboardNavigation.shared.destination == .settings,
