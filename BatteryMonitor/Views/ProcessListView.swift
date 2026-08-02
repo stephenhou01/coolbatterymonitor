@@ -48,8 +48,6 @@ struct ProcessListView: View {
 
             if processes.isEmpty {
                 VStack(spacing: 8) {
-                    // 采样完成后仍为空 ≠ 加载中。空闲机器确实可能没有活跃进程，
-                    // 这时该说清楚，而不是让转圈图标一直转。
                     if hasSampled {
                         Image(systemName: "moon.zzz")
                             .font(.system(size: 18))
@@ -88,65 +86,65 @@ struct ProcessRow: View {
             withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { isExpanded.toggle() }
         } label: {
             VStack(spacing: 0) {
-            HStack(spacing: 12) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(AppTheme.energyColor(proc.energyImpact).opacity(0.15))
-                    .frame(width: 32, height: 32)
-                Image(systemName: iconName(for: proc.displayName))
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(AppTheme.energyColor(proc.energyImpact))
-            }
+                HStack(spacing: 12) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .fill(AppTheme.energyColor(proc.energyImpact).opacity(0.15))
+                            .frame(width: 32, height: 32)
+                        Image(systemName: iconName(for: proc.displayName))
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(AppTheme.energyColor(proc.energyImpact))
+                    }
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(proc.displayName)
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(AppTheme.textPrimary)
-                    .lineLimit(1)
-                Text("PID \(proc.pid) · \(LNum("%.0fMB", proc.memoryMB))")
-                    .font(.system(size: 10))
-                    .foregroundStyle(AppTheme.textTertiary)
-            }
-            .frame(width: 140, alignment: .leading)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(proc.displayName)
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(AppTheme.textPrimary)
+                            .lineLimit(1)
+                        Text("PID \(proc.pid) · \(LNum("%.0fMB", proc.memoryMB))")
+                            .font(.system(size: 10))
+                            .foregroundStyle(AppTheme.textTertiary)
+                    }
+                    .frame(width: 140, alignment: .leading)
 
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 4, style: .continuous)
-                        .fill(AppTheme.contrastOverlay(0.04))
-                        .frame(height: 18)
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            RoundedRectangle(cornerRadius: 4, style: .continuous)
+                                .fill(AppTheme.contrastOverlay(0.04))
+                                .frame(height: 18)
 
-                    let fraction = min(max(proc.cpuPercent / maxCpu, 0), 1.0)
-                    RoundedRectangle(cornerRadius: 4, style: .continuous)
-                        .fill(LinearGradient(
-                            colors: [AppTheme.energyColor(proc.energyImpact).opacity(0.4), AppTheme.energyColor(proc.energyImpact)],
-                            startPoint: .leading, endPoint: .trailing
-                        ))
-                        .frame(width: appeared ? CGFloat(fraction) * geo.size.width : 0, height: 18)
-                        .animation(.spring(response: 0.8, dampingFraction: 0.7), value: appeared)
-                        .animation(.spring(response: 0.8, dampingFraction: 0.7), value: fraction)
+                            let fraction = min(max(proc.cpuPercent / maxCpu, 0), 1.0)
+                            RoundedRectangle(cornerRadius: 4, style: .continuous)
+                                .fill(LinearGradient(
+                                    colors: [AppTheme.energyColor(proc.energyImpact).opacity(0.4), AppTheme.energyColor(proc.energyImpact)],
+                                    startPoint: .leading, endPoint: .trailing
+                                ))
+                                .frame(width: appeared ? CGFloat(fraction) * geo.size.width : 0, height: 18)
+                                .animation(.spring(response: 0.8, dampingFraction: 0.7), value: appeared)
+                                .animation(.spring(response: 0.8, dampingFraction: 0.7), value: fraction)
+                        }
+                    }
+                    .frame(height: 18)
+
+                    HStack(spacing: 4) {
+                        Text(LNum("%.1f%%", proc.cpuPercent))
+                            .font(.system(size: 13, weight: .bold, design: .rounded))
+                            .foregroundStyle(AppTheme.energyColor(proc.energyImpact))
+                            .contentTransition(.numericText(value: proc.cpuPercent))
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundStyle(AppTheme.textTertiary)
+                            .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                    }
+                    .frame(width: 62, alignment: .trailing)
                 }
-            }
-            .frame(height: 18)
 
-            HStack(spacing: 4) {
-                Text(LNum("%.1f%%", proc.cpuPercent))
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
-                    .foregroundStyle(AppTheme.energyColor(proc.energyImpact))
-                    .contentTransition(.numericText(value: proc.cpuPercent))
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 9, weight: .bold))
-                    .foregroundStyle(AppTheme.textTertiary)
-                    .rotationEffect(.degrees(isExpanded ? 90 : 0))
-            }
-            .frame(width: 62, alignment: .trailing)
-            }
-
-            if isExpanded {
-                CPUSparkline(history: proc.cpuHistory, color: AppTheme.energyColor(proc.energyImpact))
-                    .padding(.top, 8)
-                    .padding(.horizontal, 6)
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-            }
+                if isExpanded {
+                    CPUSparkline(history: proc.cpuHistory, color: AppTheme.energyColor(proc.energyImpact))
+                        .padding(.top, 8)
+                        .padding(.horizontal, 6)
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                }
             }
         }
         .buttonStyle(.plain)
@@ -204,7 +202,9 @@ struct CPUSparkline: View {
                 Spacer()
                 statLabel(L("proc.peak"), LNum("%.1f%%", peak))
                 statLabel(L("proc.avg"), LNum("%.1f%%", avg))
-                Text(L("proc.interval", history.count))
+                // ProcessMonitorService 与电池服务都按 10 秒刷新；旧 key 仍写着 5 秒，
+                // 这里直接复用已完整翻译的真实周期文案，避免误导用户。
+                Text("\(L("p.live_10s")) · \(history.count)")
                     .font(.system(size: 9))
                     .foregroundStyle(AppTheme.textTertiary)
             }
