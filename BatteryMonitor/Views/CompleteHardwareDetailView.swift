@@ -19,6 +19,9 @@ struct CompleteHardwareMetric: Identifiable {
     let rawFields: [MetricRawField]
     let formula: String
     let substitution: String
+    /// Read time of the snapshot this row was built from, carrying whether it is
+    /// the gauge's own publish moment or merely our poll.
+    var readAt: MetricReadStamp? = nil
 
     var searchableText: String {
         [field, value, unit, meaning, referenceRange, usage, note]
@@ -44,7 +47,8 @@ struct CompleteHardwareMetric: Identifiable {
             rawFields: rawFields,
             formula: formula,
             substitution: substitution,
-            source: "\(origin) · \(L(reliability.labelKey)) · \(usage) · \(hardwareText("hw.column.product_value", "产品价值")) \(starText) · \(referenceRange)"
+            source: "\(origin) · \(L(reliability.labelKey)) · \(usage) · \(hardwareText("hw.column.product_value", "产品价值")) \(starText) · \(referenceRange)",
+            readAt: readAt
         )
     }
 }
@@ -504,7 +508,10 @@ enum CompleteHardwareMetricCatalog {
             let meaning = text(meaningKey, meaningFallback)
             let note = noteKey.map { text($0, noteFallback.isEmpty ? meaning : noteFallback) }
                 ?? (noteFallback.isEmpty ? meaning : noteFallback)
-            let raw = rawFields ?? [MetricRawField(name: field, value: value, unit: unit)]
+            // ModelDesignEnergy comes from the built-in specification table, not
+            // from a poll, and must not be captioned as a live reading.
+            let raw = rawFields ?? [MetricRawField(name: field, value: value, unit: unit,
+                                                   updateClass: field == "ModelDesignEnergy" ? .modelSpec : .live)]
             let f = formula ?? "IOKit → \(field)"
             let s = substitution ?? "\(field) → \(value)\(unit.isEmpty ? "" : " \(unit)")"
             return CompleteHardwareMetric(
@@ -520,7 +527,12 @@ enum CompleteHardwareMetricCatalog {
                 note: note,
                 rawFields: raw,
                 formula: f,
-                substitution: s
+                substitution: s,
+                // 74 行硬件表全是电量计字段，优先用它自报的发布时刻
+                readAt: data.hardwareDetail.gaugeUpdateTime.map {
+                    .gauge($0, polledAt: data.lastUpdated,
+                           interval: data.hardwareDetail.gaugePublishInterval)
+                } ?? .ourRead(data.lastUpdated)
             )
         }
 

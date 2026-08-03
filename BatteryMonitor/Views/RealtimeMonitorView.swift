@@ -6,6 +6,8 @@ struct RealtimeMonitorView: View {
     let batteryData: BatteryData
     @State private var selectedMetric: MetricType = .power
     @State private var selectedRange: TimeRange = .oneMinute
+    /// Pointer position on the x axis, from Charts' own `chartXSelection`.
+    @State private var selectedDate: Date?
 
     enum MetricType: String, CaseIterable {
         case voltage, amperage, power, temperature, percent
@@ -141,30 +143,59 @@ struct RealtimeMonitorView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
-            Chart(visiblePoints) { point in
-                LineMark(
-                    x: .value(L("rt.time"), point.timestamp),
-                    y: .value(selectedMetric.displayName, metricValue(point))
-                )
-                .foregroundStyle(chartColor)
-                // IOKit 数值在两次真实刷新之间保持不变。阶梯线如实表达采样，
-                // 避免 Catmull-Rom 凭空制造从未观测到的中间峰谷。
-                .interpolationMethod(.stepEnd)
-                .lineStyle(StrokeStyle(lineWidth: 2))
-
-                AreaMark(
-                    x: .value(L("rt.time"), point.timestamp),
-                    y: .value(selectedMetric.displayName, metricValue(point))
-                )
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [chartColor.opacity(0.3), chartColor.opacity(0.02)],
-                        startPoint: .top,
-                        endPoint: .bottom
+            Chart {
+                ForEach(visiblePoints) { point in
+                    LineMark(
+                        x: .value(L("rt.time"), point.timestamp),
+                        y: .value(selectedMetric.displayName, metricValue(point))
                     )
-                )
-                .interpolationMethod(.stepEnd)
+                    .foregroundStyle(chartColor)
+                    // IOKit 数值在两次真实刷新之间保持不变。阶梯线如实表达采样，
+                    // 避免 Catmull-Rom 凭空制造从未观测到的中间峰谷。
+                    .interpolationMethod(.stepEnd)
+                    .lineStyle(StrokeStyle(lineWidth: 2))
+
+                    AreaMark(
+                        x: .value(L("rt.time"), point.timestamp),
+                        y: .value(selectedMetric.displayName, metricValue(point))
+                    )
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [chartColor.opacity(0.3), chartColor.opacity(0.02)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .interpolationMethod(.stepEnd)
+                }
+
+                if let hovered = hoveredPoint {
+                    RuleMark(x: .value(L("rt.time"), hovered.timestamp))
+                        .foregroundStyle(chartColor.opacity(0.5))
+                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 3]))
+                        .annotation(position: .top, alignment: .leading, spacing: 2,
+                                    overflowResolution: .init(x: .fit(to: .chart), y: .disabled)) {
+                            Text(hoverReadout(hovered))
+                                .font(.system(size: 9.5, weight: .semibold, design: .monospaced))
+                                .foregroundStyle(AppTheme.textPrimary)
+                                .monospacedDigit()
+                                .fixedSize()
+                                .padding(.horizontal, 7)
+                                .padding(.vertical, 4)
+                                .background(RoundedRectangle(cornerRadius: 7)
+                                    .fill(AppTheme.surfaceRaised.opacity(0.96)))
+                                .overlay(RoundedRectangle(cornerRadius: 7)
+                                    .stroke(AppTheme.cardBorder))
+                        }
+                    PointMark(
+                        x: .value(L("rt.time"), hovered.timestamp),
+                        y: .value(selectedMetric.displayName, metricValue(hovered))
+                    )
+                    .foregroundStyle(chartColor)
+                    .symbolSize(46)
+                }
             }
+            .chartXSelection(value: $selectedDate)
             .chartXAxis {
                 AxisMarks(values: .automatic(desiredCount: 5)) { value in
                     AxisGridLine()
@@ -233,6 +264,33 @@ struct RealtimeMonitorView: View {
     }
 
     // MARK: - Helpers
+
+    /// Snapped to a real sample rather than interpolated, so every number the
+    /// readout shows was actually measured.
+    private var hoveredPoint: RealtimeDataPoint? {
+        guard let selectedDate else { return nil }
+        return visiblePoints.min {
+            abs($0.timestamp.timeIntervalSince(selectedDate)) < abs($1.timestamp.timeIntervalSince(selectedDate))
+        }
+    }
+
+    /// Seconds, not minutes: this chart's widest window is three minutes, so a
+    /// minute-granularity label would collapse most of the series into one
+    /// timestamp. The ten-minute help-panel trends round to the minute instead.
+    private func hoverReadout(_ point: RealtimeDataPoint) -> String {
+        let time = point.timestamp.formatted(.dateTime.hour().minute().second())
+        return "\(time) · \(LNum("%.1f", metricValue(point))) \(hoverUnit)"
+    }
+
+    private var hoverUnit: String {
+        switch selectedMetric {
+        case .voltage: return "V"
+        case .amperage: return "mA"
+        case .power: return "W"
+        case .temperature: return "℃"
+        case .percent: return "%"
+        }
+    }
 
     private func metricValue(_ point: RealtimeDataPoint) -> Double {
         switch selectedMetric {

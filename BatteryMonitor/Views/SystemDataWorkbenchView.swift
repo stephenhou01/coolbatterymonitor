@@ -20,6 +20,11 @@ private enum SystemWorkbenchTab: Hashable, Identifiable {
 /// first tab stays focused on fields that can actually support a user decision.
 struct SystemDataWorkbenchView: View {
     let snapshot: SystemDataSnapshot
+    /// The gauge's own publish moment. 434 of the 464 fields come from
+    /// AppleSmartBattery and therefore move on its ~60 s beat, not on our poll —
+    /// the status strip has to state the two cadences separately or it would
+    /// promise ten-second freshness for numbers that cannot deliver it.
+    let gaugeReadAt: Date?
     let isLive: Bool
     let onToggleLive: () -> Void
     let onRefresh: () -> Void
@@ -58,12 +63,17 @@ struct SystemDataWorkbenchView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 15) {
+        // Computed once per redraw and handed down. These were computed
+        // properties read four times per body, each re-filtering all 464 fields
+        // and re-running isMeaningfulByDefault on every one of them.
+        let fields = visibleFields
+        let counts = tabCounts
+        return VStack(alignment: .leading, spacing: 15) {
             header
             description
-            tabBar
-            toolbar
-            table
+            tabBar(counts)
+            toolbar(fields.count)
+            table(fields)
         }
         .padding(20)
         .finalDashboardCard(accent: AppTheme.accentPurple)
@@ -118,7 +128,7 @@ struct SystemDataWorkbenchView: View {
         .overlay(RoundedRectangle(cornerRadius: 10).stroke(AppTheme.batteryGreen.opacity(0.10), lineWidth: 1))
     }
 
-    private var tabBar: some View {
+    private func tabBar(_ counts: [SystemWorkbenchTab: Int]) -> some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 6) {
                 ForEach(tabs) { tab in
@@ -128,7 +138,7 @@ struct SystemDataWorkbenchView: View {
                         HStack(spacing: 5) {
                             Image(systemName: tabIcon(tab)).font(.system(size: 9, weight: .semibold))
                             Text(tabTitle(tab)).font(.system(size: 9.5, weight: .semibold))
-                            Text("\(count(for: tab))")
+                            Text("\(counts[tab] ?? 0)")
                                 .font(.system(size: 8.5, weight: .bold, design: .monospaced))
                                 .opacity(0.75)
                         }
@@ -146,7 +156,7 @@ struct SystemDataWorkbenchView: View {
         }
     }
 
-    private var toolbar: some View {
+    private func toolbar(_ visibleCount: Int) -> some View {
         HStack(spacing: 9) {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 10.5))
@@ -161,7 +171,7 @@ struct SystemDataWorkbenchView: View {
                 .buttonStyle(.plain)
             }
             Spacer()
-            Text("\(visibleFields.count) / \(snapshot.fields.count)")
+            Text("\(visibleCount) / \(snapshot.fields.count)")
                 .font(.system(size: 9, weight: .medium, design: .monospaced))
                 .foregroundStyle(AppTheme.textTertiary)
         }
@@ -171,14 +181,14 @@ struct SystemDataWorkbenchView: View {
         .overlay(RoundedRectangle(cornerRadius: 8).stroke(AppTheme.contrastOverlay(0.06), lineWidth: 1))
     }
 
-    private var table: some View {
+    private func table(_ fields: [SystemFieldReading]) -> some View {
         ScrollView([.horizontal, .vertical]) {
             LazyVStack(spacing: 4, pinnedViews: [.sectionHeaders]) {
                 Section(header: tableHeader) {
-                    if visibleFields.isEmpty {
+                    if fields.isEmpty {
                         emptyState.frame(width: 1450, height: 180)
                     } else {
-                        ForEach(visibleFields) { field in
+                        ForEach(fields) { field in
                             fieldRow(field)
                         }
                     }
@@ -186,7 +196,7 @@ struct SystemDataWorkbenchView: View {
             }
             .frame(minWidth: 1450, alignment: .leading)
         }
-        .frame(height: min(610, max(260, CGFloat(visibleFields.count) * 41 + 44)))
+        .frame(height: min(610, max(260, CGFloat(fields.count) * 41 + 44)))
         .background(RoundedRectangle(cornerRadius: 11).fill(AppTheme.surfaceSunken))
         .overlay(RoundedRectangle(cornerRadius: 11).stroke(AppTheme.contrastOverlay(0.05), lineWidth: 1))
     }
@@ -216,7 +226,7 @@ struct SystemDataWorkbenchView: View {
                 .textSelection(.enabled)
                 .lineLimit(2)
                 .frame(width: 285, alignment: .leading)
-            Text(field.value)
+            Text(field.convertedValue)
                 .font(.system(size: 9.7, weight: .semibold, design: .monospaced))
                 .foregroundStyle(field.isAvailable ? valueColor(field) : AppTheme.textTertiary.opacity(0.55))
                 .textSelection(.enabled)
@@ -261,11 +271,20 @@ struct SystemDataWorkbenchView: View {
 
     private var liveControls: some View {
         HStack(spacing: 7) {
-            Text(snapshot.timestamp == .distantPast
-                 ? "—"
-                 : snapshot.timestamp.formatted(date: .omitted, time: .standard))
-                .font(.system(size: 9, design: .monospaced))
-                .foregroundStyle(AppTheme.textTertiary)
+            // One ticking clock for the whole strip; the per-source countdown is
+            // the only thing that changes between polls.
+            TimelineView(.periodic(from: Date(), by: 1)) { timeline in
+                VStack(alignment: .trailing, spacing: 2) {
+                    sourceCadenceLine(
+                        label: dashboardText("p.system_source_gauge", fallback: "电量计"),
+                        text: gaugeCadenceText(now: timeline.date)
+                    )
+                    sourceCadenceLine(
+                        label: dashboardText("p.system_source_others", fallback: "其他数据源"),
+                        text: otherSourcesCadenceText
+                    )
+                }
+            }
             Button(action: onToggleLive) {
                 Label(isLive
                       ? dashboardText("p.pause_refresh", fallback: "暂停 10 秒更新")
@@ -287,13 +306,68 @@ struct SystemDataWorkbenchView: View {
         }
     }
 
-    private func count(for tab: SystemWorkbenchTab) -> Int {
-        switch tab {
-        case .meaningful: return snapshot.fields.filter(\.isMeaningful).count
-        case .anomalies: return snapshot.anomalyCount
-        case .source(let layer): return snapshot.fields.filter { $0.metadata.source == layer.sourceName }.count
-        case .all: return snapshot.fields.count
+    private func sourceCadenceLine(label: String, text: String) -> some View {
+        HStack(spacing: 5) {
+            Text(label)
+                .font(.system(size: 8.5, weight: .semibold))
+                .foregroundStyle(AppTheme.textTertiary.opacity(0.75))
+            Text(text)
+                .font(.system(size: 9, design: .monospaced))
+                .foregroundStyle(AppTheme.textTertiary)
         }
+    }
+
+    /// Same wording the help drawer uses for gauge-published fields, so the two
+    /// screens cannot disagree about the beat.
+    private func gaugeCadenceText(now: Date) -> String {
+        guard let gaugeReadAt else {
+            return dashboardText("p.runtime_raw_unavailable", fallback: "不可用")
+        }
+        let remaining = MetricFieldFreshness.gaugeRefreshSeconds
+            - MetricFieldFreshness.seconds(from: gaugeReadAt, to: now)
+        let stamp = ["time": MetricFieldFreshness.clockText(gaugeReadAt)]
+        guard remaining > 0 else {
+            return dashboardText("p.field_read_at_gauge_due",
+                                 fallback: "预计随时刷新 · 上次 {time}",
+                                 replacements: stamp)
+        }
+        return dashboardText("p.field_read_at_gauge",
+                             fallback: "还有约 {countdown} 秒刷新 · 上次 {time}",
+                             replacements: stamp.merging(["countdown": "\(remaining)"]) { a, _ in a })
+    }
+
+    /// IOPowerSources / legacy IOPM / ProcessInfo are re-read on every poll, so
+    /// their freshness is our interval, not the gauge's.
+    private var otherSourcesCadenceText: String {
+        guard snapshot.timestamp != .distantPast else {
+            return dashboardText("p.runtime_raw_unavailable", fallback: "不可用")
+        }
+        return dashboardText(
+            "p.system_others_cadence",
+            fallback: "每 {interval} 秒重读 · 上次 {time}",
+            replacements: [
+                "interval": "\(Int(BatteryService.liveRefreshInterval.rounded()))",
+                "time": MetricFieldFreshness.clockText(snapshot.timestamp),
+            ]
+        )
+    }
+
+    /// Every tab badge in one pass over the 464 readings. The per-tab version
+    /// this replaces walked the whole array once per tab — seven full scans, five
+    /// of which re-ran the meaningfulness test on every field.
+    private var tabCounts: [SystemWorkbenchTab: Int] {
+        var counts: [SystemWorkbenchTab: Int] = [
+            .meaningful: 0, .anomalies: 0, .all: snapshot.fields.count,
+        ]
+        for layer in SystemDataLayer.allCases { counts[.source(layer)] = 0 }
+        for field in snapshot.fields {
+            if field.isMeaningful { counts[.meaningful, default: 0] += 1 }
+            if field.anomalyLevel > .none { counts[.anomalies, default: 0] += 1 }
+            if let layer = SystemDataLayer.allCases.first(where: { $0.sourceName == field.metadata.source }) {
+                counts[.source(layer), default: 0] += 1
+            }
+        }
+        return counts
     }
 
     private func tabTitle(_ tab: SystemWorkbenchTab) -> String {

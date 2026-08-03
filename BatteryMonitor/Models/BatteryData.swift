@@ -203,6 +203,11 @@ struct RealtimeDataPoint: Identifiable {
     let inputPower: Double?  // W
     let adapterVoltage: Double? // negotiated V
     let adapterCurrent: Double? // negotiated A
+    /// Whether the adapter was attached when this sample was taken. Recorded
+    /// because `inputPower` cannot stand in for it: SystemPowerIn is measured to
+    /// drop to 0 while plugged in, so "no input reading" and "no adapter" are
+    /// genuinely different states and only this flag distinguishes them.
+    let isOnAC: Bool
 
     init(
         timestamp: Date,
@@ -213,7 +218,8 @@ struct RealtimeDataPoint: Identifiable {
         percent: Int,
         inputPower: Double? = nil,
         adapterVoltage: Double? = nil,
-        adapterCurrent: Double? = nil
+        adapterCurrent: Double? = nil,
+        isOnAC: Bool = false
     ) {
         self.timestamp = timestamp
         self.voltage = voltage
@@ -224,5 +230,6 @@ struct RealtimeDataPoint: Identifiable {
         self.inputPower = inputPower
         self.adapterVoltage = adapterVoltage
         self.adapterCurrent = adapterCurrent
+        self.isOnAC = isOnAC
     }
 }

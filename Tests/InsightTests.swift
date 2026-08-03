@@ -205,7 +205,8 @@ let adapterPoints = [12.4, 15.8, 16.2].enumerated().map { offset, inputPower in
         percent: 86,
         inputPower: inputPower,
         adapterVoltage: 20.0,
-        adapterCurrent: 3.25
+        adapterCurrent: 3.25,
+        isOnAC: true
     )
 }
 let adapterHelp = DashboardHelp.adapterPower(
@@ -218,9 +219,21 @@ expect(adapterHelp.powerContract?.equationText.contains("20.0 V") == true
        && adapterHelp.powerContract?.equationText.contains("3.25 A") == true
        && adapterHelp.powerContract?.equationText.contains("65.0 W") == true,
        "充电器弹窗拆解 20.0V × 3.25A = 65.0W")
+// 每个采样点：整机 8.4W + 充入 (1000mA ÷ 1000 × 12.9V) = 12.9W → 21.3W。
+// 关键是这三个点的 inputPower（SystemPowerIn）分别是 12.4/15.8/16.2，都没被采用——
+// 那个字段实测会在插着电充着电时归零，一归零整张图就消失，这正是要防的回归。
 expect(adapterHelp.powerContract?.trendPoints.count == 3
-       && adapterHelp.powerContract?.trendValue.contains("16.2 W") == true,
-       "充电器弹窗使用 SystemPowerIn 实测值绘制输入功率趋势")
+       && (adapterHelp.powerContract?.trendPoints.allSatisfy { abs($0.value - 21.3) < 0.001 } ?? false),
+       "充电器弹窗的输入功率曲线取「整机功率 + 充入功率」推导，不取 SystemPowerIn")
+let acFreePoints = adapterPoints.map {
+    RealtimeDataPoint(timestamp: $0.timestamp, voltage: $0.voltage, amperage: $0.amperage,
+                      power: $0.power, temperature: $0.temperature, percent: $0.percent,
+                      inputPower: $0.inputPower, isOnAC: false)
+}
+expect(DashboardHelp.adapterPower(
+    DashboardMetricSnapshot(data: data(from: plugged, onAC: true), realtimeData: acFreePoints)
+).powerContract?.trendPoints.isEmpty == true,
+       "拔电时段不画适配器输出——没有输出和输出 0W 是两回事")
 expect(adapterHelp.rawFields.contains { $0.name == "Derived.NegotiatedPower" && $0.value.contains("65") },
        "额定功率既保留系统 Watts，也提供电压×电流校验值")
 
@@ -256,13 +269,29 @@ wholeMacInputData.hardwareDetail.systemVoltageIn = 20_000
 wholeMacInputData.hardwareDetail.systemCurrentIn = 3_250
 wholeMacInputData.isCharging = false
 wholeMacInputData.amperage = 0
+wholeMacInputData.hardwareDetail.systemPowerWatts = 16.2
 let powerFlowSnapshot = DashboardMetricSnapshot(data: wholeMacInputData, realtimeData: adapterPoints)
 let adapterOutputHelp = DashboardHelp.adapterOutputPower(powerFlowSnapshot)
+// 插电、不充电：适配器出的就是整机吃的，两条出边只剩一条
 expect(abs((powerFlowSnapshot.adapterOutputPowerWatts ?? -1) - 16.2) < 0.001
        && adapterOutputHelp.result.contains("16.2 W"),
-       "SystemPowerIn 16200mW 只作为适配器输出/整机输入 16.2W")
+       "插电不充电时适配器输出 = 整机功率 16.2W")
 expect(adapterOutputHelp.rawFields.contains { $0.name == "PowerTelemetryData.SystemPowerIn" },
        "适配器输出功率抽屉保留 SystemPowerIn 底层字段")
+// 用户报的那个 bug 的回归：SystemPowerIn 归零时，卡片和曲线都不许消失
+var zeroTelemetryData = wholeMacInputData
+zeroTelemetryData.hardwareDetail.systemPowerIn = 0
+zeroTelemetryData.isCharging = true
+zeroTelemetryData.amperage = 1_000
+zeroTelemetryData.hardwareDetail.instantAmperage = 1_000
+let zeroTelemetrySnapshot = DashboardMetricSnapshot(data: zeroTelemetryData, realtimeData: adapterPoints)
+// 16.2W 整机 + 12.466V × 1.0A = 12.466W 充入 → 28.666W
+expect(abs((zeroTelemetrySnapshot.adapterOutputPowerWatts ?? -1) - 28.666) < 0.001,
+       "SystemPowerIn 归零时适配器输出仍然算得出来 [\(String(describing: zeroTelemetrySnapshot.adapterOutputPowerWatts))]")
+expect(DashboardHelp.adapterOutputPower(zeroTelemetrySnapshot).trend?.points.count == 3,
+       "SystemPowerIn 归零不会把趋势图整张抹掉——这正是用户看到「折线图没有了」的成因")
+expect(!DashboardHelp.adapterOutputPower(zeroTelemetrySnapshot).formula.contains("SystemPowerIn"),
+       "公式如实写成推导式，不再声称直读 SystemPowerIn")
 
 let idleChargingHelp = DashboardHelp.chargingPower(powerFlowSnapshot)
 expect(powerFlowSnapshot.batteryChargingPowerWatts == 0
@@ -294,18 +323,28 @@ expect(disconnectedAdapterHelp.rawFields.allSatisfy { $0.value == "—" },
 // MARK: - 7) 耗电分析
 
 print("── 7) 耗电分析")
+// 68% ≈ 占满 2/3 个核，超过 40% 阈值，走 note_top 分支。
+// 阈值是按真实 CPU 读数定的；不要把它改回 32.4 这种「timebase 修复前的低估值」，
+// 否则这条测试会退化成在验证 note_plain。
 let procs = [ProcessPowerInfo(pid: 1, name: "/Applications/Google Chrome.app/Google Chrome",
-                              cpuPercent: 32.4, memoryMB: 900)]
+                              cpuPercent: 68.0, memoryMB: 900)]
 let pOnBattery = InsightEngine.power(data: data(from: d, onAC: false), d: d, processes: procs)
 expect(pOnBattery.estimatedHoursRemaining != nil, "电池供电时给出续航预估")
 expect(pOnBattery.currentWatts > 0, "功耗为真实读数 [\(pOnBattery.currentWatts)W]")
 let pOnAC = InsightEngine.power(data: data(from: d, onAC: true), d: d, processes: procs)
 expect(pOnAC.estimatedHoursRemaining == nil, "AC 供电时不给续航预估")
-expect(pOnBattery.note != nil, "有高占用进程时给出提示")
+expect(pOnBattery.note?.contains("Google Chrome") == true,
+       "有高占用进程时点名该进程 [\(pOnBattery.note ?? "nil")]")
 // 提示里只能出现真实读数，不能出现编造的「省 X W」
 if let n = pOnBattery.note {
     expect(!n.contains("1.8") , "提示不含编造的节省瓦特数")
 }
+// 低于阈值时只陈述总功耗，不点名任何进程、不建议关掉它
+let lightProcs = [ProcessPowerInfo(pid: 1, name: "/Applications/Google Chrome.app/Google Chrome",
+                                   cpuPercent: 3.2, memoryMB: 900)]
+let pLight = InsightEngine.power(data: data(from: d, onAC: false), d: d, processes: lightProcs)
+expect(pLight.note != nil && pLight.note?.contains("Google Chrome") != true,
+       "低占用时只报总功耗，不点名进程 [\(pLight.note ?? "nil")]")
 expect(InsightEngine.power(data: data(from: d), d: d, processes: []).topConsumers.isEmpty,
        "无进程数据时不崩，top 列表为空")
 
@@ -409,9 +448,26 @@ expect(runtimeHelp.comparisonResults.map(\.id) == [
 ], "续航问号同时展示系统时间、稳健估算和当前负载估算")
 expect(runtimeHelp.comparisonResults.first?.value == "2 h 35 m",
        "macOS系统时间是三项里的主要结果")
-expect(runtimeHelp.comparisonResults.first?.note.contains("10 秒") == true
-       && runtimeHelp.comparisonResults.first?.note.contains("每分钟") == true,
-       "系统时间备注说明读取时间、10秒检查周期与约1分钟历史周期")
+// 三张卡各自先说清「它回答什么问题」，再说机制；机制里的频次必须报电量计的
+// 60 秒实测节拍，不能再报我们自己的 10 秒轮询，否则同屏两个数字互相矛盾。
+let systemNote = runtimeHelp.comparisonResults.first?.note ?? ""
+expect(systemNote.contains("和菜单栏同一个数字")
+       && systemNote.contains("TimeRemaining / AvgTimeToEmpty")
+       && systemNote.contains("电量计约 60 秒刷新一次")
+       && !systemNote.contains("每 10 秒"),
+       "系统时间卡先说它是菜单栏同一个数字，频次报 60 秒节拍 [\(systemNote)]")
+expect(runtimeSnapshot.latestStablePowerSampleTime == runtimeSampleEnd,
+       "稳健估算的读取时间取窗口内最新的有效功耗样本")
+let stableNote = runtimeHelp.comparisonResults.first { $0.id == "runtime.stable" }?.note ?? ""
+expect(stableNote.contains("按最近这段时间的用法还能撑多久")
+       && stableNote.contains("最新样本读取于")
+       && stableNote.contains("5 个有效样本"),
+       "稳健估算卡先说它回答什么问题，再给样本证据 [\(stableNote)]")
+let currentNote = runtimeHelp.comparisonResults.first { $0.id == "runtime.current-load" }?.note ?? ""
+expect(currentNote.contains("如果一直像现在这样用")
+       && currentNote.contains("最敏感")
+       && currentNote.contains("秒前"),
+       "当前负载卡说明它最敏感也最容易偏，并给出样本年龄 [\(currentNote)]")
 
 let insufficientSnapshot = DashboardMetricSnapshot(
     data: runtimeData,
@@ -428,6 +484,197 @@ let staleRuntimeSnapshot = DashboardMetricSnapshot(
 )
 expect(staleRuntimeSnapshot.currentLoadRuntimeMinutes == nil,
        "当前功耗样本超过120秒时停止当前负载预测")
+let runtimeFieldExplanations = runtimeHelp.rawFields.map(\.localizedExplanation)
+expect(Set(runtimeFieldExplanations).count == runtimeHelp.rawFields.count,
+       "续航卡的每个底层字段都有自己的说明，不共用一句通用话术")
+func runtimeFieldExplanation(_ name: String) -> String {
+    runtimeHelp.rawFields.first { $0.name == name }?.localizedExplanation ?? ""
+}
+expect(runtimeFieldExplanation("Derived.Recent10mMedianPower").contains("中位数")
+       && !runtimeFieldExplanation("Derived.Recent10mMedianPower").contains("当前"),
+       "10分钟功耗中位数不能被描述成当前功率")
+expect(runtimeFieldExplanation("Derived.Recent10mValidSamples").contains("样本数"),
+       "有效样本数字段说明的是样本个数，不是派生中间值")
+expect(runtimeFieldExplanation("Derived.CurrentPowerSampleAge").contains("秒"),
+       "功率样本年龄字段说明的是距今秒数")
+expect(runtimeFieldExplanation("AppleRawCurrentCapacity").contains("mAh")
+       && runtimeFieldExplanation("DesignCapacity").contains("设计容量"),
+       "剩余电量原始读数与出厂设计容量分开描述")
+
+print("── 5b) 底层字段的读取时间与更新频次")
+func runtimeField(_ name: String) -> MetricRawField? {
+    runtimeHelp.rawFields.first { $0.name == name }
+}
+expect(runtimeHelp.readAt == .ourRead(runtimeData.lastUpdated),
+       "没有电量计 UpdateTime 时卡片级读取时间退回本次轮询时刻，并标明出处")
+expect(runtimeField("AppleRawCurrentCapacity")?.updateClass == .live
+       && runtimeField("AppleRawCurrentCapacity")?.readAt == nil,
+       "IOKit 实时字段默认走卡片级读取时间")
+expect(runtimeField("DesignCapacity")?.effectiveUpdateClass == .constant,
+       "出厂设计容量按名字识别为固定值，不再挂读取频次（ioreg 实测 24 秒内不变）")
+expect(runtimeField("AppleRawCurrentCapacity")?.effectiveUpdateClass == .live,
+       "剩余电量读数不能被误判成固定值")
+expect(MetricFieldFreshness.text(for: runtimeField("DesignCapacity")!,
+                                 cardReadAt: .ourRead(runtimeData.lastUpdated),
+                                 now: Date()) == "出厂固定值，不随使用变化",
+       "固定值显示自己不随使用变化，而不是读取时间")
+expect(runtimeField("ModelDesignEnergy")?.updateClass == .modelSpec,
+       "内置机型规格电量不能被标成每10秒读一次的实时值")
+expect(runtimeField("Derived.CurrentPowerSampleAge")?.updateClass == MetricFieldUpdateClass.untimed,
+       "值本身就是读数年龄的字段不再叠加一行秒数")
+expect(runtimeField("Derived.Recent10mMedianPower")?.readAt == .ourRead(runtimeSampleEnd)
+       && runtimeField("Derived.Recent10mValidSamples")?.readAt == .ourRead(runtimeSampleEnd),
+       "10分钟窗口的两行用窗口内最新样本时刻，不用本次轮询时刻")
+
+// 时间说明的三条渲染分支
+let liveCaption = MetricFieldFreshness.text(
+    for: runtimeField("AppleRawCurrentCapacity")!,
+    cardReadAt: .ourRead(runtimeData.lastUpdated),
+    now: runtimeData.lastUpdated.addingTimeInterval(3)
+) ?? ""
+// 频次必须报电量计的实测节拍（60 秒），不能报我们自己的轮询间隔（10 秒）——
+// 两轮 5 分钟 ioreg 采样共 300 个样本，所有字段变化间隔最小 58 秒。
+expect(liveCaption.contains("读取") && !liveCaption.contains("更新（")
+       && liveCaption.contains("3 秒前")
+       && liveCaption.contains("电量计约 60 秒刷新一次")
+       && !liveCaption.contains("10 秒"),
+       "文案报电量计 60 秒节拍，不报 10 秒轮询间隔 [\(liveCaption)]")
+expect(MetricFieldFreshness.gaugeRefreshSeconds == 60
+       && Int(BatteryService.liveRefreshInterval) == 10,
+       "电量计节拍与本地轮询间隔是两个独立常量，不能互相顶替")
+
+print("── 5b2) 分钟原始值附带小时换算，和上方结果行呼应")
+// 上方主结果显示 "2 h 30 m"，字段行的 150 min 必须用同一套渲染，否则两个数字
+// 看起来像两回事。
+expect(runtimeField("TimeRemaining")?.value == "155 min (2 h 35 m)",
+       "分钟读数附上与上方结果同格式的小时换算 [\(runtimeField("TimeRemaining")?.value ?? "nil")]")
+var shortRuntimeData = runtimeData
+shortRuntimeData.hardwareDetail.timeRemainingRaw = 45
+let shortHelp = DashboardHelp.runtime(DashboardMetricSnapshot(data: shortRuntimeData, realtimeData: stablePoints))
+expect(shortHelp.rawFields.first { $0.name == "TimeRemaining" }?.value == "45 min",
+       "不足一小时不加「0 h」的噪音")
+var minuteSentinelData = runtimeData
+minuteSentinelData.hardwareDetail.timeRemainingRaw = 65535
+let minuteSentinelHelp = DashboardHelp.runtime(DashboardMetricSnapshot(data: minuteSentinelData, realtimeData: stablePoints))
+expect(minuteSentinelHelp.rawFields.first { $0.name == "TimeRemaining" }?.value == "不可用",
+       "哨兵值仍然只显示不可用，不做换算")
+
+print("── 5c) 读取时间取自电量计自报的 UpdateTime")
+// 合理性闸门：坏值一律当作没有，不能硬转成 1970 年让所有读数看着无限陈旧
+expect(BatteryService.gaugeDate(0) == nil
+       && BatteryService.gaugeDate(-1) == nil
+       && BatteryService.gaugeDate(nil) == nil
+       && BatteryService.gaugeDate(1_000) == nil,
+       "UpdateTime 为 0/负数/过小时视为不可用")
+expect(BatteryService.gaugeDate(Int(Date().timeIntervalSince1970) + 3_600) == nil,
+       "UpdateTime 落在未来一小时视为不可用（时钟异常）")
+let sane = Int(Date().timeIntervalSince1970) - 30
+expect(BatteryService.gaugeDate(sane).map { Int($0.timeIntervalSince1970) } == sane,
+       "合理的 UpdateTime 原样转成时刻")
+
+// 实测场景回归：电量计 15:48:45 发布，我们 15:49:29 才读到 —— 数据真实年龄 44 秒。
+// 换用电量计时刻前，这里会显示「0 秒前」，那是在拿我们的动作冒充数据新鲜度。
+var gaugeData = runtimeData
+let pollMoment = Date()
+gaugeData.lastUpdated = pollMoment
+gaugeData.hardwareDetail.gaugeUpdateTime = pollMoment.addingTimeInterval(-44)
+let gaugeSnapshot = DashboardMetricSnapshot(data: gaugeData, realtimeData: stablePoints)
+expect(gaugeSnapshot.rawFieldReadAt == .gauge(pollMoment.addingTimeInterval(-44)),
+       "有 UpdateTime 时读取时间用电量计发布时刻，并标明它来自电量计")
+let gaugeHelp = DashboardHelp.runtime(gaugeSnapshot)
+let gaugeCaption = MetricFieldFreshness.text(
+    for: gaugeHelp.rawFields.first { $0.name == "AppleRawCurrentCapacity" }!,
+    cardReadAt: gaugeHelp.readAt,
+    now: pollMoment
+) ?? ""
+// 知道电量计相位后，有用的数字是「下次什么时候来」：60 − 44 = 16 秒。
+// 上次刷新时刻必须同时保留，否则用户无法判断这批数字有多旧。
+expect(gaugeCaption.contains("还有约 16 秒刷新") && gaugeCaption.contains("上次"),
+       "已知相位时倒计时到下次刷新，并保留上次刷新时刻 [\(gaugeCaption)]")
+expect(!gaugeCaption.contains("0 秒前"),
+       "不能再把我们轮询到现在的 0 秒当成数据新鲜度")
+// 睡眠唤醒或节拍被事件重置后，倒计时不能数成负数
+let overdueCaption = MetricFieldFreshness.text(
+    for: gaugeHelp.rawFields.first { $0.name == "AppleRawCurrentCapacity" }!,
+    cardReadAt: .gauge(pollMoment.addingTimeInterval(-90)),
+    now: pollMoment
+) ?? ""
+expect(overdueCaption.contains("预计随时刷新") && !overdueCaption.contains("-"),
+       "超过一个节拍仍未刷新时改说随时刷新，不出现负秒数 [\(overdueCaption)]")
+expect(gaugeSnapshot.currentPowerAgeSeconds >= 44,
+       "功率样本年龄同样从电量计时刻起算 [\(gaugeSnapshot.currentPowerAgeSeconds)]")
+// 电量计满一个周期（60 秒）+ 轮询滞后仍要留在 120 秒门槛内，否则「当前负载估算」会消失
+var worstCaseData = runtimeData
+worstCaseData.lastUpdated = Date()
+worstCaseData.hardwareDetail.gaugeUpdateTime = Date().addingTimeInterval(-70)
+let worstCase = DashboardMetricSnapshot(data: worstCaseData, realtimeData: stablePoints)
+expect(worstCase.currentPowerAgeSeconds <= 120 && worstCase.currentLoadRuntimeMinutes != nil,
+       "电量计 60 秒节拍 + 10 秒轮询滞后仍在 120 秒门槛内 [\(worstCase.currentPowerAgeSeconds)s]")
+
+// 适配器身份字段不走电量计节拍：实测拔电后 2 秒内就消失
+var gaugeAdapterData = runtimeData
+gaugeAdapterData.isOnAC = true
+gaugeAdapterData.hardwareDetail.gaugeUpdateTime = Date().addingTimeInterval(-50)
+gaugeAdapterData.hardwareDetail.adapterWatts = 65
+gaugeAdapterData.hardwareDetail.adapterVoltage = 20_000
+gaugeAdapterData.hardwareDetail.adapterCurrent = 3_250
+gaugeAdapterData.hardwareDetail.presentRawFields.insert("AdapterDetails.Watts")
+let gaugeAdapterHelp = DashboardHelp.adapterPower(DashboardMetricSnapshot(data: gaugeAdapterData, realtimeData: stablePoints))
+let gaugeWattsField = gaugeAdapterHelp.rawFields.first { $0.name == "AdapterDetails.Watts" }
+expect(gaugeWattsField?.updateClass == .eventDriven,
+       "适配器额定瓦数标为事件驱动，不挂电量计节拍")
+expect(gaugeWattsField?.readAt == .ourRead(gaugeAdapterData.lastUpdated),
+       "事件驱动字段用我们自己的读取时刻，不用电量计发布时刻（否则会把它标早 50 秒）")
+let gaugeWattsCaption = MetricFieldFreshness.text(for: gaugeWattsField!, cardReadAt: gaugeAdapterHelp.readAt,
+                                             now: gaugeAdapterData.lastUpdated) ?? ""
+expect(gaugeWattsCaption.contains("插拔时立即变化") && !gaugeWattsCaption.contains("电量计"),
+       "适配器字段说明插拔即时生效，不提电量计 [\(gaugeWattsCaption)]")
+expect(runtimeField("PackReserve") == nil, "PackReserve 不在续航卡，固定值判定改用直接构造验证")
+expect(MetricRawField(name: "PackReserve", value: "127").effectiveUpdateClass == .constant,
+       "PackReserve 按实测（两轮共 600 秒恒定）识别为出厂固定值")
+expect(MetricRawField(name: "BatteryData.Qmax", value: "4595").effectiveUpdateClass == .live,
+       "Qmax 是电量计学习值，长期会变，不能标成固定值")
+
+// 插电时系统结构性不给值，要说明原因而不是让「不可用」看起来像读取失败
+var acRuntimeData = runtimeData
+acRuntimeData.isOnAC = true
+acRuntimeData.hardwareDetail.timeRemainingRaw = 65535
+let acHelp = DashboardHelp.runtime(DashboardMetricSnapshot(data: acRuntimeData, realtimeData: stablePoints))
+let acTimeField = acHelp.rawFields.first { $0.name == "TimeRemaining" }
+expect(acTimeField?.availability == .notProvidedOnAC, "插电时 TimeRemaining 标记为系统不提供")
+let acCaption = MetricFieldFreshness.text(for: acTimeField!, cardReadAt: .ourRead(acRuntimeData.lastUpdated),
+                                          now: acRuntimeData.lastUpdated) ?? ""
+expect(acCaption.contains("插电时系统不提供此值") && !acCaption.contains("刷新一次"),
+       "插电不可用时说明原因，且不再提刷新频次（没有值就谈不上频次）[\(acCaption)]")
+let batteryTimeField = runtimeField("TimeRemaining")
+expect(batteryTimeField?.availability == nil,
+       "拔电时 TimeRemaining 不带不可用标记")
+expect(MetricFieldFreshness.text(for: runtimeField("ModelDesignEnergy")!,
+                                 cardReadAt: .ourRead(runtimeData.lastUpdated),
+                                 now: Date()) == "内置机型规格，不随时间变化",
+       "机型规格字段说明自己不随时间变化")
+expect(MetricFieldFreshness.text(for: runtimeField("Derived.CurrentPowerSampleAge")!,
+                                 cardReadAt: .ourRead(runtimeData.lastUpdated),
+                                 now: Date()) == nil,
+       "标记为 untimed 的字段不渲染时间行")
+let noClockField = MetricRawField(name: "X", value: "1", readAt: nil)
+expect(MetricFieldFreshness.text(for: noClockField, cardReadAt: nil, now: Date()) == nil,
+       "拿不到任何读取时间时整行不显示，不编造时间")
+
+// 秒数分档边界
+expect(MetricFieldFreshness.ageText(seconds: 0) == "0 秒"
+       && MetricFieldFreshness.ageText(seconds: 59) == "59 秒"
+       && MetricFieldFreshness.ageText(seconds: 60) == "1 分钟"
+       && MetricFieldFreshness.ageText(seconds: 3599) == "59 分钟"
+       && MetricFieldFreshness.ageText(seconds: 3600) == "1 小时",
+       "秒/分钟/小时分档在 60 与 3600 秒处切换")
+expect(MetricFieldFreshness.seconds(from: runtimeData.lastUpdated,
+                                    to: runtimeData.lastUpdated.addingTimeInterval(-5)) == 0,
+       "时钟回拨时年龄取 0，不出现负秒数")
+let staleCurrentNote = DashboardHelp.runtime(staleRuntimeSnapshot)
+    .comparisonResults.first { $0.id == "runtime.current-load" }?.note ?? ""
+expect(staleCurrentNote.contains("上次读取于") && staleCurrentNote.contains("已过"),
+       "样本过期时备注改说上次读取时间和已过秒数 [\(staleCurrentNote)]")
 
 var pluggedRuntimeData = runtimeData
 pluggedRuntimeData.isOnAC = true
@@ -467,8 +714,8 @@ expect(sentinelHelp.rawFields.prefix(2).allSatisfy {
     $0.value == "不可用" && $0.unit.isEmpty
 } && !sentinelHelp.substitution.contains("65535"),
 "极限原始值只显示不可用，不再暴露65535")
-expect(sentinelHelp.comparisonResults.first?.note.contains("最近一次有效读取于") == true,
-       "历史回退值显示最近一次有效读取时间")
+expect(sentinelHelp.comparisonResults.first?.note.contains("最近一次有效读数在") == true,
+       "历史回退值说明最近一次有效读数的时刻，以及此后系统一直没给值")
 
 let exaggeratedHelp = DashboardHelp.runtime(
     DashboardMetricSnapshot(
@@ -531,6 +778,105 @@ expect(ProcessMonitorService.sanitizedCPUPercent(.nan) == 0
        "进程采样遇到非有限值或负CPU时归零")
 expect(ProcessMonitorService.sanitizedCPUPercent(9_999, logicalCoreCount: 8) == 800,
        "进程CPU按逻辑核心数限制异常上界")
+
+// pti_total_user/system 是 mach absolute time tick，不是纳秒。传固定 timebase 断言，
+// 这样测试结果不依赖跑测试那台机器的架构。
+// Apple Silicon: tbfrequency 24 MHz ⇒ numer/denom = 125/3 ⇒ 1 tick = 41.666… ns
+let appleSiliconTicksToNs = 1_000.0 / 24.0
+let oneCoreThreeSeconds = ProcessMonitorService.cpuPercent(
+    ticksDelta: 72_000_000, seconds: 3, ticksToNanoseconds: appleSiliconTicksToNs)
+expect(abs(oneCoreThreeSeconds - 100) < 0.01,
+       "24MHz timebase 下单核满载3秒=100% [\(oneCoreThreeSeconds)]")
+// 同一批 tick 若当成纳秒处理就是 2.4%，正是修复前的症状 —— 锁住这个回归
+expect(abs(ProcessMonitorService.cpuPercent(ticksDelta: 72_000_000, seconds: 3,
+                                            ticksToNanoseconds: 1) - 2.4) < 0.01,
+       "把 tick 当纳秒会低估成 2.4%，这是修复前的错误行为")
+let intelOneCore = ProcessMonitorService.cpuPercent(
+    ticksDelta: 3_000_000_000, seconds: 3, ticksToNanoseconds: 1)
+expect(abs(intelOneCore - 100) < 0.01,
+       "Intel timebase(1:1) 下单核满载3秒=100% [\(intelOneCore)]")
+expect(ProcessMonitorService.cpuPercent(ticksDelta: 100, seconds: 0) == 0
+       && ProcessMonitorService.cpuPercent(ticksDelta: 100, seconds: -1) == 0,
+       "采样间隔非正时不产生无穷大")
+expect(ProcessMonitorService.machTicksToNanoseconds > 0,
+       "本机 timebase 换算系数有效 [\(ProcessMonitorService.machTicksToNanoseconds)]")
+
+// 显示名只剥尾部 .app，不做全局子串替换（否则 com.apple.* 会被打烂）
+expect(ProcessPowerInfo(pid: 1, name: "com.apple.WebKit.WebContent",
+                        cpuPercent: 1, memoryMB: 1).displayName == "com.apple.WebKit.WebContent",
+       "反向域名式进程名不被 .app 替换打烂")
+expect(ProcessPowerInfo(pid: 1, name: "/Applications/Safari.app",
+                        cpuPercent: 1, memoryMB: 1).displayName == "Safari",
+       "尾部 .app 后缀正常剥离")
+
+// 进度条绝对刻度：满格 = 占满一个核，不再按列表最大值归一化
+expect(ProcessRow.barFraction(cpuPercent: 1.7) < 0.02,
+       "空闲进程画短条，不再因为是列表最大值就画满格")
+expect(ProcessRow.barFraction(cpuPercent: 100) == 1
+       && ProcessRow.barFraction(cpuPercent: 850) == 1,
+       "达到或超过单核满载时封顶在满格")
+expect(ProcessRow.barFraction(cpuPercent: .nan) == 0
+       && ProcessRow.barFraction(cpuPercent: -5) == 0,
+       "非有限值和负值不产生异常条宽")
+expect(ProcessRow.cpuText(412.34).contains("412") && !ProcessRow.cpuText(412.34).contains(".3"),
+       "三位数读数去掉小数位以免撑爆固定宽度 [\(ProcessRow.cpuText(412.34))]")
+
+// 进程归组：把子进程折进最近的祖先 GUI app
+func tableEntry(_ pid: Int32, _ ppid: Int32, _ comm: String) -> ProcessTable.Entry {
+    ProcessTable.Entry(pid: pid, ppid: ppid, comm: comm, startTime: 1_785_776_700)
+}
+// Chromium 式 fork 树：Chrome 主进程(1527) → 三个 helper
+// Terminal(55435) → zsh(75268) → claude(75285)，跨两层也要归到 Terminal
+// com.apple.WebKit.WebContent(900) ppid 是 1，归不进任何 app —— 实测本机 458/547 都是这样
+// 自己(4460) 和自己的子进程(4461) 整棵子树必须消失
+let fixtureTable = [
+    tableEntry(1527, 1, "Google Chrome"),
+    tableEntry(1535, 1527, "Google Chrome He"),
+    tableEntry(1536, 1527, "Google Chrome He"),
+    tableEntry(1537, 1535, "Google Chrome He"),
+    tableEntry(55435, 1, "Terminal"),
+    tableEntry(75268, 55435, "zsh"),
+    tableEntry(75285, 75268, "claude"),
+    tableEntry(900, 1, "com.apple.WebKit.WebContent"),
+    tableEntry(4460, 1, "BatteryMonitor"),
+    tableEntry(4461, 4460, "xpcproxy"),
+]
+let fixtureRoots = ProcessTable.rollUp(entries: fixtureTable,
+                                       appPids: [1527, 55435, 4460],
+                                       excludingSubtreeOf: 4460)
+expect(fixtureRoots[1535] == 1527 && fixtureRoots[1536] == 1527 && fixtureRoots[1537] == 1527,
+       "Chromium 式 helper（含隔一层的孙进程）全部折进 Chrome 主进程")
+expect(fixtureRoots[75285] == 55435 && fixtureRoots[75268] == 55435,
+       "跨 zsh 两层的 claude 归到 Terminal [\(String(describing: fixtureRoots[75285]))]")
+expect(fixtureRoots[900] == 900,
+       "ppid==1 的 XPC helper 自己成组，不硬塞给某个 app")
+expect(fixtureRoots[4460] == nil && fixtureRoots[4461] == nil,
+       "本进程整棵子树被剪掉，不把自己的采样开销算进排行")
+expect(fixtureRoots[1527] == 1527 && fixtureRoots[55435] == 55435,
+       "app 主进程自己就是组根")
+
+// ppid 成环和自环必须终止，不能挂死采样线程
+let cyclicTable = [tableEntry(10, 11, "a"), tableEntry(11, 10, "b"), tableEntry(0, 0, "kernel_task")]
+let cyclicRoots = ProcessTable.rollUp(entries: cyclicTable, appPids: [], excludingSubtreeOf: 99999)
+expect(cyclicRoots.count == 3 && cyclicRoots[10] == 10 && cyclicRoots[0] == 0,
+       "ppid 成环/自环时归组终止且每个进程自成一组")
+expect(ProcessTable.rollUp(entries: [], appPids: [1], excludingSubtreeOf: 1).isEmpty,
+       "空进程表不崩")
+
+// groupKey 决定 SwiftUI 行身份，必须稳定且唯一
+let sameNameA = ProcessPowerInfo(pid: 10, name: "claude", cpuPercent: 1, memoryMB: 1)
+let sameNameB = ProcessPowerInfo(pid: 11, name: "claude", cpuPercent: 1, memoryMB: 1)
+expect(sameNameA.id != sameNameB.id,
+       "未指定 groupKey 时同名进程的行身份仍然唯一（默认走 pid，不走 name）")
+let aggregated = ProcessPowerInfo(pid: 1527, name: "/Applications/Google Chrome.app",
+                                  cpuPercent: 16.1, memoryMB: 2048,
+                                  groupKey: "app:com.google.Chrome",
+                                  processCount: 21, topChildName: "Google Chrome Helper (Renderer)")
+expect(aggregated.id == "app:com.google.Chrome" && aggregated.processCount == 21
+       && aggregated.topChildName == "Google Chrome Helper (Renderer)",
+       "聚合行携带 groupKey / 进程数 / 最重子进程名")
+expect(ProcessPowerInfo(pid: 1, name: "x", cpuPercent: 1, memoryMB: 1, processCount: 0).processCount == 1,
+       "进程数下界为 1，不出现 0 个进程的行")
 
 print("── 10b) 外观与菜单栏配置持久化")
 let preferenceSuiteName = "com.stephen.BatteryMonitor.tests.presentation"
@@ -829,6 +1175,391 @@ menuPresentation = MenuBarPresentation(data: menuWaiting)
 expect(menuPresentation.runtimeMinutes == nil
        && MenuBarPresentation.durationText(menuPresentation.runtimeMinutes) == "—",
        "系统尚未给出剩余时间时显示等待态，不编造数字")
+
+// MARK: - 15) 概览卡：四种电源状态与两项新读数
+
+print("── 15) 概览卡电源状态与电流/充满时间")
+var heroDetail = healthyDetail()
+heroDetail.presentRawFields.insert("InstantAmperage")
+heroDetail.instantAmperage = -2150
+
+func heroState(_ d: BatteryData) -> BatteryPowerState {
+    BatteryPowerState.resolve(DashboardMetricSnapshot(data: d, realtimeData: []))
+}
+// 电量计休息时的读数：不足半瓦，判定要落回标志位
+var restingDetail = healthyDetail()
+restingDetail.presentRawFields.insert("InstantAmperage")
+restingDetail.instantAmperage = -12
+
+var disheroCharging = data(from: heroDetail, onAC: false)
+expect(heroState(disheroCharging) == .discharging, "未接电源判为放电中")
+
+var heroCharging = data(from: heroDetail, onAC: true)
+heroCharging.hardwareDetail.instantAmperage = 1800
+expect(heroState(heroCharging) == .charging, "实测正电流即判为充电中")
+heroCharging.isFullyCharged = true
+expect(heroState(heroCharging) == .charging,
+       "充电末端标志说已充满、电流仍在进，以电流为准判充电中")
+
+var heroFull = data(from: restingDetail, onAC: true)
+heroFull.isFullyCharged = true
+expect(heroState(heroFull) == .full, "电流归零且报告充满判为已充满")
+
+var heroTaperCharging = data(from: restingDetail, onAC: true)
+heroTaperCharging.isCharging = true
+expect(heroState(heroTaperCharging) == .charging,
+       "电流已收尾但 IsCharging 仍为真时落回标志，判充电中")
+
+var heroIdle = data(from: restingDetail, onAC: true)
+expect(heroState(heroIdle) == .pluggedIdle,
+       "接电、电流在静止带内、未充满判为插电未充电")
+
+var heroPluggedDrain = data(from: heroDetail, onAC: true)
+expect(heroState(heroPluggedDrain) == .pluggedDischarging,
+       "接电但电池仍在放电时给出独立状态，不再和「未充电」混为一谈")
+
+// 带符号电流：优化充电停在 80% 时实测为 −694 mA，符号必须保留
+heroIdle.hardwareDetail.instantAmperage = -694
+let idleSnapshot = DashboardMetricSnapshot(data: heroIdle, realtimeData: [])
+expect(idleSnapshot.batteryCurrentMilliamps == -694,
+       "插电未充电时电流保留负号，暴露电池仍在放电 [\(idleSnapshot.batteryCurrentMilliamps.map(String.init) ?? "nil")]")
+expect(idleSnapshot.batteryChargingCurrentMilliamps == 0,
+       "旧的充电电流访问器仍返回 0，两者语义不同不可互相替代")
+
+var chargingCurrentData = heroCharging
+chargingCurrentData.hardwareDetail.instantAmperage = 1820
+expect(DashboardMetricSnapshot(data: chargingCurrentData, realtimeData: []).batteryCurrentMilliamps == 1820,
+       "充电时为正值")
+
+var heroSmoothedOnly = data(from: healthyDetail(), onAC: false)
+heroSmoothedOnly.hardwareDetail.presentRawFields.insert("Amperage")
+heroSmoothedOnly.hardwareDetail.smoothedAmperage = -1500
+heroSmoothedOnly.hardwareDetail.instantAmperage = 9999    // 未标记 present，必须被忽略
+expect(DashboardMetricSnapshot(data: heroSmoothedOnly, realtimeData: []).batteryCurrentMilliamps == -1500,
+       "只有 Amperage 时用平滑值，不读未上报的 InstantAmperage")
+
+var heroNoCurrent = data(from: BatteryHardwareDetail(), onAC: false)
+heroNoCurrent.amperage = 0
+expect(DashboardMetricSnapshot(data: heroNoCurrent, realtimeData: []).batteryCurrentMilliamps == nil,
+       "字段全缺时返回 nil，不用 0 冒充读数")
+
+// 充满时间：AvgTimeToFull 是未过滤原始值
+var heroToFull = heroCharging
+heroToFull.hardwareDetail.avgTimeToFull = 72
+expect(DashboardMetricSnapshot(data: heroToFull, realtimeData: []).timeToFullMinutes == 72,
+       "充电中的合理充满时间透传")
+heroToFull.hardwareDetail.avgTimeToFull = 65535
+expect(DashboardMetricSnapshot(data: heroToFull, realtimeData: []).timeToFullMinutes == nil,
+       "65535 哨兵挡掉")
+heroToFull.hardwareDetail.avgTimeToFull = 20000
+expect(DashboardMetricSnapshot(data: heroToFull, realtimeData: []).timeToFullMinutes == nil,
+       "超过 24 小时的荒谬值挡掉")
+var heroNotCharging = heroFull
+heroNotCharging.hardwareDetail.avgTimeToFull = 72
+expect(DashboardMetricSnapshot(data: heroNotCharging, realtimeData: []).timeToFullMinutes == nil,
+       "未充电时不给充满时间")
+
+// 未知机型：两个派生口径必须同时为空，概览卡据此走通宽提示而不是两张「—」
+var heroUnknownModel = data(from: healthyDetail(), onAC: false)
+heroUnknownModel.modelIdentifier = "Mac99,99"   // 不在内置机型表里 → specification 为 nil
+let unknownSnapshot = DashboardMetricSnapshot(data: heroUnknownModel, realtimeData: [])
+expect(unknownSnapshot.designEnergyWh == nil
+       && unknownSnapshot.stableRuntimeMinutes == nil
+       && unknownSnapshot.currentLoadRuntimeMinutes == nil,
+       "机型缺额定电量时两个派生口径同时为空")
+
+print("── 14b) 能量流向：三条边的判定与守恒")
+// 数字取自 QATests/BuildValidation/telemetry-plugged-*.log 的真实采样。
+// 方向一律由 Amperage×Voltage 决定，不用 PowerTelemetryData —— 同一拍里那组字段
+// 报过 1.5 W 的整机负载、插着电的 0 W 适配器输入，和库仑计差 3 倍的电池功率。
+func flowSnapshot(milliamps: Int?, millivolts: Int, loadWatts: Double,
+                  onAC: Bool, watts: Int = 65) -> DashboardMetricSnapshot {
+    var detail = healthyDetail()
+    if let milliamps {
+        detail.presentRawFields.insert("InstantAmperage")
+        detail.instantAmperage = milliamps
+    } else {
+        detail.presentRawFields.remove("InstantAmperage")
+        detail.presentRawFields.remove("Amperage")
+        detail.instantAmperage = 0
+        detail.smoothedAmperage = 0
+    }
+    detail.packVoltage = millivolts
+    detail.systemPowerWatts = loadWatts
+    var flowData = data(from: detail, onAC: onAC)
+    flowData.amperage = 0            // 让 batteryCurrentMilliamps 只能走 detail 字段
+    flowData.chargerWattage = onAC ? watts : 0
+    return DashboardMetricSnapshot(data: flowData, realtimeData: [])
+}
+func flowFor(milliamps: Int?, millivolts: Int, loadWatts: Double,
+             onAC: Bool, watts: Int = 65) -> PowerFlow {
+    PowerFlow.resolve(flowSnapshot(milliamps: milliamps, millivolts: millivolts,
+                                   loadWatts: loadWatts, onAC: onAC, watts: watts))
+}
+func near(_ a: Double?, _ b: Double, _ label: String) -> Bool {
+    guard let a else { return false }
+    return abs(a - b) < 0.02
+}
+
+// ① 拔电：电池是唯一可能的来源，那条边恒等于整机功率，不去问电流
+let flowBattery = flowFor(milliamps: -993, millivolts: 11778, loadWatts: 9.20, onAC: false)
+expect(near(flowBattery.batteryToMac, 9.20, "")
+       && flowBattery.adapterToMac == nil && flowBattery.adapterToBattery == nil
+       && flowBattery.adapterRatedWatts == nil,
+       "拔电：只有电池→电脑一条边，适配器两条边不存在")
+// −993 mA × 11.778 V = −11.70 W，而整机是 9.20 W：两个读数在不同电轨上，差 2.5 W。
+// 拔电时按整机功率画，箭头和「这台 Mac」那个数才对得上。
+expect(near(flowBattery.batteryToMac, flowBattery.macConsumption ?? -1, ""),
+       "拔电：电池边与整机功率完全相等，不受 V×I 与系统侧读数的电轨差影响")
+// 拔电瞬间电量计还攥着拔电前的充电电流：ExternalConnected 立刻翻，Amperage 要等下一拍。
+// 实测出现过「未连接电源 + 2.88 A 充入」，旧实现会把三条边全灭掉。
+let flowStalePositive = flowFor(milliamps: 2880, millivolts: 11700, loadWatts: 13.5, onAC: false)
+expect(near(flowStalePositive.batteryToMac, 13.5, "")
+       && flowStalePositive.adapterToBattery == nil && !flowStalePositive.isIdle,
+       "拔电后电流字段仍是陈旧正值时，电池边照常画出整机功率 [\(flowStalePositive)]")
+expect(flowSnapshot(milliamps: 2880, millivolts: 11700,
+                    loadWatts: 13.5, onAC: false).batteryCurrentMilliamps == nil,
+       "拔电却读到正电流只可能是陈旧值，电流行显示「—」而不是显示一个不可能的读数")
+expect(flowSnapshot(milliamps: -707, millivolts: 12190,
+                    loadWatts: 11.08, onAC: false).batteryCurrentMilliamps == -707,
+       "拔电时正常的负电流照常显示")
+expect(flowSnapshot(milliamps: 2880, millivolts: 11700,
+                    loadWatts: 13.5, onAC: true).batteryCurrentMilliamps == 2880,
+       "接着电源时正电流是真的充电，不能被当成陈旧值抹掉")
+
+// ② 插电、电池休息：只有充电器→电脑
+let flowIdlePlugged = flowFor(milliamps: 2, millivolts: 11751, loadWatts: 13.114, onAC: true)
+expect(near(flowIdlePlugged.adapterToMac, 13.114, "")
+       && flowIdlePlugged.adapterToBattery == nil && flowIdlePlugged.batteryToMac == nil,
+       "插电不充电：只有充电器→电脑，电池两条边都不亮")
+
+// ③ 充电（实测 t=39：+3905 mA @ 11.779 V = 46.0 W 进电池）
+let flowCharging = flowFor(milliamps: 3905, millivolts: 11779, loadWatts: 11.58, onAC: true)
+expect(near(flowCharging.adapterToBattery, 46.0, "") && near(flowCharging.adapterToMac, 11.58, ""),
+       "充电：充电器分出 46.0W 给电池、11.58W 给电脑 [\(flowCharging)]")
+expect(abs((flowCharging.adapterToMac ?? 0) + (flowCharging.adapterToBattery ?? 0) - 57.6) < 0.05,
+       "两条出边之和 57.6W 未超过 65W 额定（守恒且物理可信）")
+expect(flowCharging.batteryToMac == nil, "充电时电池不同时对外放电")
+
+// ④ 插电但电池仍放电：两条入边之和必须精确等于整机消耗
+let flowMixed = flowFor(milliamps: -100, millivolts: 12000, loadWatts: 14.314, onAC: true)
+expect(near(flowMixed.batteryToMac, 1.2, "") && near(flowMixed.adapterToMac, 13.114, ""),
+       "适配器带不动时，充电器与电池同时向电脑供电 [\(flowMixed)]")
+expect(abs((flowMixed.adapterToMac ?? 0) + (flowMixed.batteryToMac ?? 0)
+           - (flowMixed.macConsumption ?? 0)) < 0.001,
+       "两条入边之和等于整机消耗（守恒）")
+
+// ⑤ 静止：极小读数不画成 0.0W 的箭头
+let flowQuiet = flowFor(milliamps: -3, millivolts: 12000, loadWatts: 0.03, onAC: false)
+expect(flowQuiet.isIdle, "毫瓦级噪声不渲染成一条边 [\(flowQuiet)]")
+
+// ⑥ 完全没有电流字段：整机功率还在，但方向不可知 → 不编一条电池边
+let flowPartial = flowFor(milliamps: nil, millivolts: 12000, loadWatts: 14.0, onAC: true)
+expect(flowPartial.origin == .partial
+       && flowPartial.batteryToMac == nil && flowPartial.adapterToBattery == nil
+       && near(flowPartial.adapterToMac, 14.0, ""),
+       "无电流字段：只画充电器→电脑，电池边留空而不是假设为零 [\(flowPartial)]")
+
+print("── 14c) 状态文字与流向图必须同源")
+// 旧实现的状态取 IOPowerSources 的 IsCharging、电流取 IORegistry 的 Amperage，
+// 两套 API 不同步时会并排显示「未充电」和「+3.95 A」。
+expect(BatteryPowerState.resolve(flowSnapshot(milliamps: 3905, millivolts: 11779,
+                                              loadWatts: 11.58, onAC: true)) == .charging,
+       "实测正电流即判为充电中，不依赖 IsCharging 标志")
+expect(BatteryPowerState.resolve(flowSnapshot(milliamps: -993, millivolts: 11778,
+                                              loadWatts: 9.20, onAC: true)) == .pluggedDischarging,
+       "插着电但电池在放电时给出独立状态，不再笼统显示「未充电」")
+expect(BatteryPowerState.resolve(flowSnapshot(milliamps: -20, millivolts: 12000,
+                                              loadWatts: 9.20, onAC: true)) == .pluggedIdle,
+       "半瓦以内的漂移算休息，不误报成放电")
+expect(BatteryPowerState.resolve(flowSnapshot(milliamps: -993, millivolts: 11778,
+                                              loadWatts: 9.20, onAC: false)) == .discharging,
+       "拔电时仍是「正在使用电池」")
+// 同一快照喂给两边，状态和图不可能互相打架
+let contradictionCheck = flowSnapshot(milliamps: 3905, millivolts: 11779,
+                                      loadWatts: 11.58, onAC: true)
+expect(BatteryPowerState.resolve(contradictionCheck) == .charging
+       && PowerFlow.resolve(contradictionCheck).adapterToBattery != nil
+       && PowerFlow.resolve(contradictionCheck).batteryToMac == nil,
+       "判为充电中时，图上必然是充电器→电池亮、电池→电脑灭")
+
+print("── 14d) 刷新倒计时：锚在数据更新时刻，落在我们的轮询格上")
+// 0.5 秒粒度实测（QATests/BuildValidation/gauge-beat-*.log）：连续五次发布的间隔是
+// 59、60、4、60、10 秒，两次短的都伴随 CurrentCapacity 跳变。节拍是 60，事件只让它提前。
+let beatBase = Date(timeIntervalSince1970: 1_785_776_703)
+// 电量计在 base+60 发布，我们在 base+4 轮询过，所以下一次能看到是 base+64
+let gridStamp = MetricReadStamp.gauge(beatBase, polledAt: beatBase.addingTimeInterval(4),
+                                      interval: 60)
+expect(MetricFieldFreshness.secondsUntilVisibleRefresh(gridStamp,
+                                                       now: beatBase.addingTimeInterval(30)) == 34,
+       "倒计时算到我们下一次轮询，而不是电量计发布那一刻 [\(MetricFieldFreshness.secondsUntilVisibleRefresh(gridStamp, now: beatBase.addingTimeInterval(30)))]")
+expect(MetricFieldFreshness.secondsUntilVisibleRefresh(gridStamp,
+                                                       now: beatBase.addingTimeInterval(64)) == 0,
+       "归零的那一刻正是屏幕上的值真的换掉的那一刻")
+// 这正是用户看到的现象：倒计时走完，值又过了十秒才动
+expect(MetricFieldFreshness.secondsUntilVisibleRefresh(gridStamp,
+                                                       now: beatBase.addingTimeInterval(60)) == 4,
+       "旧算法在这一刻已经归零，新算法还剩 4 秒——差的就是轮询滞后")
+// 没有轮询时刻的旧调用点退回原行为
+let plainStamp = MetricReadStamp.gauge(beatBase, interval: 60)
+expect(MetricFieldFreshness.secondsUntilVisibleRefresh(plainStamp,
+                                                       now: beatBase.addingTimeInterval(60)) == 0,
+       "缺轮询时刻时退回「发布即归零」，不臆造滞后")
+// 时钟跳变时投影不能失控
+let skewed = MetricReadStamp.gauge(beatBase, polledAt: beatBase.addingTimeInterval(-9_000),
+                                   interval: 60)
+expect(MetricFieldFreshness.secondsUntilVisibleRefresh(skewed, now: beatBase) <= 70,
+       "轮询时刻离谱时投影被钳在发布后一个轮询周期内 [\(MetricFieldFreshness.secondsUntilVisibleRefresh(skewed, now: beatBase))]")
+
+// 学到的是节拍，不是上一次间隔
+func detailWithGauge(_ epoch: TimeInterval, interval: TimeInterval? = nil) -> BatteryHardwareDetail {
+    var d = BatteryHardwareDetail()
+    d.gaugeUpdateTime = Date(timeIntervalSince1970: epoch)
+    d.gaugePublishInterval = interval
+    return d
+}
+let beat59 = BatteryService.learnedGaugeInterval(current: Date(timeIntervalSince1970: 1_785_776_703),
+                                                 previous: detailWithGauge(1_785_776_644))
+expect(beat59 == 59, "首次观测到 59 秒间隔即采纳为节拍 [\(String(describing: beat59))]")
+let eventPublish = BatteryService.learnedGaugeInterval(
+    current: Date(timeIntervalSince1970: 1_785_776_767),
+    previous: detailWithGauge(1_785_776_763, interval: 60))
+expect(eventPublish == 60,
+       "电量变化触发的 4 秒提前发布不能当成节拍，沿用 60 [\(String(describing: eventPublish))]")
+let samePoll = BatteryService.learnedGaugeInterval(
+    current: Date(timeIntervalSince1970: 1_785_776_763),
+    previous: detailWithGauge(1_785_776_763, interval: 60))
+expect(samePoll == 60, "同一拍的重复轮询沿用已学到的节拍")
+let afterSleep = BatteryService.learnedGaugeInterval(
+    current: Date(timeIntervalSince1970: 1_785_780_000),
+    previous: detailWithGauge(1_785_776_763, interval: 60))
+expect(afterSleep == 60, "休眠唤醒后的超长间隔不采纳")
+
+print("── 14d2) 问号面板趋势图的悬浮读数")
+let hoverBase = Date(timeIntervalSince1970: 1_785_776_700)
+let hoverPoints = (0..<6).map {
+    MetricHelpTrendPoint(timestamp: hoverBase.addingTimeInterval(Double($0) * 10), value: 9.0 + Double($0))
+}
+// 吸附到真实采样点，不在两点之间插值——读数上的每个数字都必须是测到的
+let snapped = MetricHelpDrawer.nearestTrendPoint(hoverPoints, to: hoverBase.addingTimeInterval(23))
+expect(snapped?.timestamp == hoverBase.addingTimeInterval(20) && snapped?.value == 11.0,
+       "指针落在 23 秒处吸附到 20 秒那个采样点 [\(String(describing: snapped))]")
+let snappedLeft = MetricHelpDrawer.nearestTrendPoint(hoverPoints, to: hoverBase.addingTimeInterval(-999))
+expect(snappedLeft?.timestamp == hoverBase, "指针在序列左侧时吸附到第一个点")
+let snappedRight = MetricHelpDrawer.nearestTrendPoint(hoverPoints, to: hoverBase.addingTimeInterval(999))
+expect(snappedRight?.timestamp == hoverBase.addingTimeInterval(50), "指针在序列右侧时吸附到最后一个点")
+expect(MetricHelpDrawer.nearestTrendPoint([], to: hoverBase) == nil, "空序列不返回读数")
+expect(MetricHelpDrawer.nearestTrendPoint(hoverPoints, to: nil) == nil,
+       "没有选中位置时不画读数，不能默认落在最后一个点上变成常驻标记")
+let hoverText = MetricHelpDrawer.trendHoverText(hoverPoints[2])
+expect(!hoverText.contains(":") || hoverText.filter { $0 == ":" }.count == 1,
+       "时间到分钟为止，不显示秒 [\(hoverText)]")
+expect(hoverText.contains("11.0"), "读数带上该点的功率值 [\(hoverText)]")
+expect(hoverText.hasSuffix("W"), "默认单位是瓦 [\(hoverText)]")
+expect(MetricHelpDrawer.trendHoverText(hoverPoints[2], unit: "℃").hasSuffix("℃"),
+       "温度曲线的读数带摄氏度，不硬写成瓦")
+
+// 每个「有真实序列」的问号面板都必须带图；没有序列的不许硬画
+let trendSnapshot = DashboardMetricSnapshot(data: wholeMacInputData, realtimeData: adapterPoints)
+let panelsWithTrend: [(String, MetricHelpContent)] = [
+    ("当前功率", DashboardHelp.power(trendSnapshot)),
+    ("充电功率", DashboardHelp.chargingPower(trendSnapshot)),
+    ("适配器输出功率", DashboardHelp.adapterOutputPower(trendSnapshot)),
+    ("电池温度", DashboardHelp.temperature(trendSnapshot)),
+]
+for (name, panel) in panelsWithTrend {
+    expect(panel.trend?.isPlottable == true,
+           "\(name) 的问号面板带得出趋势图 [\(panel.trend?.points.count ?? -1) 点]")
+}
+expect(DashboardHelp.temperature(trendSnapshot).trend?.unit == "℃"
+       && DashboardHelp.temperature(trendSnapshot).trend?.baselineAtZero == false,
+       "温度曲线用摄氏度且不从 0 起，否则几度的波动会被压平")
+expect(DashboardHelp.power(trendSnapshot).trend?.baselineAtZero == true,
+       "功率曲线从 0 起，「一半的瓦数」就该看起来是一半")
+// 十分钟缓冲区里它们是一条纹丝不动的直线，画出来等于假装有分辨率
+expect(DashboardHelp.cycleCount(trendSnapshot).trend == nil
+       && DashboardHelp.health(trendSnapshot).trend == nil,
+       "循环次数和健康度不配趋势图")
+// 缓冲区还没攒够两点时退回提示，不画一条只有一个点的线
+expect(DashboardHelp.power(
+    DashboardMetricSnapshot(data: wholeMacInputData, realtimeData: Array(adapterPoints.prefix(1)))
+).trend?.isPlottable == false, "只有一个采样点时不画线，显示正在积累")
+
+print("── 14e) 指标卡趋势线")
+expect(MetricSparkline.normalised([]).isEmpty && MetricSparkline.normalised([7.0]).isEmpty,
+       "少于两个点不画线")
+expect(MetricSparkline.normalised([10, 20, 30]) == [0, 0.5, 1], "三点线性归一化到 0…1")
+expect(MetricSparkline.normalised([11.00, 11.02, 10.99]) == [0.5, 0.5, 0.5],
+       "极窄区间按平线画在中间高度，不把 0.03W 的抖动放大成山脉")
+expect(MetricSparkline.normalised([1, Double.nan, 3, 5]).count == 3, "非有限值被剔除")
+
+print("── 15a) 帮助面板改成按需构造后的两个身份约束")
+// 诊断页那一行用 helpID 判断「开着的是不是我」，它必须和 help.id 完全相同，
+// 否则实时刷新会静默失效（面板卡在打开那一刻的数字）。
+let anomalyReading = SystemFieldReading(
+    metadata: SystemFieldMetadata(layer: 2, source: "AppleSmartBattery / IORegistry",
+                                  group: "电气", path: "InstantAmperage", declaredType: "Int",
+                                  unit: "mA", meaning: "", reliability: "", recommendation: "",
+                                  valueStars: 2, note: ""),
+    value: "-1400", runtimeType: "Int", isAvailable: true,
+    anomalyLevel: .attention, anomalyReason: ""
+)
+expect(anomalyReading.helpID == anomalyReading.help.id,
+       "行的 helpID 与它构造出的面板 id 一致，实时刷新才认得出自己")
+// ReferenceMetric 的 id 曾经取自 help.id，等于为了认行而构造整个面板；改用标题后
+// 仍必须唯一，否则 ForEach 会错乱。
+let referenceTitles = [
+    L("insight.factor.balance"), L("insight.factor.resistance"),
+    L("insight.factor.cycles"), L("p.design_capacity"),
+]
+expect(Set(referenceTitles).count == referenceTitles.count,
+       "参考指标表的标题互不重复，可以充当行标识 [\(referenceTitles)]")
+
+print("── 15b) 有意义字段的预计算集合与逐行判定一致")
+// 把每帧重算改成集合查表后，两条路径必须给出完全相同的结果，否则「有意义」标签页会静默漏字段
+let mismatched = SystemFieldCatalog.fields.filter {
+    SystemFieldCatalog.meaningfulIDs.contains($0.id) != $0.isMeaningfulByDefault
+}
+expect(mismatched.isEmpty,
+       "预计算集合与 isMeaningfulByDefault 对全部 \(SystemFieldCatalog.fields.count) 个字段结果一致"
+       + (mismatched.isEmpty ? "" : "，不一致 \(mismatched.map(\.path))"))
+
+print("── 16) 工作台 464 行的换算值")
+// 原始值永远在前，换算只是辅助——这是证据表，不能用换算替换实测值
+expect(SystemFieldValueConversion.suffix(for: "207", unit: "分钟") == "3 h 27 m",
+       "分钟换算成小时分钟，与结果卡同格式")
+expect(SystemFieldValueConversion.suffix(for: "65535", unit: "分钟") == nil,
+       "分钟字段的 65535 哨兵不换算")
+expect(SystemFieldValueConversion.suffix(for: "-1", unit: "分钟") == nil,
+       "IOPowerSources 的 -1「计算中」不换算成负小时")
+expect(SystemFieldValueConversion.suffix(for: "-1400", unit: "mA") == "-1.40 A",
+       "mA 换算保留负号 [\(SystemFieldValueConversion.suffix(for: "-1400", unit: "mA") ?? "nil")]")
+expect(SystemFieldValueConversion.suffix(for: "12461", unit: "mV") == "12.46 V", "mV 换算成 V")
+expect(SystemFieldValueConversion.suffix(for: "3046", unit: "原始温标")?.contains("30.5") == true,
+       "原始温标走与全局一致的温度解码 [\(SystemFieldValueConversion.suffix(for: "3046", unit: "原始温标") ?? "nil")]")
+expect(SystemFieldValueConversion.suffix(for: "true", unit: "布尔") == nil
+       && SystemFieldValueConversion.suffix(for: "4629", unit: "mAh") == nil
+       && SystemFieldValueConversion.suffix(for: "80", unit: "%") == nil,
+       "没有换算价值的单位不硬凑")
+expect(SystemFieldValueConversion.suffix(for: "—", unit: "mA") == nil,
+       "无值时不换算")
+
+let conversionField = SystemFieldReading(
+    metadata: SystemFieldMetadata(layer: 2, source: "AppleSmartBattery / IORegistry",
+                                  group: "续航", path: "TimeRemaining", declaredType: "Int",
+                                  unit: "分钟", meaning: "", reliability: "", recommendation: "",
+                                  valueStars: 3, note: ""),
+    value: "207", runtimeType: "Int", isAvailable: true,
+    anomalyLevel: .none, anomalyReason: ""
+)
+expect(conversionField.convertedValue == "207 (3 h 27 m)",
+       "工作台单元格是原始值在前、换算在括号里 [\(conversionField.convertedValue)]")
+
+// 同一个数字在概览卡和问号面板里必须同名
+let labelHelp = DashboardHelp.runtime(runtimeSnapshot)
+expect(labelHelp.comparisonResults.map(\.title) == [
+    L("p.runtime_system_label"), L("p.runtime_stable_label"), L("p.runtime_current_label"),
+], "概览卡与问号面板共用同一组口径标题")
 
 print("\n" + (failures == 0 ? "✅ 全部通过" : "❌ \(failures) 项失败"))
 exit(failures == 0 ? 0 : 1)

@@ -9,6 +9,9 @@ struct PowerCenterSection: View {
     let points: [RealtimeDataPoint]
     let processes: [ProcessPowerInfo]
     let hasProcessSample: Bool
+    /// 全机 CPU 与「可见 / 系统」拆分。列表只覆盖当前用户可读的进程，
+    /// 这一行负责把沙箱读不到的那部分标出来而不是让列表看起来像全量。
+    let systemCPU: SystemCPUSnapshot
     let isLive: Bool
     let onToggleLive: () -> Void
     let onRefresh: () -> Void
@@ -30,7 +33,6 @@ struct PowerCenterSection: View {
         guard !chartPoints.isEmpty else { return snapshot.currentPowerWatts }
         return chartPoints.map(\.power).reduce(0, +) / Double(chartPoints.count)
     }
-    private var maxCPU: Double { max(processes.map(\.cpuPercent).max() ?? 1, 1) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -38,7 +40,7 @@ struct PowerCenterSection: View {
                 icon: BatteryMetricIcon.power.symbol,
                 title: dashboardText("p.power_center_title", fallback: "当前功耗与程序活动"),
                 color: AppTheme.chargingBlue,
-                help: DashboardHelp.power(snapshot),
+                help: { DashboardHelp.power(snapshot) },
                 selection: $selectedHelp,
                 trailing: AnyView(liveControls)
             )
@@ -205,6 +207,56 @@ struct PowerCenterSection: View {
         .overlay(RoundedRectangle(cornerRadius: 13).stroke(AppTheme.contrastOverlay(0.055), lineWidth: 1))
     }
 
+    /// 全机 / 可见应用 / 系统进程 三列。
+    ///
+    /// 这三个数是**整机口径**（所有核加起来 100%），而下面每行的 CPU% 是
+    /// **每核口径**（100% = 占满一个核，多核聚合行可以超过 100%）。两者单位不同，
+    /// 所以刻意分成两个视觉区块、各自带单位说明，而不是混在一列里让人做减法。
+    ///
+    /// 排版是三列上下堆叠而不是一句长句：面板宽度硬编码 350pt，德语的
+    /// 「Gesamtsystem / Sichtbare Apps / Systemprozesse」拼成一行会溢出。
+    private var machineCPURow: some View {
+        HStack(alignment: .top, spacing: 8) {
+            machineCPUColumn(label: L("proc.cpu_machine"),
+                             value: systemCPU.machineBusyPercent,
+                             color: AppTheme.textSecondary)
+            Divider().frame(height: 24)
+            machineCPUColumn(label: L("proc.cpu_visible"),
+                             value: systemCPU.machineBusyPercent == nil ? nil : systemCPU.visiblePercent,
+                             color: AppTheme.chargingBlue)
+            Divider().frame(height: 24)
+            machineCPUColumn(label: L("proc.cpu_system"),
+                             value: systemCPU.systemPercent,
+                             color: AppTheme.textTertiary,
+                             note: L("proc.cpu_system_note"))
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, 7)
+        .padding(.horizontal, 10)
+        .background(RoundedRectangle(cornerRadius: 9).fill(AppTheme.contrastOverlay(0.03)))
+    }
+
+    private func machineCPUColumn(label: String, value: Double?, color: Color,
+                                  note: String? = nil) -> some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text(label)
+                .font(.system(size: 9))
+                .foregroundStyle(AppTheme.textTertiary)
+            // 首次采样还没有前值可求差 —— 显示「—」而不是 0%，
+            // 0% 会被读成「机器完全空闲」这个具体结论。
+            Text(value.map { LNum("%.0f%%", $0) } ?? "—")
+                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .foregroundStyle(color)
+            if let note {
+                Text(note)
+                    .font(.system(size: 8))
+                    .foregroundStyle(AppTheme.textTertiary.opacity(0.75))
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .fixedSize(horizontal: false, vertical: true)
+    }
+
     private var processPanel: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
@@ -212,10 +264,12 @@ struct PowerCenterSection: View {
                     .font(.system(size: 11.5, weight: .bold))
                     .foregroundStyle(AppTheme.textPrimary)
                 Spacer()
-                Text("CPU%")
+                Text(L("proc.col_cpu"))
                     .font(.system(size: 9, weight: .bold, design: .monospaced))
                     .foregroundStyle(AppTheme.textTertiary)
             }
+
+            machineCPURow
 
             if processes.isEmpty {
                 Text(hasProcessSample
@@ -226,7 +280,7 @@ struct PowerCenterSection: View {
                     .frame(maxWidth: .infinity, minHeight: 190)
             } else {
                 ForEach(Array(processes.prefix(6).enumerated()), id: \.element.id) { index, process in
-                    ProcessRow(proc: process, index: index, maxCpu: maxCPU)
+                    ProcessRow(proc: process, index: index)
                 }
             }
 

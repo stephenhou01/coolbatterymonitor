@@ -61,29 +61,88 @@ struct SystemFieldReading: Identifiable, Equatable {
     let isAvailable: Bool
     let anomalyLevel: SystemFieldAnomalyLevel
     let anomalyReason: String
+    /// When this reading was collected, so the help drawer can state the read
+    /// time instead of leaving it blank. Defaults to nil for older call sites.
+    var readAt: Date? = nil
 
     var id: String { metadata.id }
-    var isMeaningful: Bool { metadata.isMeaningfulByDefault || anomalyLevel > .none }
+    /// Resolved through a set built once with the catalog. The underlying test
+    /// lowercases the path and allocates two array literals every time it runs,
+    /// and the workbench asks it for all 464 rows several times per redraw.
+    /// Fields macOS added after the workbook are never in the set, which is the
+    /// right answer: they are rated one star and so are never meaningful by
+    /// default anyway.
+    var isMeaningful: Bool {
+        SystemFieldCatalog.meaningfulIDs.contains(metadata.id) || anomalyLevel > .none
+    }
+
+    /// One definition of the panel's identity so the row that opens it and the
+    /// code that refreshes it cannot drift apart.
+    var helpID: String { "system-field|\(id)" }
 
     var help: MetricHelpContent {
         let unavailable = dashboardText("p.system_data_unavailable", fallback: "本次快照系统没有返回这个字段。")
         let summary = isAvailable ? metadata.meaning : unavailable
         let note = metadata.note.isEmpty ? summary : "\(summary)\n\n\(metadata.note)"
         return MetricHelpContent(
-            id: "system-field|\(id)",
+            id: helpID,
             title: metadata.path,
             summary: note,
             result: valueWithUnit,
             rawFields: [.init(name: metadata.path, value: value, unit: metadata.unit)],
             formula: "\(metadata.source) → \(metadata.path)",
             substitution: "\(metadata.path) → \(valueWithUnit)",
-            source: "\(metadata.reliability) · \(metadata.recommendation)"
+            source: "\(metadata.reliability) · \(metadata.recommendation)",
+            readAt: readAt.map(MetricReadStamp.ourRead)
         )
     }
 
     var valueWithUnit: String {
         guard !metadata.unit.isEmpty, value != "—" else { return value }
         return "\(value) \(metadata.unit)"
+    }
+
+    /// Raw reading with a human-scale conversion appended where the raw unit is
+    /// hard to read: minutes into hours, mA/mV into A/V, the platform-scaled
+    /// temperature into ℃. Only 12 of the 464 catalogued fields carry such a
+    /// unit; everything else is returned untouched rather than padded with an
+    /// empty conversion. The raw number always stays first — this is an evidence
+    /// table, and the conversion is an aid, not a replacement.
+    var convertedValue: String {
+        guard let suffix = SystemFieldValueConversion.suffix(for: value, unit: metadata.unit) else {
+            return value
+        }
+        return "\(value) (\(suffix))"
+    }
+}
+
+enum SystemFieldValueConversion {
+    static func suffix(for value: String, unit: String) -> String? {
+        let trimmed = value.trimmingCharacters(in: .whitespaces)
+        guard trimmed != "—", !trimmed.isEmpty else { return nil }
+        switch unit {
+        case "分钟":
+            // Reject the gauge's sentinels and IOPowerSources' -1 "still
+            // calculating" rather than rendering 1092 hours.
+            guard let minutes = Int(trimmed), RuntimeSample.isValid(minutes: minutes) else { return nil }
+            return "\(minutes / 60) h \(String(format: "%02d", minutes % 60)) m"
+        case "秒":
+            guard let seconds = Int(trimmed), seconds >= 60, seconds <= 86_400 else { return nil }
+            return "\(seconds / 60) min"
+        case "mA":
+            guard let milliamps = Double(trimmed) else { return nil }
+            return LNum("%.2f A", milliamps / 1000)
+        case "mV":
+            guard let millivolts = Double(trimmed) else { return nil }
+            return LNum("%.2f V", millivolts / 1000)
+        case "原始温标":
+            // The scale differs by platform, which is exactly why the raw number
+            // is unreadable; reuse the decoder the rest of the app trusts.
+            guard let raw = Int(trimmed), raw != 0 else { return nil }
+            return LNum("%.1f ℃", BatteryService.decodeTemperature(raw))
+        default:
+            return nil
+        }
     }
 }
 
@@ -114,4 +173,9 @@ enum SystemFieldCatalog {
               payload.schemaVersion == 1 else { return [] }
         return payload.fields
     }()
+
+    /// Built once alongside the catalog so the per-row test is a set lookup.
+    static let meaningfulIDs: Set<String> = Set(
+        fields.lazy.filter(\.isMeaningfulByDefault).map(\.id)
+    )
 }

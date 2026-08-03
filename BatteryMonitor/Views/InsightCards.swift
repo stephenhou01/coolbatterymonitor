@@ -405,7 +405,18 @@ struct PowerAnalysisCard: View {
                     .foregroundStyle(AppTheme.textSecondary)
             }
 
-            let maxCPU = max(analysis.topConsumers.first?.cpuPercent ?? 1, 1)
+            // 列头。卡片标题是「耗电分析」、大字是瓦特，下面这一列却是 CPU 占用 ——
+            // 不标单位的话 1.7% 会被读成「占总功耗的 1.7%」。
+            if !analysis.topConsumers.isEmpty {
+                HStack(spacing: 8) {
+                    Spacer()
+                    Text(L("proc.col_cpu"))
+                        .font(.system(size: 8.5, weight: .bold, design: .monospaced))
+                        .foregroundStyle(AppTheme.textTertiary)
+                        .frame(width: 56, alignment: .trailing)
+                }
+            }
+
             VStack(spacing: 5) {
                 ForEach(Array(analysis.topConsumers.enumerated()), id: \.element.id) { i, proc in
                     HStack(spacing: 8) {
@@ -417,13 +428,13 @@ struct PowerAnalysisCard: View {
                             .foregroundStyle(AppTheme.textPrimary)
                             .lineLimit(1)
                             .frame(width: 128, alignment: .leading)
-                        ProgressBar(fraction: proc.cpuPercent / maxCPU,
+                        ProgressBar(fraction: ProcessRow.barFraction(cpuPercent: proc.cpuPercent),
                                     color: AppTheme.energyColor(proc.energyImpact))
                             .frame(height: 5)
-                        Text(LNum("%.1f%%", proc.cpuPercent))
+                        Text(ProcessRow.cpuText(proc.cpuPercent))
                             .font(.system(size: 11, weight: .bold, design: .rounded))
                             .foregroundStyle(AppTheme.energyColor(proc.energyImpact))
-                            .frame(width: 48, alignment: .trailing)
+                            .frame(width: 56, alignment: .trailing)
                     }
                 }
             }

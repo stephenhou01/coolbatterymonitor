@@ -510,10 +510,16 @@ enum InsightEngine {
             hours = wh / watts
         }
 
-        let top = Array(processes.prefix(5))
+        // 自己排一次序，不依赖调用方传进来的顺序。生产路径上 topProcesses 已经是
+        // 降序的，但组聚合之后「组总和」才是排序键，而测试和其他调用方可能传未排序数组 ——
+        // 一旦 top.first 不是最大值，下面点名的就是错的进程。
+        let top = ProcessPowerInfo.rankedForDisplay(processes, limit: 5)
         // 只陈述事实：谁占 CPU 最多。不把 CPU% 换算成瓦特（换不出来）。
         var note: String?
-        if let first = top.first, first.cpuPercent > 15 {
+        // 阈值 40%（约占满半个核）而不是 15%：15 是按修 timebase 之前那套低估 41.67 倍的
+        // 读数定的，实际上永不触发；换成真实读数后 15% 太容易命中，这条「关掉它会有帮助」
+        // 的建议会常驻在卡片上，对一个正常在用的浏览器或终端来说是噪音。
+        if let first = top.first, first.cpuPercent > 40 {
             // 实参顺序必须与格式串一致：%.1fW → %@ → %.0f%%。
             // String(format:) 是 C 变参，顺序错了会按错误类型读位模式。
             note = L("insight.power.note_top", watts, first.displayName, first.cpuPercent)

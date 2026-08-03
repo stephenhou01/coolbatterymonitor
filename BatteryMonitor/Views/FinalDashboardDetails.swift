@@ -23,7 +23,7 @@ struct CapacityBreakdownSection: View {
                 icon: BatteryMetricIcon.designCapacity.symbol,
                 title: dashboardText("p.where_title", fallback: "你买的容量去哪了"),
                 color: AppTheme.batteryYellow,
-                help: DashboardHelp.capacityOverview(snapshot),
+                help: { DashboardHelp.capacityOverview(snapshot) },
                 selection: $selectedHelp
             )
 
@@ -62,13 +62,13 @@ struct CapacityBreakdownSection: View {
                     terms: [
                         .init(label: dashboardText("p.design_capacity", fallback: "设计容量"), value: design,
                               icon: .designCapacity, color: AppTheme.batteryYellow,
-                              help: DashboardHelp.designCapacity(snapshot)),
+                              help: { DashboardHelp.designCapacity(snapshot) }),
                         .init(label: dashboardText("p.capacity_gap", fallback: "长期容量总差额"), value: gap,
                               icon: .capacityGap, color: AppTheme.batteryRed,
-                              help: DashboardHelp.capacityGap(snapshot)),
+                              help: { DashboardHelp.capacityGap(snapshot) }),
                         .init(label: dashboardText("p.current_max", fallback: "目前最大容量"), value: full,
                               icon: .capacity, color: AppTheme.chargingCyan,
-                              help: DashboardHelp.currentMax(snapshot)),
+                              help: { DashboardHelp.currentMax(snapshot) }),
                     ],
                     operators: ["−", "="],
                     selection: $selectedHelp
@@ -80,13 +80,13 @@ struct CapacityBreakdownSection: View {
                     terms: [
                         .init(label: dashboardText("p.current_max", fallback: "目前最大容量"), value: full,
                               icon: .capacity, color: AppTheme.chargingCyan,
-                              help: DashboardHelp.currentMax(snapshot)),
+                              help: { DashboardHelp.currentMax(snapshot) }),
                         .init(label: dashboardText("p.used_since_full", fallback: "本次已经用掉"), value: used,
                               icon: .usedCapacity, color: AppTheme.chargingBlue,
-                              help: DashboardHelp.usedSinceFull(snapshot)),
+                              help: { DashboardHelp.usedSinceFull(snapshot) }),
                         .init(label: dashboardText("p.current_actual", fallback: "此刻还剩"), value: current,
                               icon: .stateOfCharge, color: AppTheme.chargingCyan,
-                              help: DashboardHelp.currentActual(snapshot)),
+                              help: { DashboardHelp.currentActual(snapshot) }),
                     ],
                     operators: ["−", "="],
                     selection: $selectedHelp
@@ -110,13 +110,13 @@ struct CapacityBreakdownSection: View {
                         terms: [
                             .init(label: dashboardText("p.capacity_gap", fallback: "长期容量总差额"), value: gap,
                                   icon: .capacityGap, color: AppTheme.batteryYellow,
-                                  help: DashboardHelp.capacityGap(snapshot)),
+                                  help: { DashboardHelp.capacityGap(snapshot) }),
                             .init(label: dashboardText("p.seg_un", fallback: "暂时够不到"), value: inaccessible,
                                   icon: .inaccessibleCapacity, color: AppTheme.batteryYellow,
-                                  help: DashboardHelp.inaccessibleCapacity(snapshot)),
+                                  help: { DashboardHelp.inaccessibleCapacity(snapshot) }),
                             .init(label: dashboardText("p.seg_age", fallback: "真正老化"), value: permanent,
                                   icon: .permanentLoss, color: AppTheme.batteryRed,
-                                  help: DashboardHelp.permanentLoss(snapshot)),
+                                  help: { DashboardHelp.permanentLoss(snapshot) }),
                         ],
                         operators: ["=", "+"],
                         selection: $selectedHelp
@@ -220,7 +220,7 @@ struct CapacityBreakdownSection: View {
             description: dashboardText("p.capacity_sum", fallback: "这是这台机型出厂时的整只水箱：{design} mAh。",
                                        replacements: ["design": formatted(design)]),
             color: AppTheme.batteryYellow,
-            help: DashboardHelp.designCapacity(snapshot),
+            help: { DashboardHelp.designCapacity(snapshot) },
             selection: $selectedHelp
         )
         CapacityLegendCard(
@@ -230,7 +230,7 @@ struct CapacityBreakdownSection: View {
             percentage: ratio(full),
             description: dashboardText("p.current_max_desc", fallback: "像现在这只水箱真正能装满、也能放出来的总量。"),
             color: AppTheme.chargingCyan,
-            help: DashboardHelp.currentMax(snapshot),
+            help: { DashboardHelp.currentMax(snapshot) },
             selection: $selectedHelp
         )
         CapacityLegendCard(
@@ -240,7 +240,7 @@ struct CapacityBreakdownSection: View {
             percentage: ratio(current),
             description: dashboardText("p.current_actual_desc", fallback: "像水箱里此刻剩下的水；使用会减少，充电会补回来。"),
             color: AppTheme.chargingCyan,
-            help: DashboardHelp.currentActual(snapshot),
+            help: { DashboardHelp.currentActual(snapshot) },
             selection: $selectedHelp
         )
         CapacityLegendCard(
@@ -251,7 +251,7 @@ struct CapacityBreakdownSection: View {
             description: dashboardText(used == 0 ? "p.used_zero_desc" : "p.used_since_full_desc",
                                        fallback: used == 0 ? "刚充满，所以这次还没有用掉；它不是老化。" : "从本次充满到现在已经用掉的电，充电后会回来；它不是老化。"),
             color: AppTheme.chargingBlue,
-            help: DashboardHelp.usedSinceFull(snapshot),
+            help: { DashboardHelp.usedSinceFull(snapshot) },
             selection: $selectedHelp
         )
         if let inaccessible, let permanent {
@@ -262,7 +262,7 @@ struct CapacityBreakdownSection: View {
                 percentage: ratio(inaccessible),
                 description: dashboardText("p.seg_un_d", fallback: "像吸管够不到的杯底水：电量计认为它还在，但系统会在电压过低前停止放电。"),
                 color: AppTheme.batteryYellow,
-                help: DashboardHelp.inaccessibleCapacity(snapshot),
+                help: { DashboardHelp.inaccessibleCapacity(snapshot) },
                 selection: $selectedHelp
             )
             CapacityLegendCard(
@@ -272,7 +272,7 @@ struct CapacityBreakdownSection: View {
                 percentage: ratio(permanent),
                 description: dashboardText("p.seg_age_d", fallback: "像水箱本身缩小了；这是设计容量与学习到的化学容量之差。"),
                 color: AppTheme.batteryRed,
-                help: DashboardHelp.permanentLoss(snapshot),
+                help: { DashboardHelp.permanentLoss(snapshot) },
                 selection: $selectedHelp
             )
         } else {
@@ -283,7 +283,7 @@ struct CapacityBreakdownSection: View {
                 percentage: ratio(gap),
                 description: dashboardText("p.capacity_gap_desc", fallback: "目前满充容量比出厂设计少的总差额；Qmax 数据不足时不武断拆成够不到与真正老化。"),
                 color: AppTheme.batteryRed,
-                help: DashboardHelp.capacityGap(snapshot),
+                help: { DashboardHelp.capacityGap(snapshot) },
                 selection: $selectedHelp
             )
         }
@@ -340,7 +340,8 @@ private struct CapacityLegendCard: View {
     let percentage: Double
     let description: String
     let color: Color
-    let help: MetricHelpContent
+    /// Lazy so the sheet is built on tap, not on every redraw of the card.
+    let help: () -> MetricHelpContent
     @Binding var selection: MetricHelpContent?
 
     var body: some View {
@@ -353,7 +354,7 @@ private struct CapacityLegendCard: View {
                             .font(.system(size: 9.5, weight: .semibold))
                             .foregroundStyle(AppTheme.textSecondary)
                             .lineLimit(2)
-                        MetricHelpButton(content: help, selection: $selection)
+                        MetricHelpButton(content: help(), selection: $selection)
                     }
                     HStack(alignment: .firstTextBaseline, spacing: 4) {
                         Text(value.formatted(.number.grouping(.automatic)))
@@ -391,7 +392,8 @@ private struct CapacityEquationTerm {
     let value: Int
     let icon: BatteryMetricIcon
     let color: Color
-    let help: MetricHelpContent
+    /// Lazy so the sheet is built on tap, not on every redraw of the card.
+    let help: () -> MetricHelpContent
 }
 
 private struct CapacityEquation: View {
@@ -435,7 +437,7 @@ private struct CapacityEquation: View {
                                 .font(.system(size: 8.5))
                                 .foregroundStyle(AppTheme.textTertiary)
                                 .lineLimit(1)
-                            MetricHelpButton(content: term.help, selection: $selection)
+                            MetricHelpButton(content: term.help(), selection: $selection)
                         }
                         Text("\(term.value.formatted(.number.grouping(.automatic))) mAh")
                             .font(.system(size: 11, weight: .semibold, design: .monospaced))
@@ -481,7 +483,7 @@ struct MetricReferenceSection: View {
                 high: dashboardText("p.cb_bad", fallback: "压差明显时，最弱的一节会先到截止电压，整包可用容量随之变少"),
                 source: dashboardText("p.src_lit", fallback: "锂电通用文献"),
                 color: delta <= 20 ? AppTheme.chargingCyan : AppTheme.batteryYellow,
-                help: DashboardHelp.cellBalance(snapshot)
+                help: { DashboardHelp.cellBalance(snapshot) }
             ),
             ReferenceMetric(
                 icon: .resistance,
@@ -495,7 +497,7 @@ struct MetricReferenceSection: View {
                 high: dashboardText("p.ra_bad", fallback: "阻力高时更容易压降和发热，也可能更早触发低电关机"),
                 source: dashboardText("p.src_none_short", fallback: "只看趋势"),
                 color: maxResistance <= 130 ? AppTheme.chargingCyan : AppTheme.batteryYellow,
-                help: DashboardHelp.resistance(snapshot)
+                help: { DashboardHelp.resistance(snapshot) }
             ),
             ReferenceMetric(
                 icon: .cycles,
@@ -507,7 +509,7 @@ struct MetricReferenceSection: View {
                 high: dashboardText("p.cycle_high_short", fallback: "越接近额定循环寿命，越应该结合容量、内阻与温度看趋势"),
                 source: dashboardText("p.src_apple", fallback: "Apple 官方额定值"),
                 color: cycleUsage <= 50 ? AppTheme.chargingCyan : AppTheme.batteryYellow,
-                help: DashboardHelp.cycles(snapshot)
+                help: { DashboardHelp.cycles(snapshot) }
             ),
             ReferenceMetric(
                 icon: .voltage,
@@ -520,7 +522,7 @@ struct MetricReferenceSection: View {
                 high: dashboardText("p.pv_high", fallback: "接近历史最高值通常只会在刚充满时出现"),
                 source: dashboardText("p.src_personal", fallback: "你自己的历史数据"),
                 color: AppTheme.accentPurple,
-                help: DashboardHelp.packVoltage(snapshot)
+                help: { DashboardHelp.packVoltage(snapshot) }
             ),
         ]
     }
@@ -531,7 +533,7 @@ struct MetricReferenceSection: View {
                 icon: "scale.3d",
                 title: dashboardText("p.spec_other_title", fallback: "其余 4 项关键指标"),
                 color: AppTheme.accentPurple,
-                help: DashboardHelp.specOverview(snapshot),
+                help: { DashboardHelp.specOverview(snapshot) },
                 selection: $selectedHelp
             )
 
@@ -601,8 +603,21 @@ private struct ReferenceMetric: Identifiable {
     let high: String
     let source: String
     let color: Color
-    let help: MetricHelpContent
-    var id: String { help.id }
+    /// Lazy: this metric is rendered in two ViewThatFits branches, so eagerly
+    /// building the help sheet meant constructing it twice per redraw for a
+    /// panel that is usually never opened.
+    let help: () -> MetricHelpContent
+    /// Was `help.id`, which forced the whole sheet to be built just to identify
+    /// a row. The title is already unique within this table.
+    var id: String { title }
+
+    init(icon: BatteryMetricIcon, title: String, current: String, range: String, history: String,
+         low: String, high: String, source: String, color: Color,
+         help: @escaping () -> MetricHelpContent) {
+        self.icon = icon; self.title = title; self.current = current
+        self.range = range; self.history = history; self.low = low; self.high = high
+        self.source = source; self.color = color; self.help = help
+    }
 }
 
 private struct ReferenceTableRow: View {
@@ -669,7 +684,7 @@ private struct ReferenceMetricRow: View {
             Text(metric.title)
                 .font(.system(size: 9, weight: .semibold))
                 .foregroundStyle(AppTheme.textPrimary)
-            MetricHelpButton(content: metric.help, selection: $selection)
+            MetricHelpButton(content: metric.help(), selection: $selection)
         }
         .padding(.horizontal, 8)
     }
@@ -696,7 +711,7 @@ private struct ReferenceMetricCard: View {
                         Text(metric.title)
                             .font(.system(size: 11, weight: .semibold))
                             .foregroundStyle(AppTheme.textPrimary)
-                        MetricHelpButton(content: metric.help, selection: $selection)
+                        MetricHelpButton(content: metric.help(), selection: $selection)
                     }
                     Text(metric.current)
                         .font(.system(size: 20, weight: .medium, design: .monospaced))
@@ -869,16 +884,29 @@ enum DashboardHelp {
                 fallback: "暂无可靠的系统时间 · 拔掉电源后约等 10 分钟再查看"
             )
         } else if let systemReadTime {
+            // Lead with what the number means, then how it is kept up to date:
+            // the mechanism alone left readers unable to tell the three cards
+            // apart, or to know when to distrust one.
+            let meaning = dashboardText(
+                "p.runtime_system_meaning",
+                fallback: "和菜单栏同一个数字。电量计按平均电流估算，负载突然变重后要过一两分钟才跟上"
+            )
             let key = hasLiveSystemReading
                 ? "p.runtime_system_read_live"
                 : "p.runtime_system_read_last"
             let fallback = hasLiveSystemReading
-                ? "TimeRemaining / AvgTimeToEmpty · 读取于 {time} · 卡片每 10 秒检查一次；有效历史约每分钟记录一条"
-                : "TimeRemaining / AvgTimeToEmpty · 最近一次有效读取于 {time} · 卡片每 10 秒检查一次；有效历史约每分钟记录一条"
-            systemNote = dashboardText(
+                ? "TimeRemaining / AvgTimeToEmpty · 上次刷新 {time} · 电量计约 {interval} 秒刷新一次，每次有效读数存一条历史"
+                : "TimeRemaining / AvgTimeToEmpty · 最近一次有效读数在 {time}，之后系统一直没给出有效值"
+            systemNote = meaning + " · " + dashboardText(
                 key,
                 fallback: fallback,
-                replacements: ["time": runtimeReadTimestamp(systemReadTime)]
+                replacements: [
+                    // A stale fallback sample can be hours or days old, so that
+                    // variant keeps the date; live reads are always same-day and
+                    // match the bare clock used by the field rows below.
+                    "time": runtimeReadTimestamp(systemReadTime, includeDate: !hasLiveSystemReading),
+                    "interval": "\(MetricFieldFreshness.gaugeRefreshSeconds)",
+                ]
             )
         } else {
             systemNote = dashboardText("p.chart_waiting", fallback: "等待电量计给出续航预测")
@@ -887,25 +915,70 @@ enum DashboardHelp {
         let systemValue = systemMinutes.map(runtime)
             ?? dashboardText("p.runtime_unavailable", fallback: "不可用")
 
+        // The two derived rows are not live readings: state which sample they
+        // were computed from and how often that sample is refreshed.
+        var stableNote = dashboardText(
+            "p.runtime_stable_note",
+            fallback: "回答「按最近这段时间的用法还能撑多久」：取最近 10 分钟功耗的中位数，一闪而过的高负载不会带偏它；至少要 5 个有效样本"
+        )
+        if let stableSampleTime = s.latestStablePowerSampleTime {
+            stableNote += " · " + dashboardText(
+                "p.runtime_stable_read",
+                fallback: "最新样本读取于 {time}（窗口内 {samples} 个有效样本）· 每 10 秒采样一次",
+                replacements: [
+                    "time": runtimeReadTimestamp(stableSampleTime),
+                    "samples": "\(s.recentStablePowerSamples.count)",
+                ]
+            )
+        }
+
+        let currentAge = s.currentPowerAgeSeconds
+        var currentNote = dashboardText(
+            "p.runtime_current_note",
+            fallback: "回答「如果一直像现在这样用」：直接按此刻功耗换算，所以对负载变化最敏感，也最容易偏高或偏低；样本超过 120 秒就等新数据"
+        )
+        let isCurrentSampleStale = currentAge > 120
+        currentNote += " · " + dashboardText(
+            isCurrentSampleStale ? "p.runtime_current_read_stale" : "p.runtime_current_read",
+            fallback: isCurrentSampleStale
+                ? "上次读取于 {time}，已过 {age} 秒 · 每 10 秒刷新一次"
+                : "读取于 {time}（{age} 秒前）· 每 10 秒刷新一次",
+            replacements: [
+                // Must be the same clock the age is measured from, otherwise the
+                // timestamp and "N 秒前" in one sentence contradict each other.
+                // A stale sample can predate a sleep, so that variant keeps the date.
+                "time": runtimeReadTimestamp(s.rawFieldReadAt.at, includeDate: isCurrentSampleStale),
+                "age": "\(currentAge)",
+            ]
+        )
+
         return content(
             id: "runtime.comparison",
             title: dashboardText("p.runtime_compare_title", fallback: "三种续航口径"),
             summary: dashboardText("p.runtime_compare_summary", fallback: "主结果以 macOS 系统时间为准；下面两项是同一份剩余电量分别按稳健功耗和当前功耗换算的参考值。"),
             result: systemValue,
             fields: [
-                runtimeRawField("TimeRemaining", detail.timeRemainingRaw),
-                runtimeRawField("AvgTimeToEmpty", detail.avgTimeToEmpty),
-                field("ModelDesignEnergy", f(s.designEnergyWh), "Wh"),
+                runtimeRawField("TimeRemaining", detail.timeRemainingRaw, onAC: s.data.isOnAC),
+                runtimeRawField("AvgTimeToEmpty", detail.avgTimeToEmpty, onAC: s.data.isOnAC),
+                field("ModelDesignEnergy", f(s.designEnergyWh), "Wh", updateClass: .modelSpec),
                 field("AppleRawCurrentCapacity", s.currentCapacity, "mAh"),
                 field("DesignCapacity", s.designCapacity, "mAh"),
-                field("Derived.Recent10mMedianPower", f(s.stablePowerWatts), "W"),
-                field("Derived.Recent10mValidSamples", s.recentStablePowerSamples.count),
+                // Stamped from the newest sample feeding the median, not from
+                // this poll: the window is up to ten minutes wide.
+                field("Derived.Recent10mMedianPower", f(s.stablePowerWatts), "W",
+                      readAt: s.latestStablePowerSampleTime.map(MetricReadStamp.ourRead)),
+                field("Derived.Recent10mValidSamples", s.recentStablePowerSamples.count, "",
+                      readAt: s.latestStablePowerSampleTime.map(MetricReadStamp.ourRead)),
                 field("BatteryData.SystemPower", f(s.currentPowerWatts), "W"),
-                field("Derived.CurrentPowerSampleAge", s.currentPowerAgeSeconds, "s"),
+                // This row's value already is the read age; a second age next to
+                // it would only contradict itself as the clock ticks.
+                field("Derived.CurrentPowerSampleAge", s.currentPowerAgeSeconds, "s",
+                      updateClass: .untimed),
             ],
             formula: "systemMinutes = valid(TimeRemaining) ?? valid(AvgTimeToEmpty) ?? latestPersistedSystemSample\nremainingWh = designWh × currentCapacity ÷ designCapacity\nstableMinutes = remainingWh ÷ median(last10mPower) × 60\ncurrentLoadMinutes = remainingWh ÷ currentSystemPower × 60",
             substitution: "system: \(runtimeRawValue(detail.timeRemainingRaw)) / \(runtimeRawValue(detail.avgTimeToEmpty)); latest persisted \(runtimeRawValue(s.systemRuntimeFallbackSample?.minutesRemaining)) → \(systemValue)\nremaining: \(f(s.designEnergyWh)) × \(s.currentCapacity) ÷ \(s.designCapacity) = \(f(s.remainingEnergyWh)) Wh\nstable: \(f(s.remainingEnergyWh)) ÷ \(f(s.stablePowerWatts)) × 60 = \(optional(stableMinutes)) min\ncurrent: \(f(s.remainingEnergyWh)) ÷ \(f(s.currentPowerWatts)) × 60 = \(optional(currentMinutes)) min",
             source: dashboardText("p.runtime_compare_source", fallback: "macOS 系统时间来自 AppleSmartBattery；两项计算值由本机剩余能量和实测功耗推导，只作对照，不写入系统续航历史。"),
+            readAt: s.rawFieldReadAt,
             results: [
                 MetricHelpResult(
                     id: "runtime.system",
@@ -918,14 +991,14 @@ enum DashboardHelp {
                     id: "runtime.stable",
                     title: dashboardText("p.runtime_stable_label", fallback: "稳健估算"),
                     value: runtime(stableMinutes),
-                    note: dashboardText("p.runtime_stable_note", fallback: "最近 10 分钟功耗中位数；至少 5 个有效样本"),
+                    note: stableNote,
                     style: .stable
                 ),
                 MetricHelpResult(
                     id: "runtime.current-load",
                     title: dashboardText("p.runtime_current_label", fallback: "当前负载估算"),
                     value: runtime(currentMinutes),
-                    note: dashboardText("p.runtime_current_note", fallback: "假设此刻功耗保持不变；样本超过 120 秒就等待新数据"),
+                    note: currentNote,
                     style: .current
                 ),
             ]
@@ -945,7 +1018,8 @@ enum DashboardHelp {
             ],
             formula: dashboardText("p.help_direct", fallback: "无公式：直接读取系统用户可见百分比。"),
             substitution: "CurrentCapacity → \(s.data.percent)%",
-            source: "AppleSmartBattery CurrentCapacity / macOS visible state of charge."
+            source: "AppleSmartBattery CurrentCapacity / macOS visible state of charge.",
+            readAt: s.rawFieldReadAt,
         )
     }
 
@@ -962,7 +1036,8 @@ enum DashboardHelp {
             ],
             formula: "health = (FullChargeCapacity + PackReserve) ÷ (DesignCapacity − PackReserve) × 100",
             substitution: "(\(s.fullChargeCapacity) + \(s.detail.packReserve)) ÷ (\(s.designCapacity) − \(s.detail.packReserve)) × 100 = \(LNum("%.1f%%", s.healthPercent))",
-            source: "Derived from IOKit fields and aligned to this Mac's system reading. This inferred formula is labelled rather than presented as an Apple-published formula."
+            source: "Derived from IOKit fields and aligned to this Mac's system reading. This inferred formula is labelled rather than presented as an Apple-published formula.",
+            readAt: s.rawFieldReadAt,
         )
     }
 
@@ -996,7 +1071,20 @@ enum DashboardHelp {
             ],
             formula: "1. SystemPower, when valid\n2. |SystemLoad| ÷ 1000\n3. |Amperage| ÷ 1000 × Voltage\naveragePower = AccumulatedSystemLoad ÷ sampleCount ÷ 1000",
             substitution: "SystemPower = \(f(directPower)) W\n|SystemLoad| ÷ 1000 = \(f(telemetryPower)) W\n|\(s.data.amperage)| ÷ 1000 × \(f(s.data.voltage)) = \(f(currentVoltagePower)) W\nSelected: \(selectedSource) → \(f(s.currentPowerWatts)) W\n\(optional(s.detail.accumulatedSystemLoad)) ÷ \(optional(s.detail.systemLoadAccumulatorCount)) ÷ 1000 = \(f(s.detail.averageTelemetryPowerWatts)) W",
-            source: "IOKit BatteryData.SystemPower and PowerTelemetryData. The UI labels fallbacks instead of pretending every source is identical."
+            source: "IOKit BatteryData.SystemPower and PowerTelemetryData. The UI labels fallbacks instead of pretending every source is identical.",
+            readAt: s.rawFieldReadAt,
+            trend: MetricHelpTrend(
+                title: trendTitle(),
+                latestText: LNum("%.2f W", s.currentPowerWatts),
+                note: dashboardText(
+                    "p.trend_note_power",
+                    fallback: "整机功率每 10 秒采样一次。把鼠标移到线上可以看到该分钟的读数。"
+                ),
+                unit: "W",
+                tint: AppTheme.chargingCyan,
+                points: trendPoints(s) { $0.power > 0 ? $0.power : nil },
+                waitingText: trendWaiting()
+            )
         )
     }
 
@@ -1046,17 +1134,13 @@ enum DashboardHelp {
             equationNote = dashboardText("p.adapter_contract_partial", fallback: "字段不完整时不反推缺失值。")
         }
 
-        let trendEnd = s.realtimeData.map(\.timestamp).max()
-        let trendStart = trendEnd?.addingTimeInterval(-10 * 60)
-        let trendPoints = s.realtimeData.suffix(60).compactMap { point -> MetricHelpTrendPoint? in
-            guard trendStart.map({ point.timestamp >= $0 }) ?? true,
-                  let input = point.inputPower, input.isFinite, input > 0.1 else { return nil }
-            return MetricHelpTrendPoint(timestamp: point.timestamp, watts: input)
-        }
+        // Derived from Mac load + charge into the battery, not from
+        // SystemPowerIn. The old series dropped every sample where SystemPowerIn
+        // read 0 — and that field is measured going to 0 while plugged in and
+        // drawing power, so the whole chart vanished for minutes at a time.
+        let inputTrendPoints = trendPoints(s) { adapterOutputWatts($0) }
         let currentInput = connected
-            ? (detail.systemPowerIn > 0
-                ? Double(detail.systemPowerIn) / 1000.0
-                : trendPoints.last?.watts)
+            ? (s.adapterOutputPowerWatts ?? inputTrendPoints.last?.value)
             : nil
         return content(
             id: "power.adapter",
@@ -1066,21 +1150,31 @@ enum DashboardHelp {
                 fallback: "这是充电器与电脑协商出的额定功率，不是电脑此刻一定正在消耗这么多。拔掉电源后，这组字段通常会消失。"
             ),
             result: displayedWatts,
+            // The adapter identity block appears and disappears with the cable,
+            // not on the gauge's beat (measured: these fields cleared within 2 s
+            // of an unplug), so they are stamped with our own read time.
             fields: [
-                field("AdapterDetails.Watts", rawWatts, "W"),
-                field("AdapterDetails.AdapterVoltage", rawVoltage, "mV"),
-                field("AdapterDetails.Current", rawCurrent, "mA"),
-                field("Derived.NegotiatedPower", f(calculatedWatts), "W"),
+                field("AdapterDetails.Watts", rawWatts, "W",
+                      updateClass: .eventDriven, readAt: .ourRead(s.data.lastUpdated)),
+                field("AdapterDetails.AdapterVoltage", rawVoltage, "mV",
+                      updateClass: .eventDriven, readAt: .ourRead(s.data.lastUpdated)),
+                field("AdapterDetails.Current", rawCurrent, "mA",
+                      updateClass: .eventDriven, readAt: .ourRead(s.data.lastUpdated)),
+                field("Derived.NegotiatedPower", f(calculatedWatts), "W",
+                      updateClass: .eventDriven, readAt: .ourRead(s.data.lastUpdated)),
                 field("PowerTelemetryData.SystemPowerIn", rawSystemPowerIn, "mW"),
-                field("AdapterDetails.UsbHvcMenu", rawProfileCount, "profiles"),
-                field("AdapterDetails.Description", detail.adapterDescription),
+                field("AdapterDetails.UsbHvcMenu", rawProfileCount, "profiles",
+                      updateClass: .eventDriven, readAt: .ourRead(s.data.lastUpdated)),
+                field("AdapterDetails.Description", detail.adapterDescription, "", "",
+                      updateClass: .eventDriven, readAt: .ourRead(s.data.lastUpdated)),
             ],
-            formula: "voltageV = AdapterVoltage ÷ 1000\ncurrentA = Current ÷ 1000\nnegotiatedPowerW = voltageV × currentA\nactualInputW = SystemPowerIn ÷ 1000",
-            substitution: "\(optional(rawVoltage)) ÷ 1000 = \(f(voltage)) V\n\(optional(rawCurrent)) ÷ 1000 = \(f(current)) A\n\(f(voltage)) × \(f(current)) = \(f(calculatedWatts)) W\nSystemPowerIn: \(optional(rawSystemPowerIn)) ÷ 1000 = \(f(currentInput)) W",
+            formula: "voltageV = AdapterVoltage ÷ 1000\ncurrentA = Current ÷ 1000\nnegotiatedPowerW = voltageV × currentA\nactualOutputW = macLoadW + max(batteryPowerW, 0)",
+            substitution: "\(optional(rawVoltage)) ÷ 1000 = \(f(voltage)) V\n\(optional(rawCurrent)) ÷ 1000 = \(f(current)) A\n\(f(voltage)) × \(f(current)) = \(f(calculatedWatts)) W\n\(f(s.currentPowerWatts)) + \(f(max(0, s.batteryPowerWatts ?? 0))) = \(f(currentInput)) W\nSystemPowerIn (reference only): \(optional(rawSystemPowerIn)) mW",
             source: dashboardText(
                 "p.help_source_adapter_power",
                 fallback: "IOKit AppleSmartBattery.AdapterDetails。它表示当前电源协商档位；实际输入功率请看 SystemPowerIn。"
             ),
+            readAt: s.rawFieldReadAt,
             powerContract: MetricPowerContract(
                 stateTitle: stateTitle,
                 stateDetail: stateDetail,
@@ -1096,8 +1190,8 @@ enum DashboardHelp {
                 equationNote: equationNote,
                 trendTitle: dashboardText("p.adapter_input_trend", fallback: "整机实际输入功率"),
                 trendValue: currentInput.map { LNum("%.1f W", $0) } ?? "—",
-                trendNote: dashboardText("p.adapter_input_trend_note", fallback: "青线是 SystemPowerIn 实测值；黄色虚线是协商上限。两者不同很正常，剩余能力没有被浪费。"),
-                trendPoints: trendPoints,
+                trendNote: dashboardText("p.adapter_input_trend_note", fallback: "青线是推导值：电脑当前功率 + 充入电池的功率，和上方流向图的两条出边同源。黄色虚线是协商上限，两者不同很正常。鼠标移到线上可看该分钟读数。"),
+                trendPoints: inputTrendPoints,
                 ceilingWatts: watts > 0 ? Double(watts) : calculatedWatts
             )
         )
@@ -1138,6 +1232,19 @@ enum DashboardHelp {
             source: dashboardText(
                 "p.help_source_charging_power",
                 fallback: "由 AppleSmartBattery 的电池组电压与带符号电池电流推导；放电方向的负电流不会被算作充电。"
+            ),
+            readAt: s.rawFieldReadAt,
+            trend: MetricHelpTrend(
+                title: trendTitle(),
+                latestText: displayedWatts,
+                note: dashboardText(
+                    "p.trend_note_charge",
+                    fallback: "每个点是当时的电池电压 × 正向电流。放电时记为 0，所以充电停止会看到线落到底，而不是断开。"
+                ),
+                unit: "W",
+                tint: AppTheme.batteryGreen,
+                points: trendPoints(s) { chargeWatts($0) },
+                waitingText: trendWaiting()
             )
         )
     }
@@ -1180,11 +1287,24 @@ enum DashboardHelp {
                     dashboardText("p.raw_adapter_loss_explain", fallback: "适配器效率损耗原始值")
                 ),
             ],
-            formula: "adapterOutputPowerW = SystemPowerIn ÷ 1000",
-            substitution: "\(optional(detail.presentRawFields.contains("PowerTelemetryData.SystemPowerIn") ? detail.systemPowerIn : nil)) ÷ 1000 = \(displayedWatts)",
+            formula: "adapterOutputPowerW = macLoadW + max(batteryPowerW, 0)",
+            substitution: "\(f(s.currentPowerWatts)) + \(f(max(0, s.batteryPowerWatts ?? 0))) = \(displayedWatts)\nSystemPowerIn (reference only): \(optional(detail.presentRawFields.contains("PowerTelemetryData.SystemPowerIn") ? detail.systemPowerIn : nil)) mW",
             source: dashboardText(
                 "p.help_source_adapter_output_power",
-                fallback: "直接读取 IOKit PowerTelemetryData.SystemPowerIn；只有连接外部电源且该帧包含实时输入遥测时才展示。"
+                fallback: "推导值：电脑当前功率 + 充入电池的功率，和概览流向图的两条适配器出边同源。原先直读 PowerTelemetryData.SystemPowerIn，但实测这台 Mac 插着电充着电时该字段会归零，所以只把它保留在下方原始字段里作参考。"
+            ),
+            readAt: s.rawFieldReadAt,
+            trend: MetricHelpTrend(
+                title: trendTitle(),
+                latestText: displayedWatts,
+                note: dashboardText(
+                    "p.trend_note_adapter_output",
+                    fallback: "拔掉电源的时间段不画线——那时适配器没有输出，画一条 0 和画一段空白意思不同。鼠标移到线上可看该分钟读数。"
+                ),
+                unit: "W",
+                tint: AppTheme.chargingCyan,
+                points: trendPoints(s) { adapterOutputWatts($0) },
+                waitingText: trendWaiting()
             )
         )
     }
@@ -1218,7 +1338,8 @@ enum DashboardHelp {
             source: dashboardText(
                 "p.help_source_cycle_count",
                 fallback: "IOKit CycleCount；额定参考来自 DesignCycleCount9C。达到额定循环数不等于电池会立即失效。"
-            )
+            ),
+            readAt: s.rawFieldReadAt,
         )
     }
 
@@ -1246,7 +1367,21 @@ enum DashboardHelp {
             substitution: divisor == 1
                 ? "\(optional(raw)) → \(LNum("%.2f °C", s.data.temperatureCelsius))"
                 : "\(optional(raw)) ÷ \(Int(divisor)) = \(LNum("%.2f °C", s.data.temperatureCelsius))",
-            source: "IOKit Temperature with platform-aware scale decoding; lifetime minimum and maximum are shown separately."
+            source: "IOKit Temperature with platform-aware scale decoding; lifetime minimum and maximum are shown separately.",
+            readAt: s.rawFieldReadAt,
+            trend: MetricHelpTrend(
+                title: trendTitle(),
+                latestText: LNum("%.1f ℃", s.data.temperatureCelsius),
+                note: dashboardText(
+                    "p.trend_note_temperature",
+                    fallback: "纵轴贴着实际区间画，不从 0 ℃ 起——否则电池真实的几度波动会被压成一条直线。鼠标移到线上可看该分钟读数。"
+                ),
+                unit: "℃",
+                tint: AppTheme.batteryYellow,
+                points: trendPoints(s) { $0.temperature > 0 ? $0.temperature : nil },
+                baselineAtZero: false,
+                waitingText: trendWaiting()
+            )
         )
     }
 
@@ -1259,16 +1394,17 @@ enum DashboardHelp {
             summary: dashboardText("p.audit_conditions", fallback: "官方网页续航来自固定亮度、Wi‑Fi 和轻负载条件，不等于任何满电电脑都能跑同样久。"),
             result: LNum("%.0f h WEB · %.0f h VIDEO", spec.officialWebHours, spec.officialVideoHours),
             fields: [
-                field("hw.model", s.modelIdentifier),
-                field("Apple design energy", f(spec.designEnergyWh), "Wh"),
-                field("Apple wireless web", f(spec.officialWebHours), "h"),
-                field("Apple streaming video", f(spec.officialVideoHours), "h"),
+                field("hw.model", s.modelIdentifier, "", updateClass: .modelSpec),
+                field("Apple design energy", f(spec.designEnergyWh), "Wh", updateClass: .modelSpec),
+                field("Apple wireless web", f(spec.officialWebHours), "h", updateClass: .modelSpec),
+                field("Apple streaming video", f(spec.officialVideoHours), "h", updateClass: .modelSpec),
                 field("AppleRawMaxCapacity", s.fullChargeCapacity, "mAh"),
                 field("DesignCapacity", s.designCapacity, "mAh"),
             ],
             formula: "officialImpliedPower = designEnergy ÷ officialRuntime\ncurrentFullWh = designWh × FCC ÷ DesignCapacity\nsameLoadRuntime = currentFullWh ÷ officialImpliedPower",
             substitution: "\(f(spec.designEnergyWh)) ÷ \(f(spec.officialWebHours)) = \(f(impliedPower)) W\n\(f(s.currentFullEnergyWh)) ÷ \(f(impliedPower)) = \(f(sameLoad)) h",
-            source: "\(spec.sourceName) · \(spec.sourceURL.absoluteString) · controlled Apple test. Current capacity and power come from this Mac's IOKit fields."
+            source: "\(spec.sourceName) · \(spec.sourceURL.absoluteString) · controlled Apple test. Current capacity and power come from this Mac's IOKit fields.",
+            readAt: s.rawFieldReadAt,
         )
     }
 
@@ -1282,7 +1418,8 @@ enum DashboardHelp {
                 fields: [field("remainingEnergy", f(s.remainingEnergyWh), "Wh"), field("SystemPower", f(s.currentPowerWatts), "W")],
                 formula: "unplugRuntime = remainingEnergy ÷ currentPower",
                 substitution: "\(f(s.remainingEnergyWh)) Wh ÷ \(f(s.currentPowerWatts)) W = \(f(Double(s.unplugEstimateMinutes ?? 0) / 60)) h",
-                source: "Derived forecast while connected to power; dashed and excluded from system history."
+                source: "Derived forecast while connected to power; dashed and excluded from system history.",
+                readAt: s.rawFieldReadAt
             )
         }
         return content(
@@ -1290,10 +1427,12 @@ enum DashboardHelp {
             title: dashboardText("p.remaining_trend", fallback: "系统剩余时间记录"),
             summary: dashboardText("p.help_summary_time_history", fallback: "纵轴逐点记录 macOS 当时报告的剩余小时，横轴是采样时刻；相邻系统读数用阶梯连接，不按功率重算。"),
             result: runtime(s.data.timeRemainingMinutes ?? 0),
-            fields: [field("TimeRemaining", s.detail.timeRemainingRaw, "min"), field("AvgTimeToEmpty", s.detail.avgTimeToEmpty, "min")],
+            fields: [runtimeRawField("TimeRemaining", s.detail.timeRemainingRaw, onAC: s.data.isOnAC),
+                     runtimeRawField("AvgTimeToEmpty", s.detail.avgTimeToEmpty, onAC: s.data.isOnAC)],
             formula: dashboardText("p.help_direct", fallback: "无公式：每次保存有效系统读数。"),
             substitution: "validMinutes(TimeRemaining) → history point; minimum interval = 56 s",
-            source: "AppleSmartBattery runtime fields; sentinel values and duplicate sub-56-second samples are rejected."
+            source: "AppleSmartBattery runtime fields; sentinel values and duplicate sub-56-second samples are rejected.",
+            readAt: s.rawFieldReadAt,
         )
     }
 
@@ -1324,20 +1463,21 @@ enum DashboardHelp {
             fields: fields,
             formula: formula,
             substitution: substitution,
-            source: "IOKit capacity fields. Qmax decomposition is shown only when min(Qmax) lies between FCC and DesignCapacity."
+            source: "IOKit capacity fields. Qmax decomposition is shown only when min(Qmax) lies between FCC and DesignCapacity.",
+            readAt: s.rawFieldReadAt,
         )
     }
 
     static func designCapacity(_ s: DashboardMetricSnapshot) -> MetricHelpContent {
         directCapacity(id: "capacity.design", title: dashboardText("p.design_capacity", fallback: "设计容量"),
                        summary: dashboardText("p.help_summary_design_capacity", fallback: "这台电池出厂时的标称容量，是容量拆解的总尺。"),
-                       fieldName: "DesignCapacity", value: s.designCapacity)
+                       fieldName: "DesignCapacity", value: s.designCapacity, readAt: s.rawFieldReadAt)
     }
 
     static func currentMax(_ s: DashboardMetricSnapshot) -> MetricHelpContent {
         directCapacity(id: "capacity.current-max", title: dashboardText("p.current_max", fallback: "目前最大容量"),
                        summary: dashboardText("p.help_summary_full_capacity", fallback: "这块电池现在充满后，系统允许实际使用的总容量。"),
-                       fieldName: "AppleRawMaxCapacity", value: s.fullChargeCapacity)
+                       fieldName: "AppleRawMaxCapacity", value: s.fullChargeCapacity, readAt: s.rawFieldReadAt)
     }
 
     static func currentActual(_ s: DashboardMetricSnapshot) -> MetricHelpContent {
@@ -1349,7 +1489,8 @@ enum DashboardHelp {
             fields: [field("AppleRawCurrentCapacity", s.detail.appleRawCurrentCapacity, "mAh"), field("AppleRawMaxCapacity", s.fullChargeCapacity, "mAh")],
             formula: "currentActual = min(AppleRawCurrentCapacity, AppleRawMaxCapacity)",
             substitution: "min(\(s.detail.appleRawCurrentCapacity), \(s.fullChargeCapacity)) = \(s.currentCapacity) mAh",
-            source: "IOKit live capacity, capped at full-charge capacity to reject transient over-range readings."
+            source: "IOKit live capacity, capped at full-charge capacity to reject transient over-range readings.",
+            readAt: s.rawFieldReadAt,
         )
     }
 
@@ -1362,7 +1503,8 @@ enum DashboardHelp {
             fields: [field("AppleRawMaxCapacity", s.fullChargeCapacity, "mAh"), field("AppleRawCurrentCapacity", s.currentCapacity, "mAh")],
             formula: "usedSinceFull = FullChargeCapacity − CurrentCapacity",
             substitution: "\(s.fullChargeCapacity) − \(s.currentCapacity) = \(s.usedSinceFull) mAh",
-            source: "Derived from two IOKit capacity readings on the same scale."
+            source: "Derived from two IOKit capacity readings on the same scale.",
+            readAt: s.rawFieldReadAt,
         )
     }
 
@@ -1375,7 +1517,8 @@ enum DashboardHelp {
             fields: [field("DesignCapacity", s.designCapacity, "mAh"), field("AppleRawMaxCapacity (FCC)", s.fullChargeCapacity, "mAh")],
             formula: "longTermCapacityGap = DesignCapacity − FCC",
             substitution: "\(s.designCapacity) − \(s.fullChargeCapacity) = \(s.longTermCapacityGap) mAh",
-            source: "Derived from IOKit design and FCC readings. Qmax is required before this total can be split responsibly."
+            source: "Derived from IOKit design and FCC readings. Qmax is required before this total can be split responsibly.",
+            readAt: s.rawFieldReadAt,
         )
     }
 
@@ -1390,7 +1533,8 @@ enum DashboardHelp {
             fields: [field("min(Qmax)", qmax, "mAh"), field("AppleRawMaxCapacity (FCC)", s.fullChargeCapacity, "mAh")],
             formula: "inaccessibleCapacity = min(Qmax) − FCC",
             substitution: "\(qmax) − \(s.fullChargeCapacity) = \(inaccessible) mAh",
-            source: "Battery gauge learned Qmax and FCC. Shown only when FCC ≤ min(Qmax) ≤ DesignCapacity."
+            source: "Battery gauge learned Qmax and FCC. Shown only when FCC ≤ min(Qmax) ≤ DesignCapacity.",
+            readAt: s.rawFieldReadAt,
         )
     }
 
@@ -1405,7 +1549,8 @@ enum DashboardHelp {
             fields: [field("DesignCapacity", s.designCapacity, "mAh"), field("min(Qmax)", qmax, "mAh")],
             formula: "truePermanentLoss = DesignCapacity − min(Qmax)",
             substitution: "\(s.designCapacity) − \(qmax) = \(permanent) mAh",
-            source: "Derived from design capacity and the weakest cell's learned Qmax. The UI uses this label only when Qmax passes the FCC/design consistency gate."
+            source: "Derived from design capacity and the weakest cell's learned Qmax. The UI uses this label only when Qmax passes the FCC/design consistency gate.",
+            readAt: s.rawFieldReadAt,
         )
     }
 
@@ -1415,10 +1560,15 @@ enum DashboardHelp {
             title: dashboardText("p.spec_other_title", fallback: "其余 4 项关键指标"),
             summary: dashboardText("p.spec_source_note", fallback: "每个合理范围都会说明依据，不把 Apple 规格、个人历史和通用资料混成一个标准答案。"),
             result: "4 × REFERENCE",
-            fields: [field("IOKit live fields", "current values"), field("LifetimeData", "personal extremes"), field("Apple/general references", "labelled ranges")],
+            // Label-only rows: these three name groups of fields, they are not
+            // readings, so they carry neither a read time nor a cadence.
+            fields: [field("IOKit live fields", "current values", "", "", updateClass: .untimed),
+                     field("LifetimeData", "personal extremes", "", "", updateClass: .untimed),
+                     field("Apple/general references", "labelled ranges", "", "", updateClass: .untimed)],
             formula: dashboardText("p.help_direct", fallback: "每一行分别使用自己的字段或明确标注的推导。"),
             substitution: "current value + range + history + low/high impact + source",
-            source: "Mixed sources, labelled per metric."
+            source: "Mixed sources, labelled per metric.",
+            readAt: s.rawFieldReadAt,
         )
     }
 
@@ -1433,7 +1583,8 @@ enum DashboardHelp {
             fields: [field("BatteryData.CellVoltage", cells.map(String.init).joined(separator: " / "), "mV")],
             formula: "cellBalance = max(CellVoltage) − min(CellVoltage)",
             substitution: cells.isEmpty ? "no valid cell-voltage array" : "\(cells.max() ?? 0) − \(cells.min() ?? 0) = \(delta) mV",
-            source: "IOKit cell voltages; 0–20 mV is a general lithium-pack reference, not an Apple service specification."
+            source: "IOKit cell voltages; 0–20 mV is a general lithium-pack reference, not an Apple service specification.",
+            readAt: s.rawFieldReadAt,
         )
     }
 
@@ -1448,7 +1599,8 @@ enum DashboardHelp {
             fields: [field("BatteryData.WeightedRa", values.map(String.init).joined(separator: " / "), "mΩ")],
             formula: "displayedResistance = max(WeightedRa)",
             substitution: "max(\(values.map(String.init).joined(separator: ", "))) = \(maximum) mΩ",
-            source: "IOKit gauge value. 0–130 mΩ is a presentation reference; Apple publishes no fixed service range for this field."
+            source: "IOKit gauge value. 0–130 mΩ is a presentation reference; Apple publishes no fixed service range for this field.",
+            readAt: s.rawFieldReadAt,
         )
     }
 
@@ -1463,7 +1615,8 @@ enum DashboardHelp {
             fields: [field("CycleCount", s.detail.cycleCount), field("DesignCycleCount9C", rated)],
             formula: "cycleUse = CycleCount ÷ DesignCycleCount × 100",
             substitution: rated > 0 ? "\(s.detail.cycleCount) ÷ \(rated) × 100 = \(LNum("%.1f%%", usage))" : "DesignCycleCount unavailable",
-            source: "IOKit CycleCount and rated design-cycle field; Apple's 80% capacity threshold is not the same thing as reaching the cycle rating."
+            source: "IOKit CycleCount and rated design-cycle field; Apple's 80% capacity threshold is not the same thing as reaching the cycle rating.",
+            readAt: s.rawFieldReadAt,
         )
     }
 
@@ -1481,18 +1634,68 @@ enum DashboardHelp {
             ],
             formula: "packVoltageV = packVoltageMillivolts ÷ 1000",
             substitution: "\(s.detail.packVoltage) ÷ 1000 = \(LNum("%.3f V", s.voltageVolts))",
-            source: "IOKit live pack voltage and lifetime extremes from this battery."
+            source: "IOKit live pack voltage and lifetime extremes from this battery.",
+            readAt: s.rawFieldReadAt,
         )
     }
 
-    private static func directCapacity(id: String, title: String, summary: String, fieldName: String, value: Int) -> MetricHelpContent {
+    private static func directCapacity(id: String, title: String, summary: String, fieldName: String, value: Int,
+                                       readAt: MetricReadStamp?) -> MetricHelpContent {
         content(
             id: id, title: title, summary: summary, result: "\(value.formatted()) mAh",
             fields: [field(fieldName, value, "mAh")],
             formula: dashboardText("p.help_direct", fallback: "无公式：直接读取系统字段。"),
             substitution: "\(fieldName) → \(value) mAh",
-            source: "AppleSmartBattery IOKit field."
+            source: "AppleSmartBattery IOKit field.",
+            readAt: readAt,
         )
+    }
+
+    /// Ten minutes of samples at most — that is the live buffer's own horizon,
+    /// and claiming more would be inventing history the app never recorded.
+    /// Non-finite readings are dropped rather than plotted.
+    private static func trendPoints(
+        _ s: DashboardMetricSnapshot,
+        _ value: (RealtimeDataPoint) -> Double?
+    ) -> [MetricHelpTrendPoint] {
+        guard let end = s.realtimeData.map(\.timestamp).max() else { return [] }
+        let start = end.addingTimeInterval(-10 * 60)
+        return s.realtimeData.suffix(60).compactMap { point in
+            guard point.timestamp >= start,
+                  let reading = value(point), reading.isFinite else { return nil }
+            return MetricHelpTrendPoint(timestamp: point.timestamp, value: reading)
+        }
+    }
+
+    /// Battery-side power for one sample, sign intact: positive is charge going
+    /// in, negative is the pack supplying the machine.
+    private static func batteryWatts(_ point: RealtimeDataPoint) -> Double {
+        point.amperage / 1000.0 * point.voltage
+    }
+
+    /// What the adapter is putting out, derived exactly the way the overview's
+    /// flow diagram derives it: Mac load plus whatever is going into the
+    /// battery. Not `SystemPowerIn` — that field is measured dropping to 0 while
+    /// plugged in, which used to delete every sample in the window and leave the
+    /// chart empty.
+    private static func adapterOutputWatts(_ point: RealtimeDataPoint) -> Double? {
+        guard point.isOnAC else { return nil }
+        return max(0, point.power) + max(0, batteryWatts(point))
+    }
+
+    /// Power flowing into the pack. Discharge is recorded as 0 rather than
+    /// dropped, so a charge that stops shows as a line falling to the floor
+    /// instead of a gap.
+    private static func chargeWatts(_ point: RealtimeDataPoint) -> Double {
+        max(0, batteryWatts(point))
+    }
+
+    private static func trendTitle() -> String {
+        dashboardText("p.trend_last_10min", fallback: "最近 10 分钟")
+    }
+
+    private static func trendWaiting() -> String {
+        dashboardText("p.trend_waiting", fallback: "正在积累历史数据")
     }
 
     private static func content(
@@ -1504,8 +1707,10 @@ enum DashboardHelp {
         formula: String,
         substitution: String,
         source: String,
+        readAt: MetricReadStamp? = nil,
         results: [MetricHelpResult] = [],
-        powerContract: MetricPowerContract? = nil
+        powerContract: MetricPowerContract? = nil,
+        trend: MetricHelpTrend? = nil
     ) -> MetricHelpContent {
         MetricHelpContent(
             id: id,
@@ -1516,8 +1721,10 @@ enum DashboardHelp {
             formula: formula,
             substitution: substitution,
             source: source,
+            readAt: readAt,
             comparisonResults: results,
-            powerContract: powerContract
+            powerContract: powerContract,
+            trend: trend
         )
     }
 
@@ -1525,22 +1732,43 @@ enum DashboardHelp {
         _ name: String,
         _ value: String,
         _ unit: String = "",
-        _ explanation: String = ""
+        _ explanation: String = "",
+        updateClass: MetricFieldUpdateClass = .live,
+        readAt: MetricReadStamp? = nil
     ) -> MetricRawField {
-        MetricRawField(name: name, value: value.isEmpty ? "—" : value, unit: unit, explanation: explanation)
+        MetricRawField(name: name, value: value.isEmpty ? "—" : value, unit: unit, explanation: explanation,
+                       updateClass: updateClass, readAt: readAt)
     }
 
     private static func field<T: BinaryInteger>(
         _ name: String,
         _ value: T?,
         _ unit: String = "",
-        _ explanation: String = ""
+        _ explanation: String = "",
+        updateClass: MetricFieldUpdateClass = .live,
+        readAt: MetricReadStamp? = nil
     ) -> MetricRawField {
-        MetricRawField(name: name, value: value.map { String($0) } ?? "—", unit: unit, explanation: explanation)
+        MetricRawField(name: name, value: value.map { String($0) } ?? "—", unit: unit, explanation: explanation,
+                       updateClass: updateClass, readAt: readAt)
     }
 
-    private static func runtimeRawField(_ name: String, _ value: Int?) -> MetricRawField {
-        field(name, runtimeRawValue(value))
+    /// On AC the gauge parks both runtime fields at 65535, so the row reads
+    /// "不可用" for a structural reason rather than a stale read. Verified with
+    /// `ioreg`: 5 minutes on AC produced zero changes and never a valid value.
+    private static func runtimeRawField(_ name: String, _ value: Int?, onAC: Bool = false) -> MetricRawField {
+        var raw = field(name, runtimeRawFieldValue(value))
+        if onAC { raw.availability = .notProvidedOnAC }
+        return raw
+    }
+
+    /// The gauge reports whole minutes, which stops meaning anything past an hour
+    /// or two. Append the same `h m` rendering the result above the field list
+    /// uses, so the reader can tie the raw number to the headline without doing
+    /// the division. Left off below an hour, where it would only add "0 h".
+    private static func runtimeRawFieldValue(_ value: Int?) -> String {
+        let raw = runtimeRawValue(value)
+        guard let value, RuntimeSample.isValid(minutes: value), value >= 60 else { return raw }
+        return "\(raw) (\(runtime(value)))"
     }
 
     /// The fuel gauge uses sentinel integers such as 65,535 to mean that no
@@ -1554,10 +1782,13 @@ enum DashboardHelp {
         return "\(value) min"
     }
 
-    private static func runtimeReadTimestamp(_ date: Date) -> String {
+    /// Defaults to the bare clock so these cards read the same way as the field
+    /// rows below them. The date is only worth the extra width when the value can
+    /// legitimately be from another day — the persisted fallback sample.
+    private static func runtimeReadTimestamp(_ date: Date, includeDate: Bool = false) -> String {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: L10n.shared.effectiveCode)
-        formatter.dateStyle = .short
+        formatter.dateStyle = includeDate ? .short : .none
         formatter.timeStyle = .medium
         return formatter.string(from: date)
     }

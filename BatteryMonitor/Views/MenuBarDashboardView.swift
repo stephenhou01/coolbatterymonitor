@@ -1029,13 +1029,24 @@ struct MenuBarDashboardView: View {
         .frame(width: 24, height: 24)
     }
 
+    /// 从可执行文件路径向上找到所属的 .app bundle，取它的真实图标。
+    ///
+    /// 两个守卫都是必需的，不是防御性冗余：
+    /// - `hasPrefix("/")` —— 列表现在会出现没有 bundle 的进程（命令行工具、XPC helper），
+    ///   它们的 name 可能是裸 comm 甚至空串。`URL(fileURLWithPath:)` 会把它当相对路径，
+    ///   而 `deleteLastPathComponent()` 在没有 component 可删时会往上追加 `../`，
+    ///   于是 `url.path != "/"` 永假 —— 主线程在 body 求值里死循环。
+    /// - 深度上限 —— 即使是绝对路径，也不把终止条件全押在字符串比较上。
     private func applicationIcon(for executablePath: String) -> NSImage? {
+        guard executablePath.hasPrefix("/") else { return nil }
         var url = URL(fileURLWithPath: executablePath)
-        while url.path != "/" {
+        var depth = 0
+        while url.path != "/", depth < 32 {
             if url.pathExtension.lowercased() == "app" {
                 return NSWorkspace.shared.icon(forFile: url.path)
             }
             url.deleteLastPathComponent()
+            depth += 1
         }
         return nil
     }

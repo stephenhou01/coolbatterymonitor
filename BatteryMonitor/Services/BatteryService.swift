@@ -219,7 +219,10 @@ class BatteryService: ObservableObject {
                 }
             }
 
-            data.hardwareDetail = Self.parseHardwareDetail(info, fallbackCycleCount: data.cycleCount)
+            // 上一拍的解析结果只为一件事传进去：比对两个 UpdateTime 学出电量计的真实
+            // 发布周期，倒计时才不用写死 60 秒。
+            data.hardwareDetail = Self.parseHardwareDetail(info, fallbackCycleCount: data.cycleCount,
+                                                           previous: data.hardwareDetail)
             data.timeRemainingMinutes = Self.preferredSystemTimeRemaining(
                 isOnAC: data.isOnAC,
                 timeRemaining: data.hardwareDetail.timeRemainingRaw,
@@ -277,7 +280,8 @@ class BatteryService: ObservableObject {
                 : nil,
             adapterCurrent: data.hardwareDetail.adapterCurrent > 0
                 ? Double(data.hardwareDetail.adapterCurrent) / 1000.0
-                : nil
+                : nil,
+            isOnAC: data.isOnAC
         )
 
         self.batteryData = data

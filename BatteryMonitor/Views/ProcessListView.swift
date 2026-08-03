@@ -42,7 +42,7 @@ struct ProcessListView: View {
 
             VStack(spacing: 6) {
                 ForEach(Array(processes.prefix(10).enumerated()), id: \.element.id) { index, proc in
-                    ProcessRow(proc: proc, index: index, maxCpu: maxCpu)
+                    ProcessRow(proc: proc, index: index)
                 }
             }
 
@@ -70,13 +70,11 @@ struct ProcessListView: View {
         .modifier(AppTheme.card())
     }
 
-    private var maxCpu: Double { max(processes.map(\.cpuPercent).max() ?? 100, 1) }
 }
 
 struct ProcessRow: View {
     let proc: ProcessPowerInfo
     let index: Int
-    let maxCpu: Double
     @State private var appeared = false
     @State private var isHovering = false
     @State private var isExpanded = false
@@ -101,9 +99,10 @@ struct ProcessRow: View {
                             .font(.system(size: 12, weight: .semibold))
                             .foregroundStyle(AppTheme.textPrimary)
                             .lineLimit(1)
-                        Text("PID \(proc.pid) · \(LNum("%.0fMB", proc.memoryMB))")
+                        Text(ProcessRow.subtitle(for: proc))
                             .font(.system(size: 10))
                             .foregroundStyle(AppTheme.textTertiary)
+                            .lineLimit(1)
                     }
                     .frame(width: 140, alignment: .leading)
 
@@ -113,7 +112,7 @@ struct ProcessRow: View {
                                 .fill(AppTheme.contrastOverlay(0.04))
                                 .frame(height: 18)
 
-                            let fraction = min(max(proc.cpuPercent / maxCpu, 0), 1.0)
+                            let fraction = ProcessRow.barFraction(cpuPercent: proc.cpuPercent)
                             RoundedRectangle(cornerRadius: 4, style: .continuous)
                                 .fill(LinearGradient(
                                     colors: [AppTheme.energyColor(proc.energyImpact).opacity(0.4), AppTheme.energyColor(proc.energyImpact)],
@@ -127,7 +126,7 @@ struct ProcessRow: View {
                     .frame(height: 18)
 
                     HStack(spacing: 4) {
-                        Text(LNum("%.1f%%", proc.cpuPercent))
+                        Text(ProcessRow.cpuText(proc.cpuPercent))
                             .font(.system(size: 13, weight: .bold, design: .rounded))
                             .foregroundStyle(AppTheme.energyColor(proc.energyImpact))
                             .contentTransition(.numericText(value: proc.cpuPercent))
@@ -136,7 +135,9 @@ struct ProcessRow: View {
                             .foregroundStyle(AppTheme.textTertiary)
                             .rotationEffect(.degrees(isExpanded ? 90 : 0))
                     }
-                    .frame(width: 62, alignment: .trailing)
+                    // 72 而不是 62：修好 timebase 后会出现 "412.3%" 这种三位数读数，
+                    // 62pt 只够装 "9.9%"，会把 chevron 挤掉。
+                    .frame(width: 72, alignment: .trailing)
                 }
 
                 if isExpanded {
@@ -175,6 +176,33 @@ struct ProcessRow: View {
         if lower.contains("window") || lower.contains("system") { return "gearshape.fill" }
         if lower.contains("qianwen") || lower.contains("chat") { return "bubble.left.and.bubble.right.fill" }
         return "app.fill"
+    }
+
+    /// 进度条用**绝对刻度**：满格 = 占满一个核（100%）。
+    /// 以前按「本次列表里的最大值」归一化，空闲机器上最重的进程哪怕只有 1.7% 也会画满格，
+    /// 让人误以为它吃掉了大部分电。绝对刻度下空闲就是短条，这是对的。
+    /// 多核聚合行可能超 100% 并同时满格，靠右侧数字和 energyColor 区分。
+    static func barFraction(cpuPercent: Double) -> Double {
+        guard cpuPercent.isFinite, cpuPercent > 0 else { return 0 }
+        return min(1, cpuPercent / 100)
+    }
+
+    /// ≥100% 时去掉小数：进程 CPU 的 0.1% 精度没有意义，而四位数字会把固定宽度撑爆。
+    static func cpuText(_ cpuPercent: Double) -> String {
+        cpuPercent >= 100 ? LNum("%.0f%%", cpuPercent) : LNum("%.1f%%", cpuPercent)
+    }
+
+    /// 副标题。以前显示的是 `PID n`，但一行现在是 app + 子进程的聚合，代表 pid 对用户
+    /// 没有意义；有价值的信息是「合并了几个进程」和「其中最重的是哪个」。
+    /// 单进程行退回只显示内存，不硬凑一个「1 个进程」的废话。
+    static func subtitle(for proc: ProcessPowerInfo) -> String {
+        let memory = LNum("%.0fMB", proc.memoryMB)
+        guard proc.processCount > 1 else { return memory }
+        // 只在 processCount > 1 时渲染，顺带绕开 de/fr/it/pt/es 的单复数问题 ——
+        // 不需要 stringsdict。
+        let group = proc.topChildName.map { L("proc.group_subtitle", $0, proc.processCount) }
+            ?? L("proc.group_count", proc.processCount)
+        return "\(group) · \(memory)"
     }
 }
 

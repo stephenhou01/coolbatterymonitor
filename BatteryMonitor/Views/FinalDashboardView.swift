@@ -25,7 +25,9 @@ struct FinalDashboardView: View {
     }
 
     var body: some View {
-        VStack(spacing: 16) {
+        // The nine sections below are built as they come into view rather than
+        // all at once; only the first screenful is on the path to first paint.
+        LazyVStack(spacing: 16) {
             RemainingTimeHeroSection(snapshot: snapshot, selectedHelp: $selectedHelp)
 
             if let specification = snapshot.specification {
@@ -41,6 +43,7 @@ struct FinalDashboardView: View {
                 points: realtimeData,
                 processes: processService.topProcesses,
                 hasProcessSample: processService.hasSampled,
+                systemCPU: processService.systemCPU,
                 isLive: batteryService.isLiveRefreshEnabled,
                 onToggleLive: toggleLiveRefresh,
                 onRefresh: refreshNow,
@@ -59,6 +62,7 @@ struct FinalDashboardView: View {
             CompleteHardwareDetailView(data: batteryData, selectedHelp: $selectedHelp)
             SystemDataWorkbenchView(
                 snapshot: batteryService.systemDataSnapshot,
+                gaugeReadAt: batteryData.hardwareDetail.gaugeUpdateTime,
                 isLive: batteryService.isLiveRefreshEnabled,
                 onToggleLive: toggleLiveRefresh,
                 onRefresh: refreshNow,
@@ -130,11 +134,20 @@ struct DashboardMetricSnapshot {
     /// Real-time power crossing from the external adapter into the whole Mac.
     /// This is not battery charging power: part (or all) of it can be consumed
     /// directly by the running computer.
+    ///
+    /// Derived — deliberately — as `Mac load + charge into the battery`, the sum
+    /// of the two adapter edges the overview's flow diagram already draws, so
+    /// the diagram and this figure cannot disagree. It used to read
+    /// `PowerTelemetryData.SystemPowerIn` directly; that field was measured
+    /// reporting 0 mW on this Mac while plugged in and charging, which showed up
+    /// as a missing card and a vanishing trend chart. SystemPowerIn is still
+    /// listed as a raw field in the help panel, where a 0 reads as a 0 rather
+    /// than as the machine's actual input.
     var adapterOutputPowerWatts: Double? {
-        guard data.isOnAC,
-              detail.presentRawFields.contains("PowerTelemetryData.SystemPowerIn") else { return nil }
-        let watts = Double(detail.systemPowerIn) / 1000.0
-        guard watts.isFinite, watts >= 0 else { return nil }
+        guard data.isOnAC else { return nil }
+        let flow = PowerFlow.resolve(self)
+        let watts = (flow.adapterToMac ?? 0) + (flow.adapterToBattery ?? 0)
+        guard watts.isFinite, watts > 0 else { return nil }
         return watts
     }
 
@@ -152,6 +165,59 @@ struct DashboardMetricSnapshot {
         }
         guard data.amperage != 0 else { return nil }
         return max(0, data.amperage)
+    }
+
+    /// Battery current with its sign intact: negative while discharging, positive
+    /// while charging. Deliberately separate from
+    /// `batteryChargingCurrentMilliamps`, which clamps the sign away and reports 0
+    /// whenever the Mac is not charging — that hides the case this exists for: on
+    /// AC, not charging, and the battery still draining (measured at -694 mA while
+    /// optimised charging held at 80%). nil when no current field was returned;
+    /// never 0 as a stand-in for a missing reading.
+    var batteryCurrentMilliamps: Int? {
+        guard let raw = rawBatteryCurrentMilliamps else { return nil }
+        // Nothing can push charge into the pack with the cable out. A positive
+        // reading here is the last pre-unplug sample: `ExternalConnected` is
+        // event-driven and flips at once, while the gauge republishes current only
+        // every ~60 s, so the two disagree for up to a minute (measured +2.88 A
+        // with the charger out). Report nothing rather than a reading that the
+        // state line directly contradicts; the next gauge tick fixes it.
+        guard data.isOnAC || raw <= Self.staleChargeCurrentMilliamps else { return nil }
+        return raw
+    }
+
+    /// Off AC, anything above this has to be stale — a resting pack drifts by a
+    /// few tens of milliamps, it does not gain charge.
+    static let staleChargeCurrentMilliamps = 50
+
+    private var rawBatteryCurrentMilliamps: Int? {
+        if detail.presentRawFields.contains("InstantAmperage") { return detail.instantAmperage }
+        if detail.presentRawFields.contains("Amperage") { return detail.smoothedAmperage }
+        guard data.amperage != 0 else { return nil }
+        return data.amperage
+    }
+
+    /// Signed battery-side power, positive while charging. The one number the
+    /// flow diagram and the power state both hang off, so that neither can
+    /// contradict the current row — they are all the same measurement.
+    ///
+    /// Deliberately current × voltage rather than `PowerTelemetryData.BatteryPower`,
+    /// which was measured reporting −3.38 W against a coulomb-counter reading of
+    /// −10.16 W at the same gauge tick. See `PowerFlow` for the sample log.
+    var batteryPowerWatts: Double? {
+        guard let milliamps = batteryCurrentMilliamps else { return nil }
+        let watts = Double(milliamps) / 1000 * voltageVolts
+        return watts.isFinite ? watts : nil
+    }
+
+    /// Minutes until full, but only when charging and only when the value is a
+    /// credible duration. `AvgTimeToFull` is passed through unfiltered by the
+    /// parser, so the 65535 sentinel and absurd five-figure values both arrive
+    /// here and must be rejected rather than displayed.
+    var timeToFullMinutes: Int? {
+        guard data.isCharging, let minutes = detail.avgTimeToFull,
+              RuntimeSample.isValid(minutes: minutes) else { return nil }
+        return minutes
     }
 
     /// Battery charging power = pack voltage × positive battery current.
@@ -232,14 +298,24 @@ struct DashboardMetricSnapshot {
 
     /// Valid power readings from the most recent ten minutes. Requiring at
     /// least five readings prevents a few instantaneous values from being
-    /// presented as a stable estimate.
-    var recentStablePowerSamples: [Double] {
+    /// presented as a stable estimate. Timestamps are kept here so the help
+    /// sheet can state when the window was last refreshed instead of implying
+    /// the median is a live reading.
+    var recentStablePowerPoints: [RealtimeDataPoint] {
         guard let end = realtimeData.map(\.timestamp).max() else { return [] }
         let start = end.addingTimeInterval(-10 * 60)
-        return realtimeData
-            .filter { $0.timestamp >= start && $0.timestamp <= end }
-            .map(\.power)
-            .filter { $0.isFinite && $0 > 0.1 }
+        return realtimeData.filter {
+            $0.timestamp >= start && $0.timestamp <= end && $0.power.isFinite && $0.power > 0.1
+        }
+    }
+
+    var recentStablePowerSamples: [Double] {
+        recentStablePowerPoints.map(\.power)
+    }
+
+    /// Read time of the newest sample that actually feeds the median.
+    var latestStablePowerSampleTime: Date? {
+        recentStablePowerPoints.map(\.timestamp).max()
     }
 
     var stablePowerWatts: Double? {
@@ -260,8 +336,24 @@ struct DashboardMetricSnapshot {
         return RuntimeSample.isValid(minutes: minutes) ? minutes : nil
     }
 
+    /// Read time to quote for raw IOKit fields. The gauge's own publish time is
+    /// preferred because that is when the numbers were actually produced —
+    /// measured with `ioreg`, it advances once a minute, so our poll time can
+    /// understate a reading's age by nearly a minute. Falls back to the poll time
+    /// when the gauge does not publish `UpdateTime`.
+    var rawFieldReadAt: MetricReadStamp {
+        if let published = detail.gaugeUpdateTime {
+            return .gauge(published, polledAt: data.lastUpdated,
+                          interval: detail.gaugePublishInterval)
+        }
+        return .ourRead(data.lastUpdated)
+    }
+
+    /// Age of the power reading itself, not of our last poll. Bounded by the
+    /// gauge's ~60 s beat plus our poll lag, which stays well inside the 120 s
+    /// staleness gate below.
     var currentPowerAgeSeconds: Int {
-        max(0, Int(Date().timeIntervalSince(data.lastUpdated).rounded()))
+        max(0, Int(Date().timeIntervalSince(rawFieldReadAt.at).rounded()))
     }
 
     var currentLoadRuntimeMinutes: Int? {
@@ -317,7 +409,7 @@ private struct RemainingTimeHeroSection: View {
                 icon: BatteryMetricIcon.runtime.symbol,
                 title: dashboardText("p.remaining", fallback: "还能用多久"),
                 color: AppTheme.chargingCyan,
-                help: DashboardHelp.runtime(snapshot),
+                help: { DashboardHelp.runtime(snapshot) },
                 selection: $selectedHelp
             )
 
@@ -458,7 +550,7 @@ private struct RemainingTimeHeroSection: View {
                 lowImpact: dashboardText("p.health_low_short", fallback: "低于 80% 可能提示检修，续航缩短"),
                 highImpact: dashboardText("p.health_high_short", fallback: "续航更接近新机"),
                 color: AppTheme.batteryYellow,
-                help: DashboardHelp.health(snapshot),
+                help: { DashboardHelp.health(snapshot) },
                 selection: $selectedHelp
             )
             PriorityMetricCard(
@@ -472,7 +564,7 @@ private struct RemainingTimeHeroSection: View {
                 lowImpact: dashboardText("p.power_low_short", fallback: "续航更长，发热更少"),
                 highImpact: dashboardText("p.power_high_short", fallback: "续航更短，发热增加"),
                 color: AppTheme.chargingBlue,
-                help: DashboardHelp.power(snapshot),
+                help: { DashboardHelp.power(snapshot) },
                 selection: $selectedHelp
             )
             PriorityMetricCard(
@@ -485,7 +577,7 @@ private struct RemainingTimeHeroSection: View {
                 lowImpact: dashboardText("p.temp_low_short", fallback: "续航和功率会暂时下降"),
                 highImpact: dashboardText("p.temp_high_short", fallback: "发热增加并加速老化"),
                 color: snapshot.data.temperatureCelsius < 35 ? AppTheme.chargingCyan : AppTheme.batteryYellow,
-                help: DashboardHelp.temperature(snapshot),
+                help: { DashboardHelp.temperature(snapshot) },
                 selection: $selectedHelp
             )
         }
@@ -503,7 +595,8 @@ private struct PriorityMetricCard: View {
     let lowImpact: String
     let highImpact: String
     let color: Color
-    let help: MetricHelpContent
+    /// Lazy so the sheet is built on tap, not on every redraw of the card.
+    let help: () -> MetricHelpContent
     @Binding var selection: MetricHelpContent?
 
     var body: some View {
@@ -516,7 +609,7 @@ private struct PriorityMetricCard: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.72)
                 Spacer(minLength: 2)
-                MetricHelpButton(content: help, selection: $selection)
+                MetricHelpButton(content: help(), selection: $selection)
             }
 
             HStack(alignment: .firstTextBaseline, spacing: 4) {
@@ -602,7 +695,7 @@ private struct RuntimeBenchmarkSection: View {
                 icon: "scale.3d",
                 title: dashboardText("p.runtime_audit_tag", fallback: "公开基准 × 这台电脑"),
                 color: AppTheme.accentPurple,
-                help: DashboardHelp.officialBenchmark(snapshot, specification: specification),
+                help: { DashboardHelp.officialBenchmark(snapshot, specification: specification) },
                 selection: $selectedHelp,
                 trailing: AnyView(
                     Link(destination: specification.sourceURL) {
@@ -857,7 +950,7 @@ private struct RemainingTimeHistorySection: View {
                     ? dashboardText("p.unplug_trend", fallback: "拔电后的预计续航")
                     : dashboardText("p.remaining_trend", fallback: "系统剩余时间记录"),
                 color: isForecast ? AppTheme.batteryYellow : AppTheme.chargingCyan,
-                help: DashboardHelp.runtimeHistory(snapshot, isForecast: isForecast),
+                help: { DashboardHelp.runtimeHistory(snapshot, isForecast: isForecast) },
                 selection: $selectedHelp
             )
 
@@ -1057,7 +1150,8 @@ struct DashboardSectionHeader: View {
     let icon: String
     let title: String
     let color: Color
-    let help: MetricHelpContent?
+    /// Lazy so the sheet is built on tap, not on every redraw of the card.
+    let help: (() -> MetricHelpContent)?
     @Binding var selection: MetricHelpContent?
     var trailing: AnyView? = nil
 
@@ -1067,7 +1161,7 @@ struct DashboardSectionHeader: View {
             Text(title)
                 .font(.system(size: 13, weight: .semibold, design: .rounded))
                 .foregroundStyle(AppTheme.textPrimary)
-            if let help { MetricHelpButton(content: help, selection: $selection) }
+            if let help { MetricHelpButton(content: help(), selection: $selection) }
             Spacer()
             if let trailing { trailing }
         }

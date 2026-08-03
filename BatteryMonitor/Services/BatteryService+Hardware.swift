@@ -15,6 +15,18 @@ extension BatteryService {
         return nil
     }
 
+    /// `UpdateTime` is epoch seconds stamped by the gauge itself. Anything outside
+    /// a plausible window is treated as absent rather than force-converted: Intel
+    /// models may not publish the field at all, and a bogus 0 would otherwise
+    /// render as 1970 and make every reading look infinitely stale.
+    static func gaugeDate(_ value: Any?) -> Date? {
+        guard let seconds = integer(value), seconds > 1_500_000_000 else { return nil }
+        let date = Date(timeIntervalSince1970: TimeInterval(seconds))
+        // A small forward tolerance covers clock skew between the gauge and us.
+        guard date.timeIntervalSinceNow <= 120 else { return nil }
+        return date
+    }
+
     private static func integer64(_ value: Any?) -> Int64? {
         if let value = value as? Int64 { return value }
         if let value = value as? Int { return Int64(value) }
@@ -38,7 +50,31 @@ extension BatteryService {
         return Double(raw)
     }
 
-    static func parseHardwareDetail(_ info: [String: Any], fallbackCycleCount: Int) -> BatteryHardwareDetail {
+    /// 什么样的间隔算「节拍」。
+    ///
+    /// 0.5 秒粒度实测（`QATests/BuildValidation/gauge-beat-*.log`）：连续三次发布的间隔
+    /// 是 59、60、**4** 秒，第三次那一拍 `CurrentCapacity` 跳了 1%。也就是说电量计除了
+    /// 定时发布，还会被电量变化这类事件额外触发一次提前发布。
+    ///
+    /// 事件只会让发布提前，不会让它推迟，所以倒计时要按节拍算，不能按上一次间隔算——
+    /// 否则那 4 秒会被当成周期，倒计时立刻失真。区间外的差值一律不采纳：过短的是事件
+    /// 触发，过长的是休眠或时钟跳变。
+    static let plausibleGaugeInterval: ClosedRange<TimeInterval> = 30...90
+
+    static func learnedGaugeInterval(current: Date?, previous: BatteryHardwareDetail?) -> TimeInterval? {
+        guard let current, let before = previous?.gaugeUpdateTime else {
+            return previous?.gaugePublishInterval
+        }
+        let delta = current.timeIntervalSince(before)
+        // delta == 0 是同一拍的重复轮询（六次里有五次都是），沿用已学到的节拍。
+        guard delta > 0, plausibleGaugeInterval.contains(delta) else {
+            return previous?.gaugePublishInterval
+        }
+        return delta
+    }
+
+    static func parseHardwareDetail(_ info: [String: Any], fallbackCycleCount: Int,
+                                    previous: BatteryHardwareDetail? = nil) -> BatteryHardwareDetail {
         var d = BatteryHardwareDetail()
 
         // Preserve field presence separately from numeric fallbacks. IOKit uses
@@ -53,6 +89,8 @@ extension BatteryService {
         d.osVersion = ProcessInfo.processInfo.operatingSystemVersionString
 
         // ── 顶层
+        d.gaugeUpdateTime = gaugeDate(info["UpdateTime"])
+        d.gaugePublishInterval = learnedGaugeInterval(current: d.gaugeUpdateTime, previous: previous)
         d.cycleCount = integer(info["CycleCount"]) ?? fallbackCycleCount
         d.designCapacity = integer(info["DesignCapacity"]) ?? 0
         d.designCycleCount = integer(info["DesignCycleCount9C"]) ?? 0

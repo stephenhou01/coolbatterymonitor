@@ -165,6 +165,17 @@ struct BatteryHardwareDetail: Equatable {
     }
     var cycleCount: Int = 0
 
+    /// 电量计自报的本次发布时刻（顶层 UpdateTime，epoch 秒）。实测每 60 秒精确推进
+    /// 一次，所有测量类字段都跟着它变，所以它才是这批读数的真实年龄基准；我们的轮询
+    /// 时刻只说明「我们什么时候去看」。缺字段或值不合理时为 nil。
+    var gaugeUpdateTime: Date? = nil
+
+    /// 上一次发布到这一次发布之间实际隔了多久，由服务层比对连续两个 `UpdateTime`
+    /// 得到。实测通常是 60 秒，但插拔电源会让节拍重置，所以倒计时用实测周期而不是
+    /// 常量——观察到一次真实间隔之后，下一次预测就是准的。首次读取或间隔不合理时
+    /// 为 nil，由调用方回落到 60 秒。
+    var gaugePublishInterval: TimeInterval? = nil
+
     // MARK: 系统续航原始值
     var timeRemainingRaw: Int? = nil
     var avgTimeToEmpty: Int? = nil

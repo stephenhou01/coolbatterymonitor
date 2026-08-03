@@ -35,6 +35,12 @@ struct ContentView: View {
 
                 dashboardContent
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    // Scoped to the content area on purpose. On the whole ZStack
+                    // this animated the sidebar, the divider and the drawer too,
+                    // which meant both page trees stayed alive and were laid out
+                    // every frame for 0.18 s — the single biggest cost of a tab
+                    // switch on the heavier pages.
+                    .animation(.easeOut(duration: 0.18), value: navigation.destination)
             }
 
             if let selectedMetricHelp {
@@ -42,8 +48,12 @@ struct ContentView: View {
                     withAnimation(.easeOut(duration: 0.18)) { self.selectedMetricHelp = nil }
                 }
                 .zIndex(20)
+                .animation(.easeOut(duration: 0.18), value: selectedMetricHelp.id)
             }
         }
+        // One cheap signal every help button can watch, so only the open panel
+        // rebuilds itself on a poll.
+        .environment(\.dashboardDataVersion, batteryService.batteryData.lastUpdated)
         .onChange(of: processService.topProcesses) { _, processes in
             batteryService.updateProcesses(processes)
         }
@@ -52,8 +62,6 @@ struct ContentView: View {
         .onAppear {
             withAnimation(.easeOut(duration: 0.32)) { appeared = true }
         }
-        .animation(.easeOut(duration: 0.18), value: navigation.destination)
-        .animation(.easeOut(duration: 0.18), value: selectedMetricHelp?.id)
     }
 
     @ViewBuilder
