@@ -878,6 +878,56 @@ expect(aggregated.id == "app:com.google.Chrome" && aggregated.processCount == 21
 expect(ProcessPowerInfo(pid: 1, name: "x", cpuPercent: 1, memoryMB: 1, processCount: 0).processCount == 1,
        "进程数下界为 1，不出现 0 个进程的行")
 
+// 全机 CPU：整机口径 vs 每核口径。混算会让「系统进程」恒为 0
+let loadA = SystemCPULoad.Sample(user: 1000, system: 500, idle: 8500, nice: 0)
+let loadB = SystemCPULoad.Sample(user: 1200, system: 600, idle: 8700, nice: 0)
+let busy = SystemCPULoad.busyPercent(from: loadA, to: loadB)
+// Δuser 200 + Δsys 100 = 300 忙，Δidle 200 ⇒ 300/500 = 60%
+expect(busy != nil && abs(busy! - 60) < 0.01, "整机忙碌 = 非 idle tick / 总 tick [\(busy ?? -1)]")
+expect(SystemCPULoad.busyPercent(from: loadA, to: loadA) == nil,
+       "两次快照之间 tick 没动时返回 nil，不显示 0%")
+// natural_t 是 UInt32，约 50 天 uptime 后回绕；差值必须用 &- 才不会算出天文数字
+let nearMax = SystemCPULoad.Sample(user: UInt32.max - 100, system: 0, idle: 0, nice: 0)
+let wrapped = SystemCPULoad.Sample(user: 99, system: 0, idle: 101, nice: 0)
+let wrapBusy = SystemCPULoad.busyPercent(from: nearMax, to: wrapped)
+expect(wrapBusy != nil && abs(wrapBusy! - 66.4) < 0.5,
+       "UInt32 回绕时差值仍然正确（200 忙 / 301 总）[\(wrapBusy ?? -1)]")
+
+// 这是原方案里的真错误：10 核机上「整机 30%」减「Chrome 300%」会得负数
+expect(abs(SystemCPULoad.machinePercent(perCorePercent: 300, coreCount: 10) - 30) < 0.01,
+       "每核 300%（占满 3 个核）在 10 核机上等于整机 30%")
+expect(SystemCPULoad.machinePercent(perCorePercent: 300, coreCount: 0) <= 100,
+       "核心数为 0 时不除零、不超过 100%")
+let snapshot10 = SystemCPUSnapshot(machineBusy: 28.0, visiblePerCorePercent: 74.0, coreCount: 10)
+expect(abs(snapshot10.visiblePercent - 7.4) < 0.01,
+       "可见应用每核合计 74% → 整机 7.4% [\(snapshot10.visiblePercent)]")
+expect(snapshot10.systemPercent != nil && abs(snapshot10.systemPercent! - 20.6) < 0.01,
+       "系统进程 = 整机 28.0 − 可见 7.4 = 20.6 [\(String(describing: snapshot10.systemPercent))]")
+// 换算前后必须都不出现负数：可见合计可能因为采样窗口错位略超整机
+let overshoot = SystemCPUSnapshot(machineBusy: 5.0, visiblePerCorePercent: 900.0, coreCount: 10)
+expect(overshoot.systemPercent == 0, "可见合计超过整机时系统进程夹到 0，不显示负数")
+expect(SystemCPUSnapshot(machineBusy: nil, visiblePerCorePercent: 74, coreCount: 10).systemPercent == nil,
+       "还没有整机读数时系统进程也是 nil，UI 显示「—」")
+expect(SystemCPUSnapshot.unavailable.machineBusyPercent == nil,
+       "首次采样前整机读数不可用")
+
+// 副标题：聚合行报「最重子进程 · 进程数」，单进程行只报内存
+let grouped = ProcessPowerInfo(pid: 55435, name: "/Applications/Utilities/Terminal.app",
+                               cpuPercent: 31.6, memoryMB: 512,
+                               groupKey: "app:com.apple.Terminal",
+                               processCount: 10, topChildName: "claude")
+expect(ProcessRow.subtitle(for: grouped).contains("claude")
+       && ProcessRow.subtitle(for: grouped).contains("10"),
+       "聚合行副标题点名最重子进程和进程数 [\(ProcessRow.subtitle(for: grouped))]")
+let groupedNoChild = ProcessPowerInfo(pid: 1, name: "/Applications/Foo.app", cpuPercent: 1,
+                                      memoryMB: 100, processCount: 4)
+expect(!ProcessRow.subtitle(for: groupedNoChild).contains("PID")
+       && ProcessRow.subtitle(for: groupedNoChild).contains("4"),
+       "无够重子进程时只报进程数，且不再显示无意义的 PID [\(ProcessRow.subtitle(for: groupedNoChild))]")
+let single = ProcessPowerInfo(pid: 1, name: "/Applications/Foo.app", cpuPercent: 1, memoryMB: 100)
+expect(!ProcessRow.subtitle(for: single).contains("1 "),
+       "单进程行不硬凑「1 个进程」这种废话 [\(ProcessRow.subtitle(for: single))]")
+
 print("── 10b) 外观与菜单栏配置持久化")
 let preferenceSuiteName = "com.stephen.BatteryMonitor.tests.presentation"
 let preferenceDefaults = UserDefaults(suiteName: preferenceSuiteName)!

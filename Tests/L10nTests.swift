@@ -163,9 +163,12 @@ for code in ["en","zh-Hans","ja","de","fr"] {
     l.select(code)
     let all = ["insight.habit.tip_avoid_overnight","insight.habit.tip_full_cycle",
                "insight.habit.tip_optimized_charging","tip.health","tip.cycles",
-               "hist.rate_chart","rt.y_percent","proc.cpu_live"]
+               "hist.rate_chart","rt.y_percent","proc.cpu_live","proc.col_cpu"]
     expect(all.allSatisfy { !l.string($0).contains("%%") },
            "\(code): 所有含百分号的展示文案都无 %% 残留")
+    // proc.col_cpu 是纯 "CPU%%"，还原后必须剩一个百分号而不是空
+    expect(l.string("proc.col_cpu").contains("%"),
+           "\(code): CPU 列头还原后保留单个百分号 [\(l.string("proc.col_cpu"))]")
 }
 // 带参路径仍须正常：%% 交给 String(format:) 还原，且实参不被吃掉
 l.select("zh-Hans")
