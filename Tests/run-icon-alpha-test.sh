@@ -13,7 +13,7 @@ TARGET_TRIPLE="$(uname -m)-apple-macos14"
 mkdir -p "$BUILD"
 rm -f "$BINARY"
 
-echo "▸ 编译 AppIcon 透明度检查（$TARGET_TRIPLE）"
+echo "▸ 编译 AppIcon 透明度检查（${TARGET_TRIPLE}）"
 swiftc -O -target "$TARGET_TRIPLE" \
     -framework CoreGraphics -framework ImageIO \
     -o "$BINARY" \

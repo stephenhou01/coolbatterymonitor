@@ -43,7 +43,7 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
 </dict></plist>
 PLIST
 
-echo "▸ 编译（$TARGET_TRIPLE）…"
+echo "▸ 编译（${TARGET_TRIPLE}）…"
 # swiftc 要求含顶层语句的文件必须叫 main.swift，所以拷一份过去再编
 cp "$ROOT/Tests/L10nTests.swift" "$BUILD/main.swift"
 swiftc -O -target "$TARGET_TRIPLE" \

@@ -26,7 +26,7 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
 </dict></plist>
 PLIST
 
-echo "▸ 编译（$TARGET_TRIPLE）…"
+echo "▸ 编译（${TARGET_TRIPLE}）…"
 cp "$ROOT/Tests/InsightTests.swift" "$BUILD/main.swift"
 # shellcheck disable=SC2046
 swiftc -O -target "$TARGET_TRIPLE" \
