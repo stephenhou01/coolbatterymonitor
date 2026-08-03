@@ -92,10 +92,11 @@ enum ProcessTable {
     /// 把每个进程归到「最近的祖先 GUI app」。找不到 app 祖先的进程自己就是一组
     /// （命令行工具、被 launchd/XPC 直接拉起来的 helper 都属于这种）。
     ///
-    /// 实测边界：本机 547 个进程里有 458 个 `ppid == 1`，因为它们是 launchd 或 XPC
-    /// 拉起来的，不是父 app fork 出来的。所以 Chromium / Electron 系（Chrome、
-    /// Qianwen、QoderWork）能完整归并，而 `com.apple.WebKit.*` 这类 Apple 自家
-    /// XPC helper 永远归不到父 app 下面。这是 ppid 这个信号的固有上限。
+    /// 实测边界：一台常态机器上 547 个进程里有 458 个 `ppid == 1`，因为它们是 launchd
+    /// 或 XPC 拉起来的，不是父 app fork 出来的。所以 Chromium / Electron 系应用
+    /// （浏览器、各类基于 Electron 的编辑器和客户端）能完整归并，而
+    /// `com.apple.WebKit.*` 这类 Apple 自家 XPC helper 永远归不到父 app 下面。
+    /// 这是 ppid 这个信号的固有上限。
     ///
     /// - Parameters:
     ///   - appPids: NSWorkspace 报出来的 GUI app 主进程 pid（`.regular` / `.accessory`）

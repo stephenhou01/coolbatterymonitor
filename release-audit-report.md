@@ -38,7 +38,7 @@
 
 - 最低系统保持 macOS 14.0，Swift 5.9；没有引入更高系统版本 API。
 - Release 二进制同时包含 `arm64` 与 `x86_64`。
-- Release App 使用现有证书 `Apple Development: ningjun hou (3FAB9WC88G)` 签名并通过严格签名校验。
+- Release App 使用现有 `Apple Development` 证书签名并通过严格签名校验。
 - Apple Silicon 原生启动通过。
 - Rosetta 环境返回 `x86_64` 且 `sysctl.proc_translated = 1`，Intel slice 实际启动通过。
 - Xcode Analyze 无诊断退出，完整 `verify-release.sh` 通过。

@@ -1,122 +1,161 @@
 # CoolBatteryMonitor
 
-Privacy policy and support page.
+[简体中文](README.zh-CN.md) · **English**
 
-> The privacy policy / support page lives in `index.html` and is served by GitHub
-> Pages at <https://stephenhou01.github.io/coolbatterymonitor/>. Do not remove or
-> rename that file, and keep this repository public — GitHub Pages is unavailable
-> for private repositories on the Free plan, and the App Store submission points
-> at that URL.
+A native macOS battery dashboard built with SwiftUI. It reads battery telemetry
+straight from IOKit and shows you what the system actually reports — including
+where the system reports nothing at all.
+
+The guiding rule: **never fabricate a number to fill a gap.** Where a value is
+measured, it says so. Where it is derived, it shows the formula. Where the data
+is not there yet, it says "collecting" instead of guessing.
 
 ---
 
-A native macOS battery dashboard built with SwiftUI. Reads battery telemetry
-straight from IOKit (`AppleSmartBattery`) and enumerates processes via
-`proc_listpids` / `proc_pidinfo` — no shelling out, no helper daemons.
+## Interface
+
+### Menu bar
+
+Charge and remaining time stay visible without opening anything. Clicking expands
+a panel with health, power draw, cycle count and temperature, plus the top
+processes by CPU. While plugged in, any runtime figure is labelled explicitly as
+an *unplug forecast* rather than presented as time remaining.
+
+```
+▸ Menu bar item        86%  ·  4:12
+  └ popover            health · power · cycles · temperature
+                       top processes · runtime sparkline
+```
+
+### Dashboard — five pages
+
+```
+Overview      Charge ring + 8 headline metrics + charge/discharge timeline
+Technical     Power center (10-second curve + process activity)
+              Capacity breakdown (design / full / current / loss)
+              Official comparison against Apple's published figures
+              System data workbench (464-field four-layer verifier)
+Trends        Live monitor · runtime history · process ranking · charge history
+Diagnostics   Health diagnosis · power analysis · adapter check
+              Charging habits · system anomalies
+Settings      Language · appearance · menu-bar layout · refresh cadence
+```
+
+Every metric carries a **?** button that opens a drawer with the raw IOKit field
+names, the substituted formula, the value's reliability tier, and when the field
+was last read.
+
+---
 
 ## Features
 
-- **Menu-bar first glance** — keeps charge and system time remaining visible without opening the dashboard; clicking it expands health, power, cycles and temperature, while AC estimates remain explicitly labelled as unplug forecasts
-- **Remaining time first** — uses macOS `TimeRemaining` / `AvgTimeToEmpty` directly while on battery; clearly labels the current-load estimate shown while plugged in
-- **System-aligned live data** — charge level, health, direct system power, temperature and model-specific battery specifications
-- **Runtime history** — stores valid system estimates at the battery gauge's roughly 56-second refresh cadence; no duplicate high-frequency samples
-- **10-second power center** — plots whole-computer power and places active processes beside it as CPU/memory context, without inventing per-process wattage; automatic refresh can be paused or resumed
-- **Capacity explanation** — design capacity, current full capacity, current charge, used-since-full capacity and permanent loss in one consistent visualization
-- **Official comparison** — for supported models, compares the current battery with Apple's published battery energy and test runtimes without presenting those lab figures as a promise
-- **Curated evidence table** — 74 audited raw/public/derived metrics with live values, ranges, reliability and formula help
-- **Four-layer system verifier** — a 464-field metadata catalog for IOPowerSources, AppleSmartBattery/IORegistry, legacy IOPM and ProcessInfo, merged with every live field macOS returns; tabs cover meaningful fields, anomalies, each source and all fields
-- **10 languages** with runtime switching (see below)
+**Battery health and capacity**
+- Charge level, health percentage, cycle count, temperature and per-cell voltages
+- Capacity explained as one consistent picture: factory design capacity → today's
+  full-charge capacity → current charge → used since full → long-term loss, with
+  the "temporarily unreachable" and "genuinely aged" parts separated
+- Age estimation from cycle count and capacity retention, marked as an estimate
+  rather than a hardware-decoded date
+- Comparison against Apple's published battery energy and lab runtimes for
+  supported models, without presenting lab figures as a promise
+
+**Power and processes**
+- Whole-computer power draw read from IOKit, cross-checked across three fields
+  (`SystemPower`, `SystemLoad`, and input voltage × current)
+- A 10-second power curve with pause/resume
+- Process ranking by CPU, with child processes rolled up into their parent app
+  so one browser or editor is one row instead of thirty
+- Whole-machine CPU alongside a visible/system split, because a sandboxed app
+  cannot read root-owned processes — the gap is labelled, not hidden
+- **No per-process wattage.** macOS does not expose a reliable per-process power
+  figure, so the app does not invent one; CPU and memory are shown as workload
+  context
+
+**Runtime estimates**
+- Uses the system's own `TimeRemaining` / `AvgTimeToEmpty` while on battery
+- Stores valid estimates at the battery gauge's real refresh cadence (~56 s)
+  rather than duplicating high-frequency samples
+- Distinguishes a median-power estimate from a current-load estimate and says
+  which one is on screen
+
+**Transparency tooling**
+- A curated evidence table of audited raw, public and derived metrics with live
+  values, expected ranges and reliability tiers
+- A four-layer system verifier: a 464-field metadata catalog covering
+  IOPowerSources, AppleSmartBattery / IORegistry, legacy IOPM and process
+  information, merged with every live field macOS returns. Tabs separate
+  meaningful fields, anomalies, each individual source, and everything
+
+**Charging habits**
+- Weekly report on charge sessions, average high/low state of charge, peak
+  charging temperature
+- Habit scoring that only appears once enough days have actually been observed
+
+---
+
+## Languages
+
+Ten languages with runtime switching — no relaunch:
+
+English · 简体中文 · 繁體中文 · 日本語 · 한국어 · Deutsch · Español · Français ·
+Italiano · Português
+
+Each language is a self-describing JSON pack, so translations live outside the
+Swift source and a new language is one file.
+
+---
 
 ## Requirements
 
-macOS 14.0+, on Apple silicon or Intel Macs. The Release configuration builds a
-universal `arm64` + `x86_64` app. Sandboxed, hardened runtime.
+- macOS 14.0 or later
+- Apple silicon and Intel Macs (temperature units and CPU timebase differ between
+  the two; both are handled)
+- App Sandbox and Hardened Runtime enabled
+- **No network access at all**
 
-## Build
+Current version: 1.2.0
 
-The Xcode project is generated from `project.yml`, so edit that rather than the
+---
+
+## Privacy
+
+The developer does not collect or receive any personal data, and the app has no
+network access. Charging history, battery samples and language preferences are
+stored only on your Mac, inside the app's sandboxed container.
+
+Full policy: <https://stephenhou01.github.io/coolbatterymonitor/>
+
+---
+
+## Building from source
+
+The Xcode project is generated from `project.yml` — edit that rather than the
 `.xcodeproj`:
 
 ```bash
 brew install xcodegen
 xcodegen generate
-xcodebuild -project BatteryMonitor.xcodeproj -scheme BatteryMonitor -configuration Debug build
+xcodebuild -project BatteryMonitor.xcodeproj -scheme BatteryMonitor \
+           -configuration Debug build
 ```
 
-## Localization
-
-Translations are **not** in the Swift source. Each language is a self-describing
-JSON pack under `Localization/Languages/`, bundled as a folder reference so the
-directory structure survives into `BatteryMonitor.app/Contents/Resources/Languages/`:
-
-```json
-{
-  "_meta": { "code": "zh-Hans", "name": "简体中文", "order": 20 },
-  "strings": { "app.title": "电池监控中心", "...": "..." }
-}
-```
-
-`_meta.name` is the endonym — the language's own name for itself, shown in the
-in-app switcher. `order` exists because endonyms have no meaningful sort order
-across scripts.
-
-### Adding a language
-
-Drop one JSON file into `Localization/Languages/` and rebuild. No Swift changes,
-no `project.yml` changes, no `xcodegen` re-run — the switcher discovers packs at
-launch. Optionally add a matching `BatteryMonitor/<code>.lproj/InfoPlist.strings`
-so the Finder/Dock name matches too; that part *does* require re-running xcodegen.
-
-### Changing translations without rebuilding
-
-Packs in `Application Support/BatteryMonitor/Languages/` override bundled ones of
-the same code, merged per key. Useful for iterating on wording.
-
-### Notes
-
-- Language resolution defaults to the system language via
-  `Bundle.preferredLocalizations(from:)`, which handles `pt-BR → pt`,
-  `en-GB → en`, `zh-Hans-CN → zh-Hans`. English is only the last-resort fallback.
-- Packs are untrusted input, so format specifiers are validated against the `en`
-  pack at load time. `String(format:)` is a C variadic — a pack that wrote `%d`
-  where the code passes a `Double` would be memory-unsafe. Mismatched keys are
-  dropped individually and fall back to `en`.
-- The Dock / menu bar name always follows the *system* language, not the in-app
-  choice: `CFBundleDisplayName` is read by the OS at launch and cannot change at
-  runtime.
-
-## Tests
+Tests:
 
 ```bash
-./Tests/run-insight-tests.sh
-./Tests/run-l10n-tests.sh
+./Tests/run-insight-tests.sh   # models + analysis against the real source
+./Tests/run-l10n-tests.sh      # language pack loading, fallback, format guards
+./Scripts/verify-release.sh    # full local pre-release check, uploads nothing
 ```
 
-The insight test compiles the real model and analysis code. The localization
-test compiles `Localization.swift` into a throwaway `.app` bundle and exercises
-pack loading, ordering, key fallback, locale-aware number formatting, the
-Application Support override layer, and the format-specifier guard. Both tests
-use isolated temporary directories; they never write to or delete the user's
-real `~/Library/Application Support/BatteryMonitor` data.
+Adding a language: drop one JSON file into `Localization/Languages/` and rebuild.
+No Swift changes and no `xcodegen` re-run — the switcher discovers packs at
+launch. Packs are treated as untrusted input: format specifiers are validated
+against the English pack at load time, because `String(format:)` is a C variadic
+and a pack writing `%d` where the code passes a `Double` would be memory-unsafe.
 
-For the complete local pre-release check (configuration, plist files, language
-packs, an unsigned Universal Release build, and both test suites), run:
+---
 
-```bash
-./Scripts/verify-release.sh
-```
-
-This check neither changes the version/build number nor uploads anything. Since
-`project.yml` is authoritative, run `xcodegen generate` before this check and
-again whenever the project specification or source-file list changes.
-
-`BatteryMonitor/Resources/SystemFieldCatalog.json` contains field metadata only;
-the app never displays the workbook's saved sample values. To regenerate the
-catalog from an artifact-tool workbook export, use
-`Scripts/generate-system-field-catalog.py`.
-
-## Privacy
-
-The developer does not collect or receive personal data, and the app has no
-network access. Charging history, battery samples, and language preferences are
-stored only on the user's Mac inside the app's sandboxed container.
+> **Repository note** — the privacy policy and support page live in `index.html`,
+> served by GitHub Pages at the URL above. Do not remove or rename that file, and
+> keep this repository public: GitHub Pages is unavailable for private
+> repositories on the Free plan, and the App Store submission points at that URL.
