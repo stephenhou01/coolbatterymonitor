@@ -51,6 +51,7 @@ let shellAndMenuKeys = [
     "shell.apple_runtime_collecting", "shell.apple_runtime_last_note",
     "shell.apple_runtime_recent", "shell.apple_runtime_recent_last",
     "shell.system_runtime_basis", "shell.stable_runtime_basis",
+    "shell.stable_runtime_basis_seconds",
     "shell.stable_runtime_collecting", "shell.current_runtime_basis",
     "shell.derived_runtime_unavailable", "shell.state_full",
     "shell.state_plugged_idle", "shell.state_plugged_discharging", "p.field_cadence_on_plug",

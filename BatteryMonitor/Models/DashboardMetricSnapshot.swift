@@ -240,6 +240,18 @@ struct DashboardMetricSnapshot {
         return values[middle]
     }
 
+    /// Wall-clock span the median actually covers. The window is capped at ten
+    /// minutes but the floor is only five samples, so a fresh launch can produce
+    /// a median from ~40 s of data. The basis line quotes this rather than always
+    /// claiming ten minutes. Same `>= 5` floor as `stablePowerWatts` on purpose:
+    /// a span shown next to a figure computed from a different threshold would
+    /// describe samples that never fed it.
+    var stablePowerSpanSeconds: Int? {
+        let times = recentStablePowerPoints.map(\.timestamp)
+        guard times.count >= 5, let first = times.min(), let last = times.max() else { return nil }
+        return max(0, Int(last.timeIntervalSince(first).rounded()))
+    }
+
     var stableRuntimeMinutes: Int? {
         guard let remainingEnergyWh,
               let stablePowerWatts,

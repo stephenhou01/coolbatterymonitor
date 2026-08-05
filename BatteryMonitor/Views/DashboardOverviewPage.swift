@@ -76,41 +76,42 @@ struct DashboardOverviewPage: View {
                         // unrecognised model blanks them together. One honest line
                         // beats two cards showing "—".
                         VStack(spacing: 9) {
-                            runtimeCard(
-                                title: dashboardText("p.runtime_system_label", fallback: "macOS 系统时间"),
+                            primaryRuntimeCard(
                                 minutes: s.systemRuntimeMinutes,
-                                basis: systemRuntimeBasis(s),
-                                color: AppTheme.chargingCyan,
-                                emphasised: true
+                                basis: systemRuntimeBasis(s)
                             )
                             derivedUnavailableCard
                         }
                     } else {
-                        // All three share one vertical shape. The Apple estimate
-                        // used to be a wide horizontal card, which stopped fitting
-                        // the moment the row became three columns instead of one:
-                        // its 32pt figure squeezed the title down to one character
-                        // per line.
-                        HStack(spacing: 10) {
-                            runtimeCard(
-                                title: dashboardText("p.runtime_system_label", fallback: "macOS 系统时间"),
+                        // Ranked, not three abreast: the system figure is the one
+                        // to trust, the other two are cross-checks. Three equal
+                        // cards left no way to tell that from the layout. The two
+                        // derived rows drop the card shell entirely — a tinted card
+                        // beside two plain rows reads as a hierarchy, three cards
+                        // with different tints only read as three categories.
+                        HStack(alignment: .top, spacing: 14) {
+                            primaryRuntimeCard(
                                 minutes: s.systemRuntimeMinutes,
-                                basis: systemRuntimeBasis(s),
-                                color: AppTheme.chargingCyan,
-                                emphasised: true
+                                basis: systemRuntimeBasis(s)
                             )
-                            runtimeCard(
-                                title: dashboardText("p.runtime_stable_label", fallback: "稳健估算"),
-                                minutes: s.stableRuntimeMinutes,
-                                basis: stableRuntimeBasis(s),
-                                color: AppTheme.accentPurple
-                            )
-                            runtimeCard(
-                                title: dashboardText("p.runtime_current_label", fallback: "当前负载估算"),
-                                minutes: s.currentLoadRuntimeMinutes,
-                                basis: currentRuntimeBasis(s),
-                                color: AppTheme.batteryYellow
-                            )
+                            VStack(alignment: .leading, spacing: 0) {
+                                secondaryRuntimeRow(
+                                    title: dashboardText("p.runtime_stable_label", fallback: "稳健估算"),
+                                    minutes: s.stableRuntimeMinutes,
+                                    basis: stableRuntimeBasis(s),
+                                    color: AppTheme.accentPurple
+                                )
+                                Divider().overlay(AppTheme.cardBorder)
+                                secondaryRuntimeRow(
+                                    title: dashboardText("p.runtime_current_label", fallback: "短时间估算"),
+                                    minutes: s.currentLoadRuntimeMinutes,
+                                    basis: currentRuntimeBasis(s),
+                                    color: AppTheme.batteryYellow
+                                )
+                            }
+                            .frame(maxWidth: .infinity,
+                                   minHeight: Self.runtimeCardHeight,
+                                   maxHeight: Self.runtimeCardHeight)
                         }
                     }
                 }
@@ -126,29 +127,22 @@ struct DashboardOverviewPage: View {
         .shadow(color: Color.black.opacity(0.10), radius: 22, y: 8)
     }
 
-    /// One shape for all three estimates. `emphasised` is the Apple calibre: it
-    /// gets the tinted background and a larger figure, but the same geometry, so
-    /// the row cannot break the way a mixed horizontal/vertical row did.
-    ///
-    /// Fixed height on purpose. With `Spacer` doing the vertical work, one card
-    /// growing dragged the other two with it and left them mostly empty.
-    private func runtimeCard(
-        title: String,
-        minutes: Int?,
-        basis: String,
-        color: Color,
-        emphasised: Bool = false
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 3) {
+    /// Shared so the plain right-hand column ends up exactly as tall as the card
+    /// beside it. Fixed rather than intrinsic: with `Spacer` doing the vertical
+    /// work, one estimate growing dragged the others with it.
+    private static let runtimeCardHeight: CGFloat = 92
+
+    /// The calibre to trust, and the only one that keeps a card shell.
+    private func primaryRuntimeCard(minutes: Int?, basis: String) -> some View {
+        let color = AppTheme.chargingCyan
+        return VStack(alignment: .leading, spacing: 3) {
             HStack(spacing: 5) {
-                if emphasised {
-                    Image(systemName: "apple.logo")
-                        .font(.system(size: 9, weight: .semibold))
-                        .foregroundStyle(color)
-                }
-                Text(title)
-                    .font(.system(size: 10.5, weight: .semibold))
-                    .foregroundStyle(emphasised ? AppTheme.textPrimary : AppTheme.textSecondary)
+                Image(systemName: "apple.logo")
+                    .font(.system(size: 9.5, weight: .semibold))
+                    .foregroundStyle(color)
+                Text(dashboardText("p.runtime_system_label", fallback: "macOS 系统时间"))
+                    .font(.system(size: 11.5, weight: .semibold))
+                    .foregroundStyle(AppTheme.textPrimary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
             }
@@ -158,10 +152,10 @@ struct DashboardOverviewPage: View {
                 .lineLimit(2)
                 .multilineTextAlignment(.leading)
                 // Reserve both lines whether or not the basis needs them, so the
-                // three figures always sit on the same baseline.
+                // figure does not shift as the wording changes between states.
                 .frame(maxWidth: .infinity, minHeight: 24, alignment: .topLeading)
             Text(MenuBarPresentation.durationText(minutes))
-                .font(.system(size: emphasised ? 26 : 22, weight: .medium, design: .rounded))
+                .font(.system(size: 30, weight: .medium, design: .rounded))
                 .foregroundStyle(color)
                 .monospacedDigit()
                 .lineLimit(1)
@@ -170,11 +164,48 @@ struct DashboardOverviewPage: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
-        .frame(maxWidth: .infinity, minHeight: 92, maxHeight: 92, alignment: .topLeading)
-        .background(RoundedRectangle(cornerRadius: 11)
-            .fill(emphasised ? color.opacity(0.06) : AppTheme.contrastOverlay(0.025)))
-        .overlay(RoundedRectangle(cornerRadius: 11)
-            .stroke(emphasised ? color.opacity(0.20) : AppTheme.cardBorder))
+        .frame(maxWidth: .infinity,
+               minHeight: Self.runtimeCardHeight,
+               maxHeight: Self.runtimeCardHeight,
+               alignment: .topLeading)
+        .background(RoundedRectangle(cornerRadius: 11).fill(color.opacity(0.06)))
+        .overlay(RoundedRectangle(cornerRadius: 11).stroke(color.opacity(0.20)))
+        .accessibilityElement(children: .combine)
+    }
+
+    /// A cross-check, deliberately quieter: no shell, smaller figure, and the
+    /// title sharing a line with the figure so two of these fit the primary
+    /// card's height without giving the basis line less than two lines.
+    private func secondaryRuntimeRow(
+        title: String,
+        minutes: Int?,
+        basis: String,
+        color: Color
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 1) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(title)
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(AppTheme.textSecondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+                Spacer(minLength: 4)
+                Text(MenuBarPresentation.durationText(minutes))
+                    .font(.system(size: 17, weight: .medium, design: .rounded))
+                    .foregroundStyle(color)
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+            }
+            Text(basis)
+                .font(.system(size: 8.5))
+                .foregroundStyle(AppTheme.textTertiary)
+                .lineLimit(2)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.horizontal, 2)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .accessibilityElement(children: .combine)
     }
 
@@ -203,7 +234,8 @@ struct DashboardOverviewPage: View {
             return dashboardText("shell.apple_runtime_last_note",
                                  fallback: "接电状态下保留最近一次有效的 Apple 官方系统预估")
         }
-        return dashboardText("shell.system_runtime_basis", fallback: "Apple 官方算法 · 与菜单栏一致")
+        return dashboardText("shell.system_runtime_basis",
+                             fallback: "电量计芯片自身算法 · 约每分钟更新 · 与菜单栏同一个数字")
     }
 
     private func stableRuntimeBasis(_ s: DashboardMetricSnapshot) -> String {
@@ -212,15 +244,29 @@ struct DashboardOverviewPage: View {
                                  fallback: "正在积累样本 {samples}/5",
                                  replacements: ["samples": "\(s.recentStablePowerSamples.count)"])
         }
-        return dashboardText("shell.stable_runtime_basis", fallback: "近 10 分钟功耗中位数")
+        // Quote the span the samples actually cover. The window is capped at ten
+        // minutes but the floor is five samples, so this line used to claim "last
+        // 10 minutes" over as little as 40 seconds of data. Truncating rather than
+        // rounding, because rounding up is the same overstatement in miniature.
+        let span = s.stablePowerSpanSeconds ?? 0
+        if span < 60 {
+            return dashboardText("shell.stable_runtime_basis_seconds",
+                                 fallback: "近 {seconds} 秒典型功耗",
+                                 replacements: ["seconds": "\(span)"])
+        }
+        return dashboardText("shell.stable_runtime_basis",
+                             fallback: "近 {minutes} 分钟典型功耗",
+                             replacements: ["minutes": "\(span / 60)"])
     }
 
     private func currentRuntimeBasis(_ s: DashboardMetricSnapshot) -> String {
         guard s.currentLoadRuntimeMinutes != nil else {
             return dashboardText("shell.instant_runtime_waiting", fallback: "等待有效的瞬时功率数据")
         }
+        // Not "right now": this is one unsmoothed reading, and the gauge only
+        // publishes about once a minute, so it can already be that old.
         return dashboardText("shell.current_runtime_basis",
-                             fallback: "按此刻 {power} W 计算",
+                             fallback: "最新读数 {power} W · 约每分钟更新",
                              replacements: ["power": LNum("%.1f", s.currentPowerWatts)])
     }
 
