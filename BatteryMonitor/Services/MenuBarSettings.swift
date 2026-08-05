@@ -11,6 +11,8 @@ enum MenuBarMetric: String, CaseIterable, Identifiable {
     case cycles
     case health
     case current
+    case chargingPower
+    case chargeSpeed
 
     var id: String { rawValue }
 
@@ -28,6 +30,13 @@ enum MenuBarMetric: String, CaseIterable, Identifiable {
             return dashboardText("menu.metric.health", fallback: "健康度")
         case .current:
             return dashboardText("menu.metric.current", fallback: "当前电流")
+        case .chargingPower:
+            // Deliberately not "充电功率" like the overview card: this list also
+            // contains "当前功率", which is whole-Mac load. The two would be one
+            // word apart in a picker whose whole job is telling them apart.
+            return dashboardText("menu.metric.charge_power", fallback: "电池充电功率")
+        case .chargeSpeed:
+            return dashboardText("menu.metric.charge_speed", fallback: "电池充电速度")
         }
     }
 
@@ -39,6 +48,8 @@ enum MenuBarMetric: String, CaseIterable, Identifiable {
         case .cycles: return .cycles
         case .health: return .health
         case .current: return .current
+        case .chargingPower: return .charging
+        case .chargeSpeed: return .chargeSpeed
         }
     }
 

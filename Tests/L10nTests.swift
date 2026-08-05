@@ -56,7 +56,8 @@ let shellAndMenuKeys = [
     "shell.state_plugged_idle", "shell.state_plugged_discharging", "p.field_cadence_on_plug",
     "shell.battery_current", "shell.time_to_full",
     "shell.flow_adapter", "shell.flow_battery", "shell.flow_mac", "shell.flow_idle",
-    "shell.flow_derived", "shell.flow_a11y_battery_to_mac",
+    "shell.flow_derived", "shell.flow_forecast_measured", "shell.flow_forecast_derived",
+    "shell.flow_a11y_battery_to_mac",
     "shell.flow_a11y_adapter_to_battery", "shell.flow_a11y_adapter_to_mac",
     // 概览卡的三个口径标题必须和问号面板同名，所以也纳入必查
     "p.runtime_system_label", "p.runtime_stable_label", "p.runtime_current_label",
@@ -65,6 +66,7 @@ let shellAndMenuKeys = [
     "menu.config.show", "menu.config.hide", "menu.config.move_up", "menu.config.move_down",
     "menu.config.restore_defaults", "menu.metric.runtime", "menu.metric.power",
     "menu.metric.temperature", "menu.metric.health", "menu.metric.cycles", "menu.metric.current",
+    "menu.metric.charge_power", "menu.metric.charge_speed",
     "menu.process.none", "menu.process.latest_real_sample", "p.menu_settings",
     "p.menu_close", "p.menu_language", "p.menu_quit",
     "p.help_summary_adapter_power", "p.help_source_adapter_power",

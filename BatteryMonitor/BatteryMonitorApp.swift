@@ -36,7 +36,8 @@ struct BatteryMonitorApp: App {
                 .onAppear(perform: startMonitoringIfNeeded)
         } label: {
             MenuBarStatusLabel(data: batteryService.batteryData,
-                               secondaryMetric: menuBarSettings.secondaryMetric)
+                               secondaryMetric: menuBarSettings.secondaryMetric,
+                               chargeSpeed: batteryService.chargeSpeed)
                 .onAppear(perform: startMonitoringIfNeeded)
         }
         .menuBarExtraStyle(.window)

@@ -6,6 +6,10 @@ import AppKit
 /// stale gauge value and may instead show the explicitly labelled unplug estimate.
 struct MenuBarPresentation {
     let data: BatteryData
+    /// Resolved once per gauge publish by `BatteryService`, not here — this type is
+    /// rebuilt on every menu-bar redraw. nil means there is nothing honest to
+    /// show (not charging, already full, or no usable reading).
+    var chargeSpeed: ChargeSpeedEstimate? = nil
 
     var isLoaded: Bool {
         data.percent > 0 || data.designCapacity > 0 || !data.batteryModel.isEmpty
@@ -54,6 +58,29 @@ struct MenuBarPresentation {
     var powerText: String { LNum("%.1f W", max(0, data.currentPowerWatts)) }
     var temperatureText: String { LNum("%.1f °C", data.temperatureCelsius) }
 
+    /// Charging power shares its formatter with the overview card so the two can
+    /// never print the same watts differently. Building a snapshot here is cheap:
+    /// it is a struct of stored references and derives nothing until asked.
+    private var chargingSnapshot: DashboardMetricSnapshot {
+        DashboardMetricSnapshot(data: data, realtimeData: [])
+    }
+
+    var chargingPowerText: String { chargingSnapshot.chargingPowerText }
+
+    /// The two horizons the charge-speed metric is defined over.
+    static let chargeSpeedHorizons: (short: Double, long: Double) = (5, 10)
+
+    /// "+4%/5m · +9%/10m". nil when there is no estimate, so callers fall back to
+    /// the bare percentage instead of printing "+0%".
+    func chargeSpeedText(separator: String) -> String? {
+        guard let chargeSpeed else { return nil }
+        let short = chargeSpeed.gainPercent(overMinutes: Self.chargeSpeedHorizons.short)
+        let long = chargeSpeed.gainPercent(overMinutes: Self.chargeSpeedHorizons.long)
+        return LNum("+%.0f%%/%.0fm", short, Self.chargeSpeedHorizons.short)
+            + separator
+            + LNum("+%.0f%%/%.0fm", long, Self.chargeSpeedHorizons.long)
+    }
+
     func title(for metric: MenuBarMetric) -> String {
         metric == .runtime ? timeTitle : metric.title
     }
@@ -66,6 +93,8 @@ struct MenuBarPresentation {
         case .cycles: return data.cycleCount.formatted()
         case .health: return healthText
         case .current: return LNum("%.2f A", Double(data.amperage) / 1000)
+        case .chargingPower: return chargingPowerText
+        case .chargeSpeed: return chargeSpeedText(separator: " · ") ?? "—"
         }
     }
 
@@ -87,6 +116,12 @@ struct MenuBarPresentation {
             return isLoaded ? LNum("%.0f%%", healthPercent) : nil
         case .current:
             return isLoaded ? LNum("%.2fA", Double(data.amperage) / 1000) : nil
+        case .chargingPower:
+            // 0 W is the honest reading with nothing charging, and a fixed-width
+            // one keeps the menu bar from shuffling on every plug event.
+            return isLoaded ? chargingSnapshot.chargingPowerCompactText : nil
+        case .chargeSpeed:
+            return isLoaded ? chargeSpeedText(separator: "·") : nil
         }
     }
 
@@ -110,8 +145,9 @@ struct MenuBarPresentation {
 struct MenuBarStatusLabel: View {
     let data: BatteryData
     let secondaryMetric: MenuBarMetric
+    var chargeSpeed: ChargeSpeedEstimate? = nil
 
-    private var presentation: MenuBarPresentation { .init(data: data) }
+    private var presentation: MenuBarPresentation { .init(data: data, chargeSpeed: chargeSpeed) }
 
     var body: some View {
         Text(presentation.menuBarText(secondaryMetric: secondaryMetric))
@@ -125,10 +161,11 @@ struct MenuBarStatusLabel: View {
 struct MenuBarTopStatusConfigurationView: View {
     let data: BatteryData
     var compact = false
+    var chargeSpeed: ChargeSpeedEstimate? = nil
 
     @Environment(MenuBarSettings.self) private var menuSettings
 
-    private var presentation: MenuBarPresentation { .init(data: data) }
+    private var presentation: MenuBarPresentation { .init(data: data, chargeSpeed: chargeSpeed) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: compact ? 8 : 12) {
@@ -181,7 +218,9 @@ struct MenuBarTopStatusConfigurationView: View {
 
             Spacer(minLength: 12)
 
-            MenuBarStatusLabel(data: data, secondaryMetric: menuSettings.secondaryMetric)
+            MenuBarStatusLabel(data: data,
+                               secondaryMetric: menuSettings.secondaryMetric,
+                               chargeSpeed: chargeSpeed)
                 .font(.system(size: compact ? 9.5 : 11, weight: .medium))
 
             Divider()
@@ -289,7 +328,9 @@ struct MenuBarDashboardView: View {
     }
 
     private var data: BatteryData { batteryService.batteryData }
-    private var presentation: MenuBarPresentation { .init(data: data) }
+    private var presentation: MenuBarPresentation {
+        .init(data: data, chargeSpeed: batteryService.chargeSpeed)
+    }
 
     var body: some View {
         ZStack {
@@ -494,7 +535,9 @@ struct MenuBarDashboardView: View {
 
     private var values: some View {
         VStack(spacing: 0) {
-            MenuBarTopStatusConfigurationView(data: data, compact: true)
+            MenuBarTopStatusConfigurationView(data: data,
+                                              compact: true,
+                                              chargeSpeed: batteryService.chargeSpeed)
                 .padding(.vertical, 10)
 
             HStack {
@@ -687,6 +730,8 @@ struct MenuBarDashboardView: View {
         case .cycles: return AppTheme.accentPurple
         case .health: return AppTheme.batteryGreen
         case .current: return AppTheme.batteryYellow
+        case .chargingPower: return AppTheme.batteryGreen
+        case .chargeSpeed: return AppTheme.chargingCyan
         }
     }
 

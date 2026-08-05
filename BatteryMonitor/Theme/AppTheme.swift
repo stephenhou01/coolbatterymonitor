@@ -151,6 +151,7 @@ enum BatteryMetricIcon: String, CaseIterable {
     case adapter
     case adapterOutput
     case charging
+    case chargeSpeed
     case temperature
     case cycles
     case health
@@ -174,6 +175,7 @@ enum BatteryMetricIcon: String, CaseIterable {
         case .adapter: return "powerplug.fill"
         case .adapterOutput: return "arrow.down.circle.fill"
         case .charging: return "bolt.fill"
+        case .chargeSpeed: return "speedometer"
         case .temperature: return "thermometer.medium"
         case .cycles: return "arrow.triangle.2.circlepath"
         case .health: return "heart.fill"
@@ -202,6 +204,9 @@ enum BatteryMetricIcon: String, CaseIterable {
         case .adapter: return "powerplug"
         case .adapterOutput: return "arrow.down.circle"
         case .charging: return "bolt.fill"
+        // Same glyph both ways: speedometer ships back to macOS 11, so there is
+        // no version where the preferred symbol needs downgrading.
+        case .chargeSpeed: return "speedometer"
         case .temperature: return "thermometer"
         case .cycles: return "arrow.2.circlepath"
         case .health: return "heart.fill"

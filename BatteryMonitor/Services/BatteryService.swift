@@ -17,6 +17,11 @@ class BatteryService: ObservableObject {
     @Published var lastHistoryUpdate: Date? = nil
     /// 消费者层洞察。nil = 首帧还没算出来。
     @Published var insight: BatteryInsight? = nil
+    /// 充电速度预测。nil = 没在充电、已充满，或还没有可用读数。
+    ///
+    /// 在这里算而不是在 View 里算：菜单栏 label 每次重绘都会走一遍 body，而这个
+    /// 值只可能在电量计发布新样本时变化，跟着十秒轮询算一次就够。
+    @Published private(set) var chargeSpeed: ChargeSpeedEstimate? = nil
 
     private var timer: Timer?
     private var terminationObserver: NSObjectProtocol?
@@ -281,7 +286,10 @@ class BatteryService: ObservableObject {
             adapterCurrent: data.hardwareDetail.adapterCurrent > 0
                 ? Double(data.hardwareDetail.adapterCurrent) / 1000.0
                 : nil,
-            isOnAC: data.isOnAC
+            isOnAC: data.isOnAC,
+            rawCurrentCapacity: data.hardwareDetail.presentRawFields.contains("AppleRawCurrentCapacity")
+                ? data.hardwareDetail.appleRawCurrentCapacity
+                : nil
         )
 
         self.batteryData = data
@@ -290,6 +298,10 @@ class BatteryService: ObservableObject {
         if self.realtimeData.count > self.maxRealtimePoints {
             self.realtimeData.removeFirst(self.realtimeData.count - self.maxRealtimePoints)
         }
+        // Needs the freshly appended sample, so it runs after the buffer update.
+        self.chargeSpeed = ChargeSpeedEstimate.resolve(data: data,
+                                                      samples: self.realtimeData,
+                                                      now: data.lastUpdated)
 
         recordRuntimeSample(data)
         recordSOCSnapshot(data)

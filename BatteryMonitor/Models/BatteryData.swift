@@ -208,6 +208,12 @@ struct RealtimeDataPoint: Identifiable {
     /// drop to 0 while plugged in, so "no input reading" and "no adapter" are
     /// genuinely different states and only this flag distinguishes them.
     let isOnAC: Bool
+    /// `AppleRawCurrentCapacity` in mAh at this sample. Recorded alongside
+    /// `percent` rather than instead of it because charge *speed* cannot be
+    /// differenced off an integer percentage: over a two-minute window the
+    /// displayed SOC moves 2–3 points, so ±1 of quantisation is a ±35% error on
+    /// the rate. This counter is ~1 mAh out of ~5000. nil when the field is absent.
+    let rawCurrentCapacity: Int?
 
     init(
         timestamp: Date,
@@ -219,7 +225,8 @@ struct RealtimeDataPoint: Identifiable {
         inputPower: Double? = nil,
         adapterVoltage: Double? = nil,
         adapterCurrent: Double? = nil,
-        isOnAC: Bool = false
+        isOnAC: Bool = false,
+        rawCurrentCapacity: Int? = nil
     ) {
         self.timestamp = timestamp
         self.voltage = voltage
@@ -231,5 +238,6 @@ struct RealtimeDataPoint: Identifiable {
         self.adapterVoltage = adapterVoltage
         self.adapterCurrent = adapterCurrent
         self.isOnAC = isOnAC
+        self.rawCurrentCapacity = rawCurrentCapacity
     }
 }

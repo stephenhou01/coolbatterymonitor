@@ -1611,5 +1611,137 @@ expect(labelHelp.comparisonResults.map(\.title) == [
     L("p.runtime_system_label"), L("p.runtime_stable_label"), L("p.runtime_current_label"),
 ], "概览卡与问号面板共用同一组口径标题")
 
+// MARK: - 充电速度预测
+
+print("── 充电速度预测：实测优先、功率兜底、两道钳位")
+
+/// 构造一串充电中的实时样本。`capacities` 从旧到新，间隔 `step` 秒。
+func chargingSamples(_ capacities: [Int?], step: TimeInterval = 10,
+                     endingAt end: Date, onAC: Bool = true) -> [RealtimeDataPoint] {
+    let count = capacities.count
+    return capacities.enumerated().map { index, capacity in
+        RealtimeDataPoint(
+            timestamp: end.addingTimeInterval(-Double(count - 1 - index) * step),
+            voltage: 12.9, amperage: 2500, power: 12, temperature: 31, percent: 60,
+            isOnAC: onAC, rawCurrentCapacity: capacity
+        )
+    }
+}
+
+let speedNow = Date(timeIntervalSince1970: 1_770_000_000)
+var chargingBattery = data(from: healthyDetail(), onAC: true)
+chargingBattery.isCharging = true
+chargingBattery.percent = 60
+chargingBattery.hardwareDetail.instantAmperage = 2500
+chargingBattery.hardwareDetail.presentRawFields.insert("InstantAmperage")
+
+// FCC 4107 mAh。120 秒内涨 100 mAh = 2.435% → 1.2175 %/min
+let measuredSamples = chargingSamples([3900, 3900, 4000], step: 60, endingAt: speedNow)
+let measured = ChargeSpeedEstimate.resolve(data: chargingBattery,
+                                           samples: measuredSamples, now: speedNow)
+expect(measured?.source == .measured,
+       "有 120 秒且电量计确实变化的窗口时走实测口径 [\(String(describing: measured?.source))]")
+if let measured {
+    let expectedRate = 100.0 / 4107.0 * 100 / 2
+    expect(abs(measured.percentPerMinute - expectedRate) < 0.001,
+           "实测速率 = Δ容量÷FCC÷分钟数 [\(measured.percentPerMinute) vs \(expectedRate)]")
+    expect(abs(measured.gainPercent(overMinutes: 10)
+               - measured.gainPercent(overMinutes: 5) * 2) < 0.001,
+           "未触发钳位时线性外推，10 分钟正好是 5 分钟的两倍")
+}
+
+// 电量计约 56 秒才发布一次，10 秒轮询会把同一个值重复十几遍。端点必须按
+// 「值变过」来取，否则会把明明在充电的机器算成 0。
+let stalledSamples = chargingSamples([3900, 3900, 3900, 3900, 3900, 3900, 3900, 4000, 4000,
+                                      4000, 4000, 4000, 4000], step: 10, endingAt: speedNow)
+let stalled = ChargeSpeedEstimate.resolve(data: chargingBattery,
+                                          samples: stalledSamples, now: speedNow)
+expect(stalled?.source == .measured && (stalled?.percentPerMinute ?? 0) > 0,
+       "重复值不清零：跳过未刷新的样本，用真正变化过的那一对做端点")
+
+// 窗口不够长 → 退回功率推算，而不是拿 20 秒的抖动当速率
+let shortWindow = chargingSamples([3900, 4000], step: 20, endingAt: speedNow)
+let shortResult = ChargeSpeedEstimate.resolve(data: chargingBattery,
+                                              samples: shortWindow, now: speedNow)
+expect(shortResult?.source == .derived,
+       "窗口短于 110 秒时退回功率推算 [\(String(describing: shortResult?.source))]")
+if let shortResult {
+    let expectedDerived = 2500.0 / 4107.0 * 100 / 60
+    expect(abs(shortResult.percentPerMinute - expectedDerived) < 0.001,
+           "功率推算速率 = 充电电流÷FCC÷60 [\(shortResult.percentPerMinute)]")
+}
+
+expect(ChargeSpeedEstimate.resolve(data: chargingBattery, samples: [], now: speedNow)?.source
+       == .derived, "刚插电没有历史样本时仍能给出功率推算值")
+
+// 拔插过一次：跨越会话边界的样本不能拿来算
+let brokenSession = [
+    RealtimeDataPoint(timestamp: speedNow.addingTimeInterval(-120), voltage: 12.9,
+                      amperage: 0, power: 12, temperature: 31, percent: 58,
+                      isOnAC: false, rawCurrentCapacity: 3900),
+    RealtimeDataPoint(timestamp: speedNow, voltage: 12.9, amperage: 2500, power: 12,
+                      temperature: 31, percent: 60, isOnAC: true, rawCurrentCapacity: 4000),
+]
+expect(ChargeSpeedEstimate.resolve(data: chargingBattery,
+                                   samples: brokenSession, now: speedNow)?.source == .derived,
+       "样本跨越拔电边界时不做差分，退回功率推算")
+
+// 用户截图那一幕：96%、大功率进电，剩余空间只有 4%
+var nearFull = chargingBattery
+nearFull.percent = 96
+let nearFullEstimate = ChargeSpeedEstimate.resolve(data: nearFull, samples: [], now: speedNow)
+expect(nearFullEstimate?.headroomPercent == 4, "剩余空间 = 100 − 当前电量")
+expect(nearFullEstimate.map { $0.gainPercent(overMinutes: 10) == 4 } == true,
+       "满电附近按剩余空间封顶，不会预测出超过 4% 的进电量")
+expect(nearFullEstimate.map { $0.percentPerMinute * 10 > 4 } == true,
+       "这一幕的线性外推本来会超出剩余空间——确认钳位真的起了作用，不是恰好没超")
+
+// 系统说这段时间内会充满，就按剩余空间给满，不再线性外推
+var quickFinish = nearFull
+quickFinish.hardwareDetail.avgTimeToFull = 3
+if let q = ChargeSpeedEstimate.resolve(data: quickFinish, samples: [], now: speedNow) {
+    expect(q.timeToFullMinutes == 3 && q.gainPercent(overMinutes: 5) == 4,
+           "AvgTimeToFull ≤ 预测区间时直接给出全部剩余空间")
+} else {
+    expect(false, "充满还需 3 分钟时仍应给出充电速度预测")
+}
+
+var notCharging = chargingBattery
+notCharging.isCharging = false
+expect(ChargeSpeedEstimate.resolve(data: notCharging, samples: measuredSamples,
+                                   now: speedNow) == nil,
+       "没在充电时不给速度，交由界面退回裸电量")
+
+var fullBattery = chargingBattery
+fullBattery.percent = 100
+expect(ChargeSpeedEstimate.resolve(data: fullBattery, samples: measuredSamples,
+                                   now: speedNow) == nil,
+       "已满电时不显示 +0%，返回 nil")
+
+// MARK: - 两个新菜单栏指标
+
+print("── 菜单栏新增：电池充电功率与电池充电速度")
+
+let chargePresentation = MenuBarPresentation(data: chargingBattery, chargeSpeed: measured)
+expect(chargePresentation.statusValue(for: .chargingPower)?.hasSuffix("W") == true,
+       "充电功率状态项以 W 结尾 [\(String(describing: chargePresentation.statusValue(for: .chargingPower)))]")
+let speedStatus = chargePresentation.statusValue(for: .chargeSpeed)
+expect(speedStatus?.contains("/5m") == true && speedStatus?.contains("/10m") == true,
+       "充电速度状态项同时给出 5 分钟与 10 分钟 [\(String(describing: speedStatus))]")
+
+// 未充电态：功率按产品决策显示 0W，速度退回裸电量
+let idlePresentation = MenuBarPresentation(data: notCharging, chargeSpeed: nil)
+expect(idlePresentation.statusValue(for: .chargingPower) == "0W",
+       "没充电时充电功率是 0W，宽度稳定不跳变 [\(String(describing: idlePresentation.statusValue(for: .chargingPower)))]")
+expect(idlePresentation.statusValue(for: .chargeSpeed) == nil
+       && idlePresentation.menuBarText(secondaryMetric: .chargeSpeed)
+       == idlePresentation.percentText,
+       "没充电时充电速度不占位，菜单栏只剩电量")
+
+// 菜单栏和主看板卡片必须共用同一个充电功率格式化
+let sharedSnapshot = DashboardMetricSnapshot(data: chargingBattery, realtimeData: [])
+expect(chargePresentation.value(for: .chargingPower) == sharedSnapshot.chargingPowerText,
+       "面板行与概览卡的充电功率文本同源，不会漂移")
+
 print("\n" + (failures == 0 ? "✅ 全部通过" : "❌ \(failures) 项失败"))
 exit(failures == 0 ? 0 : 1)
