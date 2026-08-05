@@ -131,17 +131,19 @@ private enum MetricRawFieldExplanation {
             return localized("p.raw_explain_model_design_energy",
                              "Apple 公布的本机型出厂设计电量，用于把 mAh 换算成 Wh")
         }
-        if name.contains("recent10mmedianpower") {
+        // Deliberately not "recent 10 minutes": the window caps at ten minutes
+        // but only needs five samples, so it can legitimately cover far less.
+        if name.contains("stablewindowmedianpower") {
             return localized("p.raw_explain_median_power",
-                             "最近 10 分钟功耗样本的中位数，不是此刻的功率")
+                             "窗口内功耗样本的中位数，不是此刻的功率；窗口最长 10 分钟，实际覆盖时长见卡片副标题")
         }
-        if name.contains("recent10mvalidsamples") {
+        if name.contains("stablewindowsamples") {
             return localized("p.raw_explain_valid_samples",
-                             "最近 10 分钟里参与中位数计算的有效样本数")
+                             "窗口内参与中位数计算的有效样本数，满 5 个就能出结果")
         }
         if name.contains("currentpowersampleage") {
             return localized("p.raw_explain_sample_age",
-                             "此刻功率读数已经过去的秒数，超过 120 秒就不再用于估算")
+                             "最新一次功率读数距现在的秒数，超过 120 秒就不再用于估算")
         }
         if name.contains("applerawcurrentcapacity") {
             return localized("p.raw_explain_current_capacity_raw",

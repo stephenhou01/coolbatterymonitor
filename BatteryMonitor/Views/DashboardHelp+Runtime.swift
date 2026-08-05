@@ -109,10 +109,12 @@ extension DashboardHelp {
                 field("AppleRawCurrentCapacity", s.currentCapacity, "mAh"),
                 field("DesignCapacity", s.designCapacity, "mAh"),
                 // Stamped from the newest sample feeding the median, not from
-                // this poll: the window is up to ten minutes wide.
-                field("Derived.Recent10mMedianPower", f(s.stablePowerWatts), "W",
+                // this poll: the window is up to ten minutes wide. Named for the
+                // window rather than "10m" because five samples are enough, so
+                // the span can be much shorter than ten minutes.
+                field("Derived.StableWindowMedianPower", f(s.stablePowerWatts), "W",
                       readAt: s.latestStablePowerSampleTime.map(MetricReadStamp.ourRead)),
-                field("Derived.Recent10mValidSamples", s.recentStablePowerSamples.count, "",
+                field("Derived.StableWindowSamples", s.recentStablePowerSamples.count, "",
                       readAt: s.latestStablePowerSampleTime.map(MetricReadStamp.ourRead)),
                 field("BatteryData.SystemPower", f(s.currentPowerWatts), "W"),
                 // This row's value already is the read age; a second age next to

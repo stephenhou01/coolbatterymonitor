@@ -490,10 +490,10 @@ expect(Set(runtimeFieldExplanations).count == runtimeHelp.rawFields.count,
 func runtimeFieldExplanation(_ name: String) -> String {
     runtimeHelp.rawFields.first { $0.name == name }?.localizedExplanation ?? ""
 }
-expect(runtimeFieldExplanation("Derived.Recent10mMedianPower").contains("中位数")
-       && !runtimeFieldExplanation("Derived.Recent10mMedianPower").contains("当前"),
-       "10分钟功耗中位数不能被描述成当前功率")
-expect(runtimeFieldExplanation("Derived.Recent10mValidSamples").contains("样本数"),
+expect(runtimeFieldExplanation("Derived.StableWindowMedianPower").contains("中位数")
+       && !runtimeFieldExplanation("Derived.StableWindowMedianPower").contains("当前"),
+       "窗口功耗中位数不能被描述成当前功率")
+expect(runtimeFieldExplanation("Derived.StableWindowSamples").contains("样本数"),
        "有效样本数字段说明的是样本个数，不是派生中间值")
 expect(runtimeFieldExplanation("Derived.CurrentPowerSampleAge").contains("秒"),
        "功率样本年龄字段说明的是距今秒数")
@@ -522,9 +522,9 @@ expect(runtimeField("ModelDesignEnergy")?.updateClass == .modelSpec,
        "内置机型规格电量不能被标成每10秒读一次的实时值")
 expect(runtimeField("Derived.CurrentPowerSampleAge")?.updateClass == MetricFieldUpdateClass.untimed,
        "值本身就是读数年龄的字段不再叠加一行秒数")
-expect(runtimeField("Derived.Recent10mMedianPower")?.readAt == .ourRead(runtimeSampleEnd)
-       && runtimeField("Derived.Recent10mValidSamples")?.readAt == .ourRead(runtimeSampleEnd),
-       "10分钟窗口的两行用窗口内最新样本时刻，不用本次轮询时刻")
+expect(runtimeField("Derived.StableWindowMedianPower")?.readAt == .ourRead(runtimeSampleEnd)
+       && runtimeField("Derived.StableWindowSamples")?.readAt == .ourRead(runtimeSampleEnd),
+       "稳健窗口的两行用窗口内最新样本时刻，不用本次轮询时刻")
 
 // 时间说明的三条渲染分支
 let liveCaption = MetricFieldFreshness.text(
