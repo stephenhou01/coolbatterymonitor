@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		00DC0B6D2CA6B67FE456FD7C /* DashboardHelp+Capacity.swift in Sources */ = {isa = PBXBuildFile; fileRef = F698273014C47A1B3E4DB1E4 /* DashboardHelp+Capacity.swift */; };
 		0AEC9648FE83F772C9446448 /* PowerFlowDiagram.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77757026C852F1EBD0E0C6CC /* PowerFlowDiagram.swift */; };
 		0E3E335F00D0BAD150B99D20 /* Localization.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6E46A3F0296A98788F4DF10 /* Localization.swift */; };
 		0EE0CC3C26A22CFFA0C99C33 /* AppearanceSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933561C72DA3154B86AE1420 /* AppearanceSettings.swift */; };
@@ -22,13 +23,17 @@
 		3458C7CEF71BEAD22079D450 /* BatteryMonitorApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77ECF2C63BE84926565C63E8 /* BatteryMonitorApp.swift */; };
 		3489706991841CD5F25B47BC /* PowerFlowEdge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F30E2D96C71833CF776A3CA /* PowerFlowEdge.swift */; };
 		34FC7AD20FDB3E63BD108066 /* SystemFieldCatalog.json in Resources */ = {isa = PBXBuildFile; fileRef = 644460A7915BB9FD1CC139A8 /* SystemFieldCatalog.json */; };
+		37C9625E652CF39D13BC17EB /* MetricHelpModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FE613DF49FD6F3DFC6991C2 /* MetricHelpModels.swift */; };
 		396C79D16D12DCDEC55CFF6D /* ProcessListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5AE99AEA5C62A1EAF379E65 /* ProcessListView.swift */; };
 		3A04622ABD481A7FCBE793DC /* CapacityBreakdownSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC5925414B8135611DA6B3C /* CapacityBreakdownSection.swift */; };
+		3A1B897717AF0176E15EE805 /* DashboardHelp+Power.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1ECE8AB1A881CF29C115F8D6 /* DashboardHelp+Power.swift */; };
 		3CB77A9F3C88DEE2BC867913 /* PowerFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CDE1AE413E767C732E14105 /* PowerFlow.swift */; };
 		3ECEF69AE22A167C83F0C2ED /* BatteryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9663833CEC4F05BCC3FCB95 /* BatteryService.swift */; };
 		4775B36B233F73D0CEAA1C29 /* MetricSparkline.swift in Sources */ = {isa = PBXBuildFile; fileRef = F17F02B7FD9CF8157A274CDF /* MetricSparkline.swift */; };
 		5AD29E9223AB9472406E2D32 /* DashboardTrendsPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56D0904A783288CF2314DD11 /* DashboardTrendsPage.swift */; };
 		5C35C7BCC268E3A873D62D28 /* DashboardOverviewPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D5A9550308BEFF21BE34A78 /* DashboardOverviewPage.swift */; };
+		5C53B083980E0097A1EA3551 /* DashboardHelp+Runtime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C53ECF3D17C9627FAA6E50A /* DashboardHelp+Runtime.swift */; };
+		5F07A64E26C05FDAB5A6F7B2 /* MenuBarStatusItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B9815E54A2BBCBCD2BFF184 /* MenuBarStatusItem.swift */; };
 		613E6647748ED11FED84B3E1 /* RuntimeBenchmarkSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33F11AA8CC2FCC0A83ED6772 /* RuntimeBenchmarkSection.swift */; };
 		68AE7723FC298F860B100182 /* MetricHelpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BBE0E459066F94337164C23 /* MetricHelpView.swift */; };
 		68F7701B35ACE22089ED5BDC /* PowerCenterSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 403DF87590CB225CA41D78EB /* PowerCenterSection.swift */; };
@@ -42,9 +47,11 @@
 		885B67D83CF8C821D8044D26 /* SystemCPULoad.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12CF0A9C7B2A6A77F6F48B2C /* SystemCPULoad.swift */; };
 		890BEEA92A8ED31C8A9E7249 /* MenuBarDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4750C09BBEA559BF502861E /* MenuBarDashboardView.swift */; };
 		8B7A3FDA0013257C1C33215B /* DashboardSettingsPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E454959C0D187D2ED8FFA70 /* DashboardSettingsPage.swift */; };
+		97E08441114C9A06CE80B0AF /* CompleteHardwareMetricCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F2924A319EB0E0291612478 /* CompleteHardwareMetricCatalog.swift */; };
 		9A7BCC0000D9357B2CAFDB38 /* InsightEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC011E70494486FBFACC4106 /* InsightEngine.swift */; };
 		9BD60A87CA353A36045FED91 /* RealtimeMonitorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99CEEA72E68ACE637FB53D1C /* RealtimeMonitorView.swift */; };
 		9D61B917D5C833B24F2BBDC4 /* ProcessTable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0F80EB8D4D1711A87816F /* ProcessTable.swift */; };
+		A3DD7D0708E84E81FEA6EB3F /* MenuBarPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = F079818416411E5C9E5644DB /* MenuBarPresentation.swift */; };
 		A68E57F83036CDDDD4214B8D /* InsightCards.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90CF748C20D98621E7B95DFA /* InsightCards.swift */; };
 		B53C54D9465EF44ABDD73A31 /* BatteryService+Hardware.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C5F77CB6C7A8E47CB6419B5 /* BatteryService+Hardware.swift */; };
 		B98FD1B7030F9FE9FB853AF2 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 11F06F7D5ADC891F4DB4C2D0 /* InfoPlist.strings */; };
@@ -55,6 +62,7 @@
 		CC2A0D360D221889210CB8FD /* CompleteHardwareDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 243CB0FB211EB32DB8512490 /* CompleteHardwareDetailView.swift */; };
 		D4AED56621DDC3CE7A8E6E0F /* BatteryModelSpecification.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0BEB288FD8AD51618CFA512 /* BatteryModelSpecification.swift */; };
 		D629E37A482698B5161F5F7C /* ProcessInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64D77D4CAFCF034D3CB95241 /* ProcessInfo.swift */; };
+		D764F6144F8CEAB84A6F2016 /* MetricHelpContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 379F12DE6E51EEC949BB6D8B /* MetricHelpContent.swift */; };
 		DCE839339B5ABDC23D65BF8F /* HistoryChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 735D2BF0200ADD9E1BA4B82D /* HistoryChartView.swift */; };
 		E4C1D2488081737694B3A8C2 /* SystemDataSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F141A2AB0CBA3A7C985B8E /* SystemDataSnapshot.swift */; };
 		E4EED2490DE5AA40EFF5E470 /* BatteryGaugeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7BB6E03A988E27E5AFD1810 /* BatteryGaugeView.swift */; };
@@ -69,21 +77,27 @@
 		066BF5640748979A337627B9 /* RemainingTimeHeroSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemainingTimeHeroSection.swift; sourceTree = "<group>"; };
 		090252E442C7064318AD6FAE /* FinalDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinalDashboardView.swift; sourceTree = "<group>"; };
 		0ADAEF7C09D535732D3BE3A8 /* BatteryHardwareDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatteryHardwareDetail.swift; sourceTree = "<group>"; };
+		0B9815E54A2BBCBCD2BFF184 /* MenuBarStatusItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarStatusItem.swift; sourceTree = "<group>"; };
 		0C3559A910BA398A59842336 /* pt */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = pt; path = pt.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		0C53ECF3D17C9627FAA6E50A /* DashboardHelp+Runtime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DashboardHelp+Runtime.swift"; sourceTree = "<group>"; };
+		0FE613DF49FD6F3DFC6991C2 /* MetricHelpModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricHelpModels.swift; sourceTree = "<group>"; };
 		0FECAA007FFBAB28F3E5CE72 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		12CF0A9C7B2A6A77F6F48B2C /* SystemCPULoad.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemCPULoad.swift; sourceTree = "<group>"; };
 		1CDE1AE413E767C732E14105 /* PowerFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PowerFlow.swift; sourceTree = "<group>"; };
 		1D5A9550308BEFF21BE34A78 /* DashboardOverviewPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardOverviewPage.swift; sourceTree = "<group>"; };
 		1E574B68E2339270456F3C6C /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		1ECE8AB1A881CF29C115F8D6 /* DashboardHelp+Power.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DashboardHelp+Power.swift"; sourceTree = "<group>"; };
 		2145F7213261647A34650A4D /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		227FCAF1EF4BAA3CD499ED7F /* DashboardHelp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardHelp.swift; sourceTree = "<group>"; };
 		243CB0FB211EB32DB8512490 /* CompleteHardwareDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompleteHardwareDetailView.swift; sourceTree = "<group>"; };
 		2C5F77CB6C7A8E47CB6419B5 /* BatteryService+Hardware.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BatteryService+Hardware.swift"; sourceTree = "<group>"; };
 		2E5DD7FF55CC18833AC09814 /* ConsumerExplanationSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConsumerExplanationSection.swift; sourceTree = "<group>"; };
 		33F11AA8CC2FCC0A83ED6772 /* RuntimeBenchmarkSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuntimeBenchmarkSection.swift; sourceTree = "<group>"; };
+		379F12DE6E51EEC949BB6D8B /* MetricHelpContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricHelpContent.swift; sourceTree = "<group>"; };
 		3AE51C7F6E569BF1607722C1 /* DashboardTechnicalPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardTechnicalPage.swift; sourceTree = "<group>"; };
 		3BBE0E459066F94337164C23 /* MetricHelpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricHelpView.swift; sourceTree = "<group>"; };
 		3D166C5BEEFE5FD30D1BB0A1 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		3F2924A319EB0E0291612478 /* CompleteHardwareMetricCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompleteHardwareMetricCatalog.swift; sourceTree = "<group>"; };
 		403DF87590CB225CA41D78EB /* PowerCenterSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PowerCenterSection.swift; sourceTree = "<group>"; };
 		40492E334C2BCB293514D4C2 /* ChargeSpeedEstimate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChargeSpeedEstimate.swift; sourceTree = "<group>"; };
 		41D244C949B0DF17568C8E73 /* SystemDataWorkbenchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemDataWorkbenchView.swift; sourceTree = "<group>"; };
@@ -128,8 +142,10 @@
 		E9DB2840A0477BE64B95199F /* MenuBarSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarSettings.swift; sourceTree = "<group>"; };
 		EB77AFADC990D5226F553D02 /* DashboardMetricSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardMetricSnapshot.swift; sourceTree = "<group>"; };
 		EEFE6EAFDB9B2755B327C992 /* RuntimeSample.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuntimeSample.swift; sourceTree = "<group>"; };
+		F079818416411E5C9E5644DB /* MenuBarPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarPresentation.swift; sourceTree = "<group>"; };
 		F17F02B7FD9CF8157A274CDF /* MetricSparkline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricSparkline.swift; sourceTree = "<group>"; };
 		F48F1F4F64B191BC32BC31CE /* MetricReferenceSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricReferenceSection.swift; sourceTree = "<group>"; };
+		F698273014C47A1B3E4DB1E4 /* DashboardHelp+Capacity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DashboardHelp+Capacity.swift"; sourceTree = "<group>"; };
 		F6EBB4602FB6FEF4A3CBA0F1 /* BatteryMonitor.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = BatteryMonitor.entitlements; sourceTree = "<group>"; };
 		FBAF3C5BBE3AC94A25D92771 /* zh-Hant */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hant"; path = "zh-Hant.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
 		FC011E70494486FBFACC4106 /* InsightEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsightEngine.swift; sourceTree = "<group>"; };
@@ -166,10 +182,14 @@
 				D7BB6E03A988E27E5AFD1810 /* BatteryGaugeView.swift */,
 				4BC5925414B8135611DA6B3C /* CapacityBreakdownSection.swift */,
 				243CB0FB211EB32DB8512490 /* CompleteHardwareDetailView.swift */,
+				3F2924A319EB0E0291612478 /* CompleteHardwareMetricCatalog.swift */,
 				2E5DD7FF55CC18833AC09814 /* ConsumerExplanationSection.swift */,
 				7EABEB94827ED7A54B1B808B /* ContentView.swift */,
 				DBE6FD98699133078F23AA0D /* DashboardDiagnosticsPage.swift */,
 				227FCAF1EF4BAA3CD499ED7F /* DashboardHelp.swift */,
+				F698273014C47A1B3E4DB1E4 /* DashboardHelp+Capacity.swift */,
+				1ECE8AB1A881CF29C115F8D6 /* DashboardHelp+Power.swift */,
+				0C53ECF3D17C9627FAA6E50A /* DashboardHelp+Runtime.swift */,
 				1D5A9550308BEFF21BE34A78 /* DashboardOverviewPage.swift */,
 				5E454959C0D187D2ED8FFA70 /* DashboardSettingsPage.swift */,
 				AFEC92A2DE9568C8CCD20396 /* DashboardShellView.swift */,
@@ -180,6 +200,10 @@
 				735D2BF0200ADD9E1BA4B82D /* HistoryChartView.swift */,
 				90CF748C20D98621E7B95DFA /* InsightCards.swift */,
 				E4750C09BBEA559BF502861E /* MenuBarDashboardView.swift */,
+				F079818416411E5C9E5644DB /* MenuBarPresentation.swift */,
+				0B9815E54A2BBCBCD2BFF184 /* MenuBarStatusItem.swift */,
+				379F12DE6E51EEC949BB6D8B /* MetricHelpContent.swift */,
+				0FE613DF49FD6F3DFC6991C2 /* MetricHelpModels.swift */,
 				3BBE0E459066F94337164C23 /* MetricHelpView.swift */,
 				F48F1F4F64B191BC32BC31CE /* MetricReferenceSection.swift */,
 				F17F02B7FD9CF8157A274CDF /* MetricSparkline.swift */,
@@ -360,9 +384,13 @@
 				3A04622ABD481A7FCBE793DC /* CapacityBreakdownSection.swift in Sources */,
 				F59F9CE7C571E38D0636BD75 /* ChargeSpeedEstimate.swift in Sources */,
 				CC2A0D360D221889210CB8FD /* CompleteHardwareDetailView.swift in Sources */,
+				97E08441114C9A06CE80B0AF /* CompleteHardwareMetricCatalog.swift in Sources */,
 				3261E9643A27C5790BEA0795 /* ConsumerExplanationSection.swift in Sources */,
 				2FDFD22A2582AF1C59FC4DDA /* ContentView.swift in Sources */,
 				EDDFF1F641F9AE6955F051BB /* DashboardDiagnosticsPage.swift in Sources */,
+				00DC0B6D2CA6B67FE456FD7C /* DashboardHelp+Capacity.swift in Sources */,
+				3A1B897717AF0176E15EE805 /* DashboardHelp+Power.swift in Sources */,
+				5C53B083980E0097A1EA3551 /* DashboardHelp+Runtime.swift in Sources */,
 				BFB69297C11F88A470B668FC /* DashboardHelp.swift in Sources */,
 				7D5B080183B8D905F87ECF3F /* DashboardMetricSnapshot.swift in Sources */,
 				5C35C7BCC268E3A873D62D28 /* DashboardOverviewPage.swift in Sources */,
@@ -377,7 +405,11 @@
 				9A7BCC0000D9357B2CAFDB38 /* InsightEngine.swift in Sources */,
 				0E3E335F00D0BAD150B99D20 /* Localization.swift in Sources */,
 				890BEEA92A8ED31C8A9E7249 /* MenuBarDashboardView.swift in Sources */,
+				A3DD7D0708E84E81FEA6EB3F /* MenuBarPresentation.swift in Sources */,
 				7CC0FAEFE4DA26B42DC8D74F /* MenuBarSettings.swift in Sources */,
+				5F07A64E26C05FDAB5A6F7B2 /* MenuBarStatusItem.swift in Sources */,
+				D764F6144F8CEAB84A6F2016 /* MetricHelpContent.swift in Sources */,
+				37C9625E652CF39D13BC17EB /* MetricHelpModels.swift in Sources */,
 				68AE7723FC298F860B100182 /* MetricHelpView.swift in Sources */,
 				18DD9B762A71B18F88D1CD82 /* MetricReferenceSection.swift in Sources */,
 				4775B36B233F73D0CEAA1C29 /* MetricSparkline.swift in Sources */,

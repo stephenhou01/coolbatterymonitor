@@ -1,5 +1,4 @@
 import SwiftUI
-import Charts
 
 enum DashboardDestination: String, CaseIterable, Identifiable {
     case overview
