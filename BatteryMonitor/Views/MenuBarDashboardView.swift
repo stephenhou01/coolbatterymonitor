@@ -618,7 +618,7 @@ struct MenuBarDashboardView: View {
         case .runtime:
             return presentation.runtimeText
         case .current:
-            return LNum("%.2f A", Double(data.amperage) / 1000)
+            return presentation.value(for: MenuBarMetric.current)
         }
     }
 
