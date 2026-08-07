@@ -1,0 +1,96 @@
+{
+  "_meta": {
+    "scope": "shared/core",
+    "title": "跨页面 / 通用",
+    "description": "跨页面复用的 App 名称、状态、动作和辅助功能文案。",
+    "consumers": [
+      "multiple"
+    ]
+  },
+  "strings": {
+    "lang.system": {
+      "en": "Follow System",
+      "zh-Hans": "跟随系统",
+      "zh-Hant": "跟隨系統",
+      "ja": "システムに従う",
+      "ko": "시스템 따르기",
+      "de": "Systemsprache",
+      "es": "Seguir el sistema",
+      "fr": "Suivre le système",
+      "it": "Segui il sistema",
+      "pt": "Seguir o sistema"
+    },
+    "app.title": {
+      "en": "Battery Monitor",
+      "zh-Hans": "电池监控中心",
+      "zh-Hant": "電池監控中心",
+      "ja": "バッテリーモニター",
+      "ko": "배터리 모니터",
+      "de": "Batterie-Monitor",
+      "es": "Monitor de Batería",
+      "fr": "Moniteur Batterie",
+      "it": "Monitor Batteria",
+      "pt": "Monitor de Bateria"
+    },
+    "app.subtitle": {
+      "en": "Real-Time Battery Dashboard",
+      "zh-Hans": "实时电池数据看板",
+      "zh-Hant": "即時電池資料看板",
+      "ja": "リアルタイムバッテリーダッシュボード",
+      "ko": "실시간 배터리 대시보드",
+      "de": "Echtzeit-Batterie-Dashboard",
+      "es": "Panel de batería en tiempo real",
+      "fr": "Tableau de bord batterie temps réel",
+      "it": "Dashboard batteria in tempo reale",
+      "pt": "Painel de bateria em tempo real"
+    },
+    "app.subtitle.model": {
+      "en": "%@ · Real-Time Dashboard",
+      "zh-Hans": "%@ · 实时数据看板",
+      "zh-Hant": "%@ · 即時資料看板",
+      "ja": "%@ · リアルタイムダッシュボード",
+      "ko": "%@ · 실시간 대시보드",
+      "de": "%@ · Echtzeit-Dashboard",
+      "es": "%@ · Panel en tiempo real",
+      "fr": "%@ · Tableau de bord temps réel",
+      "it": "%@ · Dashboard in tempo reale",
+      "pt": "%@ · Painel em tempo real"
+    },
+    "app.live": {
+      "en": "LIVE",
+      "zh-Hans": "实时",
+      "zh-Hant": "即時",
+      "ja": "リアルタイム",
+      "ko": "실시간",
+      "de": "LIVE",
+      "es": "EN VIVO",
+      "fr": "EN DIRECT",
+      "it": "LIVE",
+      "pt": "AO VIVO"
+    },
+    "calculating": {
+      "en": "Calculating...",
+      "zh-Hans": "计算中...",
+      "zh-Hant": "計算中...",
+      "ja": "計算中...",
+      "ko": "계산 중...",
+      "de": "Berechnung...",
+      "es": "Calculando...",
+      "fr": "Calcul...",
+      "it": "Calcolo...",
+      "pt": "Calculando..."
+    },
+    "p.duration_accessibility": {
+      "en": "{hours} hours {minutes} minutes",
+      "zh-Hans": "{hours} 小时 {minutes} 分钟",
+      "zh-Hant": "{hours} 小時 {minutes} 分鐘",
+      "ja": "{hours} 時間 {minutes} 分",
+      "ko": "{hours}시간 {minutes}분",
+      "de": "{hours} Stunden {minutes} Minuten",
+      "es": "{hours} horas {minutes} minutos",
+      "fr": "{hours} heures {minutes} minutes",
+      "it": "{hours} ore {minutes} minuti",
+      "pt": "{hours} horas {minutes} minutos"
+    }
+  }
+}

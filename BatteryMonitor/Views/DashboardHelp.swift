@@ -17,16 +17,17 @@ enum DashboardHelp {
         )
     }
 
-    /// Ten minutes of samples at most — that is the live buffer's own horizon,
-    /// and claiming more would be inventing history the app never recorded.
-    /// Non-finite readings are dropped rather than plotted.
+    /// Up to 24 hours of source samples. The drawer applies its selected range
+    /// and turns them into fixed closed buckets at render time. Non-finite
+    /// readings are dropped rather than plotted.
     static func trendPoints(
         _ s: DashboardMetricSnapshot,
         _ value: (RealtimeDataPoint) -> Double?
     ) -> [MetricHelpTrendPoint] {
-        guard let end = s.realtimeData.map(\.timestamp).max() else { return [] }
-        let start = end.addingTimeInterval(-10 * 60)
-        return s.realtimeData.suffix(60).compactMap { point in
+        let source = s.trendRealtimeData
+        guard let end = source.map(\.timestamp).max() else { return [] }
+        let start = end.addingTimeInterval(-24 * 60 * 60)
+        return source.compactMap { point in
             guard point.timestamp >= start,
                   let reading = value(point), reading.isFinite else { return nil }
             return MetricHelpTrendPoint(timestamp: point.timestamp, value: reading)
@@ -57,7 +58,7 @@ enum DashboardHelp {
     }
 
     static func trendTitle() -> String {
-        dashboardText("p.trend_last_10min", fallback: "最近 10 分钟")
+        dashboardText("p.trend_history", fallback: "历史趋势")
     }
 
     static func trendWaiting() -> String {

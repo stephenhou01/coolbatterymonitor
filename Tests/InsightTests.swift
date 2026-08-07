@@ -2,13 +2,24 @@ import Foundation
 import AppKit
 
 // InsightEngine / BatteryAgeEstimator / 硬件解析的边界测试。
-// 由 Tests/run-insight-tests.sh 编译运行，不依赖 Xcode 也不依赖界面截图。
+// 由 QATests/run-fixed-qa.sh insight 编译运行，不依赖 Xcode 也不依赖界面截图。
 
 var failures = 0
 func expect(_ cond: Bool, _ msg: String) {
     print((cond ? "  ✓ " : "  ✗ ") + msg)
     if !cond { failures += 1 }
 }
+
+// 断言里出现的中文字面量必须来自真实语言包，不能来自 dashboardText 的兜底参数。
+// 这个进程里 Bundle.main 是固定 BatteryMonitor-QAHost.app，run-fixed-qa.sh 会把
+// Localization/Languages/*.json 拷进去；不拷的话 L() 只返回 key，而
+// dashboardText(_:fallback:) 仍返回中文兜底 —— 两条路径在同一个断言里对不上，
+// 表现成「6 项莫名失败」。显式选简体中文，避免结果随开发机系统语言漂移。
+L10n.shared.select("zh-Hans")
+precondition(L10n.shared.languages.count == 10,
+             "语言包没进 BatteryMonitor-QAHost.app —— run-fixed-qa.sh 是否漏拷 Resources/Languages？")
+precondition(L10n.shared.effectiveCode == "zh-Hans",
+             "未能选中 zh-Hans，实际 \(L10n.shared.effectiveCode)")
 
 // MARK: - 构造样本
 
@@ -587,10 +598,13 @@ let gaugeCaption = MetricFieldFreshness.text(
     cardReadAt: gaugeHelp.readAt,
     now: pollMoment
 ) ?? ""
-// 知道电量计相位后，有用的数字是「下次什么时候来」：60 − 44 = 16 秒。
+// 知道电量计相位后，有用的数字是「下次什么时候来」。但报的必须是**你能看到**的时刻，
+// 不是电量计发布的时刻：电量计在 60 − 44 = 16 秒后发布，而我们 10 秒轮询一次，
+// 这个新值要到第 20 秒那次轮询才会进到界面上。报 16 等于承诺一次用户看不到的刷新。
+// 这就是 secondsUntilVisibleRefresh 名字里 visible 的意思，别把它改回 16。
 // 上次刷新时刻必须同时保留，否则用户无法判断这批数字有多旧。
-expect(gaugeCaption.contains("还有约 16 秒刷新") && gaugeCaption.contains("上次"),
-       "已知相位时倒计时到下次刷新，并保留上次刷新时刻 [\(gaugeCaption)]")
+expect(gaugeCaption.contains("还有约 20 秒刷新") && gaugeCaption.contains("上次"),
+       "已知相位时倒计时到下次「能看到」的刷新，并保留上次刷新时刻 [\(gaugeCaption)]")
 expect(!gaugeCaption.contains("0 秒前"),
        "不能再把我们轮询到现在的 0 秒当成数据新鲜度")
 // 睡眠唤醒或节拍被事件重置后，倒计时不能数成负数
@@ -684,55 +698,38 @@ let pluggedHelp = DashboardHelp.runtime(
 expect(pluggedHelp.comparisonResults.first?.value == "不可用"
        && pluggedHelp.comparisonResults.dropFirst().allSatisfy { $0.value != "—" },
        "插电时系统时间明确不可用，但两项拔电计算值仍可对照")
-let pluggedHelpWithSystemHistory = DashboardHelp.runtime(
-    DashboardMetricSnapshot(
-        data: pluggedRuntimeData,
-        realtimeData: stablePoints,
-        systemRuntimeFallbackSample: RuntimeSample(
-            timestamp: Date(), minutesRemaining: 192, percent: pluggedRuntimeData.percent
-        )
-    )
-)
-expect(pluggedHelpWithSystemHistory.comparisonResults.first?.value == "3 h 12 m",
-       "插电时续航说明保留最近一次有效的Apple系统时间")
+expect(pluggedHelp.comparisonResults.first?.note.contains("当前接电") == true
+       && pluggedHelp.comparisonResults.first?.note.contains("不提供放电剩余时间") == true,
+       "插电不可用时备注明确说明状态和原因")
 
 var sentinelRuntimeData = pluggedRuntimeData
 sentinelRuntimeData.hardwareDetail.timeRemainingRaw = 65_535
 sentinelRuntimeData.hardwareDetail.avgTimeToEmpty = 65_535
 let sentinelHelp = DashboardHelp.runtime(
-    DashboardMetricSnapshot(
-        data: sentinelRuntimeData,
-        realtimeData: stablePoints,
-        systemRuntimeFallbackSample: RuntimeSample(
-            timestamp: Date(), minutesRemaining: 16, percent: sentinelRuntimeData.percent
-        )
-    )
+    DashboardMetricSnapshot(data: sentinelRuntimeData, realtimeData: stablePoints)
 )
-expect(sentinelHelp.comparisonResults.first?.value == "0 h 16 m",
-       "无效实时字段与最近有效系统时间不会混为同一个读数")
+expect(sentinelHelp.comparisonResults.first?.value == "不可用",
+       "无效实时字段不再回填历史系统时间")
 expect(sentinelHelp.rawFields.prefix(2).allSatisfy {
     $0.value == "不可用" && $0.unit.isEmpty
 } && !sentinelHelp.substitution.contains("65535"),
 "极限原始值只显示不可用，不再暴露65535")
-expect(sentinelHelp.comparisonResults.first?.note.contains("最近一次有效读数在") == true,
-       "历史回退值说明最近一次有效读数的时刻，以及此后系统一直没给值")
+expect(sentinelHelp.comparisonResults.first?.note.contains("2 h 28 m") == true
+       && sentinelHelp.comparisonResults.first?.note.contains("仅作拔电参考") == true,
+       "接电时系统时间不可用，并把实测功耗结果明确标成拔电参考")
 
+var exaggeratedRuntimeData = runtimeData
+exaggeratedRuntimeData.isOnAC = false
+exaggeratedRuntimeData.timeRemainingMinutes = 62_840
+exaggeratedRuntimeData.hardwareDetail.timeRemainingRaw = 62_840
+exaggeratedRuntimeData.hardwareDetail.avgTimeToEmpty = 65_535
 let exaggeratedHelp = DashboardHelp.runtime(
-    DashboardMetricSnapshot(
-        data: sentinelRuntimeData,
-        realtimeData: stablePoints,
-        systemRuntimeFallbackSample: RuntimeSample(
-            timestamp: Date(), minutesRemaining: 62_840, percent: sentinelRuntimeData.percent
-        )
-    )
+    DashboardMetricSnapshot(data: exaggeratedRuntimeData, realtimeData: stablePoints)
 )
 expect(exaggeratedHelp.comparisonResults.first?.value == "不可用",
-       "超过24小时的历史系统值不显示成夸张时长")
+       "超过24小时的实时系统值不显示成夸张时长")
 expect(!exaggeratedHelp.substitution.contains("62840"),
        "公式代入区也不暴露超过24小时的极端原始数")
-expect(exaggeratedHelp.comparisonResults.first?.note.contains("2 h 28 m") == true
-       && exaggeratedHelp.comparisonResults.first?.note.contains("10 分钟") == true,
-       "系统时间不可用时给出实测功耗预计和拔电等待建议")
 
 // MARK: - 10.1) 四层系统数据的类型与异常规则
 
@@ -755,6 +752,14 @@ expect(SystemDataCollector.anomalyLevelForTesting(
 expect(BatteryService.liveRefreshInterval == 10
        && ProcessMonitorService.liveRefreshInterval == 10,
        "功率、字段与进程上下文统一每10秒刷新")
+expect(ProcessMonitorService.refreshInterval(hasHighFrequencyConsumer: true) == 10
+       && ProcessMonitorService.refreshInterval(hasHighFrequencyConsumer: false) == 60,
+       "进程明细可见时10秒刷新，全部隐藏时降到60秒")
+expect(!ProcessMonitorService.shouldResetBaseline(lastSamplingStartedAt: 100,
+                                                  nextSamplingStartedAt: 250)
+       && ProcessMonitorService.shouldResetBaseline(lastSamplingStartedAt: 100,
+                                                    nextSamplingStartedAt: 251),
+       "采样间隔超过150秒后重建CPU基线，不把暂停期平均值冒充当前值")
 
 let idleApps = [
     ProcessPowerInfo(pid: 101, name: "Notes", cpuPercent: 0, memoryMB: 80),
@@ -878,7 +883,7 @@ expect(aggregated.id == "app:com.google.Chrome" && aggregated.processCount == 21
 expect(ProcessPowerInfo(pid: 1, name: "x", cpuPercent: 1, memoryMB: 1, processCount: 0).processCount == 1,
        "进程数下界为 1，不出现 0 个进程的行")
 
-// 全机 CPU：整机口径 vs 每核口径。混算会让「系统进程」恒为 0
+// 全机 CPU：整机口径 vs 每核口径。混算会让「未归因负载」恒为 0
 let loadA = SystemCPULoad.Sample(user: 1000, system: 500, idle: 8500, nice: 0)
 let loadB = SystemCPULoad.Sample(user: 1200, system: 600, idle: 8700, nice: 0)
 let busy = SystemCPULoad.busyPercent(from: loadA, to: loadB)
@@ -900,14 +905,14 @@ expect(SystemCPULoad.machinePercent(perCorePercent: 300, coreCount: 0) <= 100,
        "核心数为 0 时不除零、不超过 100%")
 let snapshot10 = SystemCPUSnapshot(machineBusy: 28.0, visiblePerCorePercent: 74.0, coreCount: 10)
 expect(abs(snapshot10.visiblePercent - 7.4) < 0.01,
-       "可见应用每核合计 74% → 整机 7.4% [\(snapshot10.visiblePercent)]")
+       "可读进程每核合计 74% → 整机 7.4% [\(snapshot10.visiblePercent)]")
 expect(snapshot10.systemPercent != nil && abs(snapshot10.systemPercent! - 20.6) < 0.01,
-       "系统进程 = 整机 28.0 − 可见 7.4 = 20.6 [\(String(describing: snapshot10.systemPercent))]")
+       "未归因负载 = 整机 28.0 − 可读 7.4 = 20.6 [\(String(describing: snapshot10.systemPercent))]")
 // 换算前后必须都不出现负数：可见合计可能因为采样窗口错位略超整机
 let overshoot = SystemCPUSnapshot(machineBusy: 5.0, visiblePerCorePercent: 900.0, coreCount: 10)
-expect(overshoot.systemPercent == 0, "可见合计超过整机时系统进程夹到 0，不显示负数")
+expect(overshoot.systemPercent == 0, "可读合计超过整机时未归因负载夹到 0，不显示负数")
 expect(SystemCPUSnapshot(machineBusy: nil, visiblePerCorePercent: 74, coreCount: 10).systemPercent == nil,
-       "还没有整机读数时系统进程也是 nil，UI 显示「—」")
+       "还没有整机读数时未归因负载也是 nil，UI 显示「—」")
 expect(SystemCPUSnapshot.unavailable.machineBusyPercent == nil,
        "首次采样前整机读数不可用")
 
@@ -933,14 +938,21 @@ let preferenceSuiteName = "com.stephen.BatteryMonitor.tests.presentation"
 let preferenceDefaults = UserDefaults(suiteName: preferenceSuiteName)!
 preferenceDefaults.removePersistentDomain(forName: preferenceSuiteName)
 
-let appearancePreferences = AppearanceSettings(defaults: preferenceDefaults)
-expect(appearancePreferences.mode == .system, "外观默认跟随系统")
+let appearancePreferences = AppearanceSettings(defaults: preferenceDefaults, defaultMode: .light)
+expect(appearancePreferences.mode == .light
+       && preferenceDefaults.string(forKey: "app.appearance.mode") == AppearanceMode.light.rawValue,
+       "首次启动把系统外观解析成可见的浅色或深色选项")
 appearancePreferences.select(.dark)
 expect(AppearanceSettings(defaults: preferenceDefaults).mode == .dark,
        "深色外观选择可持久化并由新实例恢复")
 appearancePreferences.select(.light)
 expect(AppearanceSettings(defaults: preferenceDefaults).mode == .light,
        "浅色外观选择可覆盖深色并持久化")
+preferenceDefaults.set(AppearanceMode.system.rawValue, forKey: "app.appearance.mode")
+let migratedAppearance = AppearanceSettings(defaults: preferenceDefaults, defaultMode: .dark)
+expect(migratedAppearance.mode == .dark
+       && preferenceDefaults.string(forKey: "app.appearance.mode") == AppearanceMode.dark.rawValue,
+       "旧版跟随系统偏好会迁移成当前系统对应的具体颜色")
 
 let menuPreferences = MenuBarSettings(defaults: preferenceDefaults)
 expect(menuPreferences.secondaryMetric == .runtime,
@@ -1295,6 +1307,13 @@ expect(DashboardMetricSnapshot(data: heroNoCurrent, realtimeData: []).batteryCur
 
 // 充满时间：AvgTimeToFull 是未过滤原始值
 var heroToFull = heroCharging
+// 必须显式打开 isCharging。上面那批断言用的是 heroState()／BatteryPowerState，
+// 它由实测电流推断充电；而 timeToFullMinutes 读的是系统给的 data.isCharging 原始
+// 标志位（同 batteryChargingPowerWatts）。heroCharging 只设了 isOnAC 和
+// instantAmperage，还在 1261 行被置成 isFullyCharged —— 拿它当「正在充电」的样本，
+// 测的其实是「没在充电时返回 nil」，跟断言想说的事情正好相反。
+heroToFull.isCharging = true
+heroToFull.isFullyCharged = false
 heroToFull.hardwareDetail.avgTimeToFull = 72
 expect(DashboardMetricSnapshot(data: heroToFull, realtimeData: []).timeToFullMinutes == 72,
        "充电中的合理充满时间透传")
@@ -1509,6 +1528,101 @@ expect(hoverText.hasSuffix("W"), "默认单位是瓦 [\(hoverText)]")
 expect(MetricHelpDrawer.trendHoverText(hoverPoints[2], unit: "℃").hasSuffix("℃"),
        "温度曲线的读数带摄氏度，不硬写成瓦")
 
+// 三档范围共用同一份 24 小时原始序列；默认档必须始终是 10 分钟。
+// 图表展示的是已封闭分桶，不是后台 10 秒轮询点。
+expect(MetricHelpTrendRange.allCases.first == .tenMinutes,
+       "问号面板趋势默认仍是最近 10 分钟")
+expect(BatteryService.maxRealtimePoints == 8_641,
+       "十秒采样缓存完整覆盖 24 小时（含首尾点）")
+let trendBase = Date(timeIntervalSince1970: 0)
+let dayTrendPoints = (0...8_640).map { offset in
+    MetricHelpTrendPoint(
+        timestamp: trendBase.addingTimeInterval(Double(offset) * BatteryService.liveRefreshInterval),
+        value: offset == 4_321 ? 999 : Double(offset % 37)
+    )
+}
+let tenMinuteTrend = MetricHelpTrendRange.tenMinutes.chartPoints(from: dayTrendPoints, maximumCount: 10_000)
+expect(tenMinuteTrend.count == 10,
+       "最近 10 分钟固定显示 10 个一分钟均值点 [\(tenMinuteTrend.count)]")
+let oneHourTrend = MetricHelpTrendRange.oneHour.chartPoints(from: dayTrendPoints, maximumCount: 10_000)
+expect(oneHourTrend.count == 20,
+       "最近 1 小时固定显示 20 个三分钟均值点 [\(oneHourTrend.count)]")
+let downsampledDayTrend = MetricHelpTrendRange.twentyFourHours.chartPoints(from: dayTrendPoints)
+expect(downsampledDayTrend.count == 40,
+       "最近 24 小时自动按 36 分钟间隔显示 40 点 [\(downsampledDayTrend.count)]")
+expect(abs(oneHourTrend[1].timestamp.timeIntervalSince(oneHourTrend[0].timestamp) - 180) < 0.001,
+       "1 小时相邻展示点严格间隔 3 分钟")
+expect(abs(tenMinuteTrend[1].timestamp.timeIntervalSince(tenMinuteTrend[0].timestamp) - 60) < 0.001,
+       "10 分钟相邻展示点严格间隔 1 分钟")
+expect(abs(downsampledDayTrend[1].timestamp.timeIntervalSince(downsampledDayTrend[0].timestamp) - 2_160) < 0.001,
+       "24 小时相邻展示点自动间隔 36 分钟")
+for range in MetricHelpTrendRange.allCases {
+    let boundary = range.duration
+    let before = dayTrendPoints.filter { $0.timestamp <= trendBase.addingTimeInterval(boundary + 10) }
+    let after = dayTrendPoints.filter { $0.timestamp <= trendBase.addingTimeInterval(boundary + 20) }
+    expect(range.chartPoints(from: before) == range.chartPoints(from: after),
+           "\(range.rawValue) 的未封闭桶内新增 10 秒轮询点不应让图表提前更新")
+}
+let fittedFixture = [
+    MetricHelpTrendPoint(timestamp: trendBase, value: 10),
+    MetricHelpTrendPoint(timestamp: trendBase.addingTimeInterval(9 * 60), value: 16),
+    MetricHelpTrendPoint(timestamp: trendBase.addingTimeInterval(12 * 60), value: 16),
+]
+let fittedTrend = MetricHelpTrendRange.oneHour.chartPoints(from: fittedFixture)
+expect(fittedTrend.contains(where: { $0.quality == .fitted }),
+       "一个短缺口会拟合，并明确标记为拟合点")
+let longGapFixture = [
+    MetricHelpTrendPoint(timestamp: trendBase, value: 10),
+    MetricHelpTrendPoint(timestamp: trendBase.addingTimeInterval(30 * 60), value: 16),
+    MetricHelpTrendPoint(timestamp: trendBase.addingTimeInterval(33 * 60), value: 16),
+]
+let segmentedTrend = MetricHelpTrendRange.oneHour.chartPoints(from: longGapFixture)
+expect(Set(segmentedTrend.map(\.segmentID)).count == 2,
+       "长时间没有采样时折线断开，不把离线时段伪造成连续数据")
+let realtimeRoundTripData = try! JSONEncoder().encode(adapterPoints)
+let realtimeRoundTrip = try! JSONDecoder().decode([RealtimeDataPoint].self, from: realtimeRoundTripData)
+expect(realtimeRoundTrip.count == adapterPoints.count
+       && realtimeRoundTrip.last?.power == adapterPoints.last?.power,
+       "24 小时实时采样可编码并在重启后恢复")
+var legacyRealtimeJSONObject = try! JSONSerialization.jsonObject(with: realtimeRoundTripData) as! [[String: Any]]
+for index in legacyRealtimeJSONObject.indices {
+    legacyRealtimeJSONObject[index].removeValue(forKey: "sampleCount")
+    legacyRealtimeJSONObject[index].removeValue(forKey: "adapterRatedPower")
+    legacyRealtimeJSONObject[index].removeValue(forKey: "adapterOutputPower")
+    legacyRealtimeJSONObject[index].removeValue(forKey: "chargingPower")
+    legacyRealtimeJSONObject[index].removeValue(forKey: "cycleCount")
+    legacyRealtimeJSONObject[index].removeValue(forKey: "healthPercent")
+}
+let legacyRealtimeData = try! JSONSerialization.data(withJSONObject: legacyRealtimeJSONObject)
+let legacyRealtimeDecoded = try? JSONDecoder().decode([RealtimeDataPoint].self, from: legacyRealtimeData)
+expect(legacyRealtimeDecoded?.first?.sampleCount == 1,
+       "升级后仍能读取旧版实时历史，新增字段缺失时按一个真实样本处理")
+let archiveBase = RealtimeDataPoint(timestamp: hoverBase, voltage: 13, amperage: 100,
+                                    power: 10, temperature: 30, percent: 80,
+                                    cycleCount: 200, healthPercent: 95)
+let archiveNext = RealtimeDataPoint(timestamp: hoverBase.addingTimeInterval(10), voltage: 13.2,
+                                    amperage: 300, power: 14, temperature: 32, percent: 80,
+                                    cycleCount: 200, healthPercent: 95)
+let archiveBucket = TelemetryHistoryArchive.appending(
+    archiveNext,
+    to: TelemetryHistoryArchive.appending(archiveBase, to: [])
+)
+expect(archiveBucket.count == 1 && archiveBucket[0].sampleCount == 2
+       && abs(archiveBucket[0].power - 12) < 0.001,
+       "永久档案把同一三分钟桶压成带真实样本数的均值")
+let retentionNow = hoverBase.addingTimeInterval(24 * 60 * 60)
+let retentionFixture = [
+    RealtimeDataPoint(timestamp: retentionNow.addingTimeInterval(-24 * 60 * 60 - 1),
+                      voltage: 13, amperage: 0, power: 8, temperature: 30, percent: 100),
+    RealtimeDataPoint(timestamp: retentionNow.addingTimeInterval(-24 * 60 * 60),
+                      voltage: 13, amperage: 0, power: 9, temperature: 30, percent: 100),
+    RealtimeDataPoint(timestamp: retentionNow,
+                      voltage: 13, amperage: 0, power: 10, temperature: 30, percent: 100),
+]
+let retainedFixture = BatteryService.retainedRealtimeSamples(retentionFixture, now: retentionNow)
+expect(retainedFixture.map(\.power) == [9, 10],
+       "重启恢复时只保留最近 24 小时，边界点保留、过期点丢弃")
+
 // 每个「有真实序列」的问号面板都必须带图；没有序列的不许硬画
 let trendSnapshot = DashboardMetricSnapshot(data: wholeMacInputData, realtimeData: adapterPoints)
 let panelsWithTrend: [(String, MetricHelpContent)] = [
@@ -1708,6 +1822,9 @@ if let q = ChargeSpeedEstimate.resolve(data: quickFinish, samples: [], now: spee
 
 var notCharging = chargingBattery
 notCharging.isCharging = false
+notCharging.amperage = 0
+notCharging.hardwareDetail.instantAmperage = 0
+notCharging.hardwareDetail.smoothedAmperage = 0
 expect(ChargeSpeedEstimate.resolve(data: notCharging, samples: measuredSamples,
                                    now: speedNow) == nil,
        "没在充电时不给速度，交由界面退回裸电量")

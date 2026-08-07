@@ -38,8 +38,17 @@ enum AppTheme {
         dark: NSColor(srgbRed: 0.78, green: 0.86, blue: 0.94, alpha: 0.11)
     )
     static let textPrimary = Color(nsColor: .labelColor)
-    static let textSecondary = Color(nsColor: .secondaryLabelColor)
-    static let textTertiary = Color(nsColor: .tertiaryLabelColor)
+    // System secondary/tertiary label colors become too faint on our tinted,
+    // translucent cards in light mode. Keep the hierarchy, but use opaque
+    // adaptive tokens so captions and evidence remain readable.
+    static let textSecondary = adaptive(
+        light: NSColor(srgbRed: 0.28, green: 0.31, blue: 0.36, alpha: 1),
+        dark: NSColor(srgbRed: 0.76, green: 0.79, blue: 0.84, alpha: 1)
+    )
+    static let textTertiary = adaptive(
+        light: NSColor(srgbRed: 0.40, green: 0.43, blue: 0.48, alpha: 1),
+        dark: NSColor(srgbRed: 0.64, green: 0.68, blue: 0.74, alpha: 1)
+    )
     static let selectionText = Color.white
 
     /// A subtle surface/row tint that is white in dark mode and black in light

@@ -8,12 +8,18 @@ import Foundation
 struct DashboardMetricSnapshot {
     let data: BatteryData
     let realtimeData: [RealtimeDataPoint]
-    /// The latest persisted Apple system estimate. Overview uses this while on
-    /// AC because the live gauge returns 65535 there; derived power estimates
-    /// are never written into this fallback.
-    var systemRuntimeFallbackSample: RuntimeSample? = nil
+    var archivedRealtimeData: [RealtimeDataPoint] = []
 
     var detail: BatteryHardwareDetail { data.hardwareDetail }
+    /// Prefer raw ten-second points wherever they exist and use the permanent
+    /// three-minute archive only for the older part of the visible window.
+    /// This avoids double-weighting the same measurements after a relaunch.
+    var trendRealtimeData: [RealtimeDataPoint] {
+        TelemetryHistoryArchive.mergedHistory(
+            archive: archivedRealtimeData,
+            raw: realtimeData
+        )
+    }
     var modelIdentifier: String {
         data.modelIdentifier.isEmpty ? BatteryService.hardwareModel() : data.modelIdentifier
     }
@@ -47,20 +53,49 @@ struct DashboardMetricSnapshot {
         return watts
     }
 
-    /// Positive battery-side current only. `InstantAmperage` is preferred for
-    /// the live card; `Amperage` is the compatible smoothed fallback. A Mac can
-    /// be on AC while this remains exactly zero because the adapter is powering
-    /// the system without adding charge to the battery.
+    /// A resting pack drifts by a few tens of milliamps. Below half a watt the
+    /// direction is noise, not a state worth naming.
+    static let chargeDirectionDeadBandWatts = 0.5
+
+    /// Whether charge is actually going into the pack — the one charging verdict
+    /// for the whole app. `BatteryPowerState`, the charging-power card, the
+    /// time-to-full row and the charge-speed forecast all resolve it here so that
+    /// none of them can contradict another.
+    ///
+    /// Measured current leads, `IsCharging` only breaks ties inside the dead band.
+    /// The flag is not a reliable answer on its own: AppleSmartBattery reports
+    /// `IsCharging = false` while `InstantAmperage` is positive. That is not a
+    /// sampling race — `BatteryService.fetchData` reads the flag and the current
+    /// out of one IORegistry snapshot — the hardware simply says both things at
+    /// once. Trusting the flag there is what made the charging-power card read
+    /// 0 W with the sparkline underneath it sitting at 32 W.
+    ///
+    /// The converse is why the flag is kept at all: at the top of a charge the
+    /// current has tapered into the noise floor, and then the flag is the only
+    /// honest answer left.
+    var isEffectivelyCharging: Bool {
+        guard data.isOnAC else { return false }
+        let watts = batteryPowerWatts ?? 0
+        if watts >= Self.chargeDirectionDeadBandWatts { return true }
+        if watts <= -Self.chargeDirectionDeadBandWatts { return false }
+        if data.isFullyCharged { return false }
+        return data.isCharging
+    }
+
+    /// Positive battery-side current only. A Mac can be on AC while this remains
+    /// exactly zero because the adapter is powering the system without adding
+    /// charge to the battery.
+    ///
+    /// Reads through `batteryCurrentMilliamps` rather than repeating the
+    /// `InstantAmperage → Amperage → data.amperage` ladder: two copies of that
+    /// ladder is how this property came to bypass the stale-current guard in
+    /// `batteryCurrentMilliamps`, and report ≈37 W into the pack for up to a
+    /// minute after the cable came out. Clamping the sign here is equivalent —
+    /// the guard above already establishes we are on AC, which is the only
+    /// condition that guard tests.
     var batteryChargingCurrentMilliamps: Int? {
-        guard data.isCharging else { return 0 }
-        if detail.presentRawFields.contains("InstantAmperage") {
-            return max(0, detail.instantAmperage)
-        }
-        if detail.presentRawFields.contains("Amperage") {
-            return max(0, detail.smoothedAmperage)
-        }
-        guard data.amperage != 0 else { return nil }
-        return max(0, data.amperage)
+        guard isEffectivelyCharging else { return 0 }
+        return batteryCurrentMilliamps.map { max(0, $0) }
     }
 
     /// Battery current with its sign intact: negative while discharging, positive
@@ -111,16 +146,22 @@ struct DashboardMetricSnapshot {
     /// parser, so the 65535 sentinel and absurd five-figure values both arrive
     /// here and must be rejected rather than displayed.
     var timeToFullMinutes: Int? {
-        guard data.isCharging, let minutes = detail.avgTimeToFull,
+        guard isEffectivelyCharging, let minutes = detail.avgTimeToFull,
               RuntimeSample.isValid(minutes: minutes) else { return nil }
         return minutes
     }
 
     /// Battery charging power = pack voltage × positive battery current.
-    /// When IsCharging is false the physical flow into the battery is 0 W,
-    /// regardless of the adapter's whole-Mac input power.
+    /// Nothing is flowing into the pack when it is not charging, regardless of
+    /// the adapter's whole-Mac input power.
     var batteryChargingPowerWatts: Double? {
-        guard data.isCharging else { return 0 }
+        // Looks redundant against the same guard inside
+        // `batteryChargingCurrentMilliamps`, but it carries an invariant the
+        // inner one cannot: before the first poll lands both `data.voltage` and
+        // `packVoltage` are 0, and without this the next guard returns **nil**
+        // instead of 0 — which makes the whole menu-bar item disappear rather
+        // than read "0W". Do not delete it as duplication.
+        guard isEffectivelyCharging else { return 0 }
         guard voltageVolts.isFinite, voltageVolts > 0,
               let milliamps = batteryChargingCurrentMilliamps else { return nil }
         return voltageVolts * Double(milliamps) / 1000.0
@@ -286,14 +327,10 @@ struct DashboardMetricSnapshot {
     }
 
     var systemRuntimeMinutes: Int? {
-        if !data.isOnAC,
-           let minutes = data.timeRemainingMinutes,
-           RuntimeSample.isValid(minutes: minutes) {
-            return minutes
-        }
-        guard let fallback = systemRuntimeFallbackSample,
-              RuntimeSample.isValid(minutes: fallback.minutesRemaining) else { return nil }
-        return fallback.minutesRemaining
+        guard !data.isOnAC,
+              let minutes = data.timeRemainingMinutes,
+              RuntimeSample.isValid(minutes: minutes) else { return nil }
+        return minutes
     }
 
     var displayedRuntimeMinutes: Int? {

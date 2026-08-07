@@ -40,6 +40,11 @@ struct ProcessListView: View {
                 }
             }
 
+            Text(L("proc.cpu_per_core_note"))
+                .font(.system(size: 9.5))
+                .foregroundStyle(AppTheme.textTertiary)
+                .fixedSize(horizontal: false, vertical: true)
+
             VStack(spacing: 6) {
                 ForEach(Array(processes.prefix(10).enumerated()), id: \.element.id) { index, proc in
                     ProcessRow(proc: proc, index: index)
@@ -103,6 +108,7 @@ struct ProcessRow: View {
                             .font(.system(size: 10))
                             .foregroundStyle(AppTheme.textTertiary)
                             .lineLimit(1)
+                            .help(L("proc.memory_rss_note"))
                     }
                     .frame(width: 140, alignment: .leading)
 

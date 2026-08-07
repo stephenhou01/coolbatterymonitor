@@ -44,6 +44,7 @@ struct DashboardSidebar: View {
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundStyle(AppTheme.textPrimary)
                         .lineLimit(1)
+                        .minimumScaleFactor(0.88)
                 }
                 Text(dashboardText("shell.sidebar_subtitle", fallback: "你的 Mac 电池仪表盘"))
                     .font(.system(size: 10.5))
@@ -148,7 +149,7 @@ struct AppearanceModePicker: View {
 
     var body: some View {
         HStack(spacing: 3) {
-            ForEach(AppearanceMode.allCases) { mode in
+            ForEach(AppearanceMode.selectableCases) { mode in
                 Button {
                     withAnimation(.easeInOut(duration: 0.16)) {
                         appearance.select(mode)
@@ -287,23 +288,28 @@ enum BatteryPowerState: Equatable {
     case pluggedDischarging
     case discharging
 
-    /// A resting pack drifts by a few tens of milliamps. Below half a watt the
-    /// direction is noise, not a state worth naming.
-    static let restingWatts = 0.5
-
-    /// Resolved from measured battery power, not from `IsCharging`. The flag
-    /// comes from IOPowerSources while the current comes from the IORegistry, on
-    /// a different refresh cadence, so the two disagree for a tick at a time —
-    /// which is how the panel came to read "not charging · +3.95 A".
+    /// Resolved from measured battery power, not from `IsCharging` alone.
+    ///
+    /// The reason is not a sampling race between two APIs, which is what an
+    /// earlier version of this comment claimed: `BatteryService.fetchData` reads
+    /// `IsCharging` and the battery current out of the *same* IORegistry
+    /// snapshot (`fetchFromIOPowerSources` only runs when that read fails
+    /// outright). AppleSmartBattery genuinely reports `IsCharging = false` with
+    /// `InstantAmperage` positive, which is how the panel came to read
+    /// "not charging · +3.95 A". Do not "fix the synchronisation" — there is
+    /// nothing out of sync.
+    ///
+    /// The charging half of the decision lives in
+    /// `DashboardMetricSnapshot.isEffectivelyCharging` so the state line, the
+    /// charging-power card, the time-to-full row and the charge-speed forecast
+    /// are all the same verdict. Post-condition worth keeping true:
+    /// `state == .charging` ⟺ `isEffectivelyCharging`.
     static func resolve(_ s: DashboardMetricSnapshot) -> BatteryPowerState {
         guard s.data.isOnAC else { return .discharging }
         let watts = s.batteryPowerWatts ?? 0
-        if watts >= restingWatts { return .charging }
-        if watts <= -restingWatts { return .pluggedDischarging }
-        // Inside the dead band the measurement cannot pick a side, so fall back
-        // to the flags — including the top of a charge, where current has tapered
-        // to nothing but `IsCharging` is still the honest answer.
-        if s.data.isFullyCharged { return .full }
-        return s.data.isCharging ? .charging : .pluggedIdle
+        if watts <= -DashboardMetricSnapshot.chargeDirectionDeadBandWatts { return .pluggedDischarging }
+        if s.isEffectivelyCharging { return .charging }
+        // Left over: inside the dead band with neither flag set, or holding full.
+        return s.data.isFullyCharged ? .full : .pluggedIdle
     }
 }

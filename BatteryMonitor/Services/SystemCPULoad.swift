@@ -5,8 +5,8 @@ import Darwin
 ///
 /// 存在的理由是诚实：进程列表只覆盖当前用户可读的进程，`proc_pidinfo` 对 root 进程
 /// 一律失败，所以 WindowServer、kernel_task 这些经常是真正大头的进程永远不在列表里。
-/// 实测本机全机 28.0% 忙，可见应用只解释了其中约 1/4。有了全机数，缺口就能标成
-/// 「系统进程」而不是假装列表是全量。
+/// 实测本机全机 28.0% 忙，可读进程只解释了其中约 1/4。有了全机数，缺口就能标成
+/// 「未归因负载」而不是假装列表是全量。
 ///
 /// 这个调用不需要任何 entitlement，也不会弹窗（实测返回 KERN_SUCCESS）。
 enum SystemCPULoad {
@@ -81,7 +81,8 @@ struct SystemCPUSnapshot: Sendable, Equatable {
     let machineBusyPercent: Double?
     /// 可见进程合计（已从每核口径换算成整机口径）。
     let visiblePercent: Double
-    /// 剩下那部分，即沙箱读不到的系统进程。machineBusyPercent 为 nil 时也是 nil。
+    /// 剩下那部分是未归因负载，包含沙箱读不到的系统进程与采样差额。
+    /// machineBusyPercent 为 nil 时也是 nil。
     let systemPercent: Double?
 
     static let unavailable = SystemCPUSnapshot(machineBusyPercent: nil, visiblePercent: 0,

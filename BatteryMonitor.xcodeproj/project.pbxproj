@@ -14,6 +14,7 @@
 		10557DC884ECFBEDBF45CDDF /* Languages in Resources */ = {isa = PBXBuildFile; fileRef = 4D0E4832C92998CD6E9F5913 /* Languages */; };
 		132C00799288C5840DEE1006 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0FECAA007FFBAB28F3E5CE72 /* Assets.xcassets */; };
 		18DD9B762A71B18F88D1CD82 /* MetricReferenceSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = F48F1F4F64B191BC32BC31CE /* MetricReferenceSection.swift */; };
+		1EA4C55C0AFFA12223B93B44 /* TelemetryHistoryArchive.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64A527251238014F652D517D /* TelemetryHistoryArchive.swift */; };
 		2213190F103B2D982173B7C4 /* RemainingTimeHeroSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 066BF5640748979A337627B9 /* RemainingTimeHeroSection.swift */; };
 		2D23B1A2DFC248B1C208766A /* DashboardTechnicalPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AE51C7F6E569BF1607722C1 /* DashboardTechnicalPage.swift */; };
 		2F1AEE73BAE304E5CD762F6E /* DashboardShellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFEC92A2DE9568C8CCD20396 /* DashboardShellView.swift */; };
@@ -109,6 +110,7 @@
 		5E454959C0D187D2ED8FFA70 /* DashboardSettingsPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardSettingsPage.swift; sourceTree = "<group>"; };
 		5EC0F80EB8D4D1711A87816F /* ProcessTable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessTable.swift; sourceTree = "<group>"; };
 		644460A7915BB9FD1CC139A8 /* SystemFieldCatalog.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = SystemFieldCatalog.json; sourceTree = "<group>"; };
+		64A527251238014F652D517D /* TelemetryHistoryArchive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelemetryHistoryArchive.swift; sourceTree = "<group>"; };
 		64D77D4CAFCF034D3CB95241 /* ProcessInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessInfo.swift; sourceTree = "<group>"; };
 		6F30E2D96C71833CF776A3CA /* PowerFlowEdge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PowerFlowEdge.swift; sourceTree = "<group>"; };
 		7073575F06568B3A2252C953 /* RemainingTimeHistorySection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemainingTimeHistorySection.swift; sourceTree = "<group>"; };
@@ -275,6 +277,7 @@
 				64D77D4CAFCF034D3CB95241 /* ProcessInfo.swift */,
 				EEFE6EAFDB9B2755B327C992 /* RuntimeSample.swift */,
 				97F141A2AB0CBA3A7C985B8E /* SystemDataSnapshot.swift */,
+				64A527251238014F652D517D /* TelemetryHistoryArchive.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -431,6 +434,7 @@
 				7C7916B54380C176CBB72E61 /* SystemDataCollector.swift in Sources */,
 				E4C1D2488081737694B3A8C2 /* SystemDataSnapshot.swift in Sources */,
 				762F1D7D591324903800BD40 /* SystemDataWorkbenchView.swift in Sources */,
+				1EA4C55C0AFFA12223B93B44 /* TelemetryHistoryArchive.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

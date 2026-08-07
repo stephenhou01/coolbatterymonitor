@@ -9,7 +9,7 @@ struct DashboardOverviewPage: View {
         DashboardMetricSnapshot(
             data: data,
             realtimeData: batteryService.realtimeData,
-            systemRuntimeFallbackSample: batteryService.runtimeSamples.last
+            archivedRealtimeData: batteryService.archivedRealtimeData
         )
     }
     private var presentation: MenuBarPresentation {
@@ -22,7 +22,10 @@ struct DashboardOverviewPage: View {
                 DashboardPageHeader(
                     title: L("app.title"),
                     subtitle: data.modelIdentifier.isEmpty ? L("app.subtitle") : data.modelIdentifier,
-                    trailing: AppearanceModePicker()
+                    trailing: HStack(spacing: 10) {
+                        LanguageSelectionMenu()
+                        AppearanceModePicker()
+                    }
                 )
 
                 overviewHero
@@ -154,7 +157,7 @@ struct DashboardOverviewPage: View {
                 // Reserve both lines whether or not the basis needs them, so the
                 // figure does not shift as the wording changes between states.
                 .frame(maxWidth: .infinity, minHeight: 24, alignment: .topLeading)
-            Text(MenuBarPresentation.durationText(minutes))
+            Text(runtimeValueText(minutes))
                 .font(.system(size: 30, weight: .medium, design: .rounded))
                 .foregroundStyle(color)
                 .monospacedDigit()
@@ -190,7 +193,7 @@ struct DashboardOverviewPage: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.75)
                 Spacer(minLength: 4)
-                Text(MenuBarPresentation.durationText(minutes))
+                Text(runtimeValueText(minutes))
                     .font(.system(size: 17, weight: .medium, design: .rounded))
                     .foregroundStyle(color)
                     .monospacedDigit()
@@ -226,16 +229,29 @@ struct DashboardOverviewPage: View {
     /// the question mark next to the section title carries the long version.
     private func systemRuntimeBasis(_ s: DashboardMetricSnapshot) -> String {
         guard s.systemRuntimeMinutes != nil else {
-            return dashboardText("shell.apple_runtime_unavailable", fallback: "Apple 官方系统预估 · 拔电使用后生成")
-        }
-        // On AC the gauge parks its estimate, so what is on screen is the last
-        // valid reading rather than a live one — say so instead of implying live.
-        guard data.timeRemainingMinutes != nil else {
-            return dashboardText("shell.apple_runtime_last_note",
-                                 fallback: "接电状态下保留最近一次有效的 Apple 官方系统预估")
+            if !data.isOnAC {
+                return dashboardText(
+                    "shell.apple_runtime_waiting",
+                    fallback: "macOS 暂未提供有效剩余时间 · 继续使用电池后再查看"
+                )
+            }
+            return dashboardText(
+                "shell.apple_runtime_unavailable",
+                fallback: "当前接电时 macOS 不提供放电剩余时间 · 拔电使用后生成"
+            )
         }
         return dashboardText("shell.system_runtime_basis",
                              fallback: "电量计芯片自身算法 · 约每分钟更新 · 与菜单栏同一个数字")
+    }
+
+    /// A missing duration is a product state, not a formatting glyph. Spell it
+    /// out so users do not have to guess whether an em dash means unavailable,
+    /// still loading, or a rendering problem.
+    private func runtimeValueText(_ minutes: Int?) -> String {
+        guard let minutes, minutes > 0 else {
+            return dashboardText("p.runtime_unavailable", fallback: "不可用")
+        }
+        return MenuBarPresentation.durationText(minutes)
     }
 
     private func stableRuntimeBasis(_ s: DashboardMetricSnapshot) -> String {

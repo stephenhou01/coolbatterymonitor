@@ -1,0 +1,240 @@
+{
+  "_meta": {
+    "scope": "technical/runtime-benchmark",
+    "title": "技术参数 / 官方续航对比",
+    "description": "机型基准、测试条件和续航审计文案。",
+    "consumers": [
+      "RuntimeBenchmarkSection"
+    ]
+  },
+  "strings": {
+    "p.full_tank_explain": {
+      "en": "A full charge only means the tank is full. Power use is now {ratio}%% of your usual level, so it will drain faster.",
+      "zh-Hans": "满电只是“油箱装满”；现在功耗是日常水平的 {ratio}%%，所以会用得更快。",
+      "zh-Hant": "滿電只是「油箱裝滿」；現在功耗是日常水準的 {ratio}%%，所以會用得更快。",
+      "ja": "満充電は「タンクが満杯」という意味にすぎません。現在の消費電力は普段の {ratio}%% なので、より早く減ります。",
+      "ko": "완충은 「탱크가 가득 찼다」는 뜻일 뿐입니다. 현재 소비 전력이 평소 수준의 {ratio}%%이므로 더 빨리 줄어듭니다.",
+      "de": "Voll geladen heißt nur: Der Tank ist voll. Der Verbrauch liegt jetzt bei {ratio}%% des üblichen Werts, deshalb leert er sich schneller.",
+      "es": "Estar a plena carga solo significa que el depósito está lleno. El consumo es ahora el {ratio}%% de tu nivel habitual, así que se vaciará más rápido.",
+      "fr": "Une charge complète signifie seulement que le réservoir est plein. La consommation atteint actuellement {ratio}%% de votre niveau habituel : la batterie se videra donc plus vite.",
+      "it": "Carica completa significa solo che il serbatoio è pieno. Il consumo è ora al {ratio}%% del livello abituale, quindi si scaricherà più in fretta.",
+      "pt": "Carga completa só quer dizer que o tanque está cheio. O consumo agora está em {ratio}%% do seu nível habitual, então ela vai se esgotar mais rápido."
+    },
+    "p.model_design_energy": {
+      "en": "Design energy for this model",
+      "zh-Hans": "这款机型出厂设计",
+      "zh-Hant": "這款機型出廠設計",
+      "ja": "この機種の設計エネルギー",
+      "ko": "이 기종의 설계 에너지",
+      "de": "Auslegungsenergie dieses Modells",
+      "es": "Energía de diseño de este modelo",
+      "fr": "Énergie nominale de ce modèle",
+      "it": "Energia di progetto di questo modello",
+      "pt": "Energia de projeto deste modelo"
+    },
+    "p.current_full_energy": {
+      "en": "This battery when full now",
+      "zh-Hans": "这块电池现在充满",
+      "zh-Hant": "這塊電池現在充滿",
+      "ja": "現在の満充電エネルギー",
+      "ko": "지금 완충했을 때의 에너지",
+      "de": "Dieser Akku heute voll",
+      "es": "Esta batería llena hoy",
+      "fr": "Cette batterie à pleine charge aujourd'hui",
+      "it": "Questa batteria oggi a piena carica",
+      "pt": "Esta bateria quando cheia hoje"
+    },
+    "p.energy_in_battery": {
+      "en": "Energy remaining now",
+      "zh-Hans": "此刻剩余能量",
+      "zh-Hant": "此刻剩餘能量",
+      "ja": "現在の残存エネルギー",
+      "ko": "현재 남은 에너지",
+      "de": "Aktuell verbleibende Energie",
+      "es": "Energía restante ahora",
+      "fr": "Énergie restante à cet instant",
+      "it": "Energia residua adesso",
+      "pt": "Energia restante agora"
+    },
+    "p.current_use_estimate": {
+      "en": "At this usage",
+      "zh-Hans": "照现在这样用",
+      "zh-Hant": "照現在這樣用",
+      "ja": "この使い方なら",
+      "ko": "이 사용 방식이면",
+      "de": "Bei dieser Nutzung",
+      "es": "Con este uso",
+      "fr": "À ce rythme d'utilisation",
+      "it": "Con questo utilizzo",
+      "pt": "Neste uso"
+    },
+    "p.baseline_compare": {
+      "en": "At this Mac's usual {watts}W, the estimate is about {time}. The shorter figure mainly reflects the current workload.",
+      "zh-Hans": "回到本机日常功耗 {watts}W，预计约 {time}；较短的数字主要反映当前负载较高。",
+      "zh-Hant": "回到本機日常功耗 {watts}W，預估約 {time}；較短的數字主要反映當前負載較高。",
+      "ja": "この Mac の普段の {watts}W なら約 {time} の見込みです。短い予測は主に現在の負荷を反映します。",
+      "ko": "이 Mac이 평소 쓰는 {watts}W라면 약 {time} 정도로 예상됩니다. 예측이 짧게 나온 것은 주로 현재 부하 때문입니다.",
+      "de": "Beim üblichen Verbrauch dieses Macs von {watts} W wären es etwa {time}. Der kurze Wert spiegelt vor allem die aktuelle Last wider.",
+      "es": "Con los {watts}W habituales de este Mac, la estimación sería de unos {time}. La cifra más corta refleja sobre todo la carga de trabajo actual.",
+      "fr": "À la consommation habituelle de ce Mac, {watts}W, l'estimation serait d'environ {time}. Le chiffre plus court reflète surtout la charge de travail actuelle.",
+      "it": "Con il consumo abituale di questo Mac, {watts}W, la stima è di circa {time}. Il valore più corto riflette soprattutto il carico attuale.",
+      "pt": "No consumo habitual de {watts}W deste Mac, a estimativa fica em cerca de {time}. O número menor reflete principalmente a carga de trabalho atual."
+    },
+    "p.runtime_audit_tag": {
+      "en": "Published benchmark × this Mac",
+      "zh-Hans": "公开基准 × 本机实测",
+      "zh-Hant": "公開基準 × 本機實測",
+      "ja": "公開基準 × このMacの実測",
+      "ko": "공개 기준 × 이 Mac 실측",
+      "de": "Öffentlicher Richtwert × dieser Mac",
+      "es": "Referencia publicada × este Mac",
+      "fr": "Référence publiée × ce Mac",
+      "it": "Riferimento pubblico × questo Mac",
+      "pt": "Referência publicada × este Mac"
+    },
+    "p.runtime_audit_title": {
+      "en": "Why can an official 15 hours become only a few hours now?",
+      "zh-Hans": "官方 15 小时为什么到了现在只剩几小时？",
+      "zh-Hant": "官方 15 小時為什麼到了現在只剩幾小時？",
+      "ja": "公称15時間が、なぜ今は数時間になるのか？",
+      "ko": "공식 15시간이 왜 지금은 몇 시간밖에 되지 않나요?",
+      "de": "Warum werden aus offiziell 15 Stunden jetzt nur wenige?",
+      "es": "¿Por qué unas 15 horas oficiales se quedan ahora en unas pocas?",
+      "fr": "Pourquoi 15 heures officielles ne font-elles plus que quelques heures ?",
+      "it": "Perché 15 ore dichiarate possono diventare solo qualche ora?",
+      "pt": "Por que 15 horas oficiais podem virar só algumas horas agora?"
+    },
+    "p.audit_official": {
+      "en": "Apple new-battery wireless web test",
+      "zh-Hans": "Apple 新机无线网页测试",
+      "zh-Hant": "Apple 新機無線網頁測試",
+      "ja": "Apple 新品のワイヤレスWebテスト",
+      "ko": "Apple 신품 배터리 무선 웹 테스트",
+      "de": "Apple WLAN-Webtest mit neuem Akku",
+      "es": "Prueba de navegación web inalámbrica de Apple con batería nueva",
+      "fr": "Test de navigation web sans fil Apple, batterie neuve",
+      "it": "Test web wireless Apple con batteria nuova",
+      "pt": "Teste de navegação sem fio da Apple com bateria nova"
+    },
+    "p.audit_same_load": {
+      "en": "This battery at the same light workload",
+      "zh-Hans": "这块电池按相同轻负载",
+      "zh-Hant": "這塊電池按相同輕負載",
+      "ja": "このバッテリーを同じ軽負荷で使用",
+      "ko": "이 배터리를 같은 경부하로 사용",
+      "de": "Dieser Akku bei derselben leichten Last",
+      "es": "Esta batería con la misma carga ligera",
+      "fr": "Cette batterie sous la même charge légère",
+      "it": "Questa batteria con lo stesso carico leggero",
+      "pt": "Esta bateria com a mesma carga leve"
+    },
+    "p.audit_actual": {
+      "en": "Actual system runtime now",
+      "zh-Hans": "此刻系统实际续航",
+      "zh-Hant": "此刻系統實際續航",
+      "ja": "現在のシステム実測駆動時間",
+      "ko": "현재 시스템 실측 사용 시간",
+      "de": "Aktuelle Systemlaufzeit",
+      "es": "Autonomía real del sistema ahora",
+      "fr": "Autonomie système réelle à cet instant",
+      "it": "Autonomia reale del sistema adesso",
+      "pt": "Autonomia real do sistema agora"
+    },
+    "p.audit_capacity_note": {
+      "en": "Capacity effect: about {hours} hours below new",
+      "zh-Hans": "容量影响：比新机少约 {hours} 小时",
+      "zh-Hant": "容量影響：比新機少約 {hours} 小時",
+      "ja": "容量の影響：新品より約 {hours} 時間短い",
+      "ko": "용량의 영향: 신품보다 약 {hours}시간 짧음",
+      "de": "Kapazitätseffekt: ca. {hours} Std. weniger als neu",
+      "es": "Efecto de la capacidad: unas {hours} horas menos que nueva",
+      "fr": "Effet de la capacité : environ {hours} heures de moins qu'à l'état neuf",
+      "it": "Effetto della capacità: circa {hours} ore in meno rispetto al nuovo",
+      "pt": "Efeito da capacidade: cerca de {hours} horas menos que nova"
+    },
+    "p.audit_load_note": {
+      "en": "Workload effect: about {hours} more hours lost",
+      "zh-Hans": "负载影响：再缩短约 {hours} 小时",
+      "zh-Hant": "負載影響：再縮短約 {hours} 小時",
+      "ja": "負荷の影響：さらに約 {hours} 時間短い",
+      "ko": "부하의 영향: 약 {hours}시간 더 짧음",
+      "de": "Lasteffekt: nochmals ca. {hours} Std. weniger",
+      "es": "Efecto de la carga de trabajo: unas {hours} horas menos todavía",
+      "fr": "Effet de la charge de travail : environ {hours} heures perdues en plus",
+      "it": "Effetto del carico: circa {hours} ore in meno",
+      "pt": "Efeito da carga de trabalho: cerca de {hours} horas perdidas a mais"
+    },
+    "p.audit_cause": {
+      "en": "Main cause: current workload",
+      "zh-Hans": "主要原因：当前负载",
+      "zh-Hant": "主要原因：當前負載",
+      "ja": "主因：現在の負荷",
+      "ko": "주요 원인: 현재 부하",
+      "de": "Hauptursache: aktuelle Last",
+      "es": "Causa principal: la carga de trabajo actual",
+      "fr": "Cause principale : la charge de travail actuelle",
+      "it": "Causa principale: il carico attuale",
+      "pt": "Causa principal: carga de trabalho atual"
+    },
+    "p.audit_cause_body": {
+      "en": "Current power is about {ratio}× the implied average in Apple's wireless-web test. 100%% means today's capacity is full, not that the Mac is running the official light workload.",
+      "zh-Hans": "当前功耗约为 Apple 无线网页测试隐含平均功耗的 {ratio} 倍。100%% 只表示“当前容量已充满”，不代表能按官方轻负载使用 15 小时。",
+      "zh-Hant": "當前功耗約為 Apple 無線網頁測試隱含平均功耗的 {ratio} 倍。100%% 只表示「當前容量已充滿」，不代表能按官方輕負載使用 15 小時。",
+      "ja": "現在の消費電力は Apple のWebテスト推定平均の約 {ratio} 倍。100%%は現在容量が満充電という意味で、公式の軽負荷が続く意味ではありません。",
+      "ko": "현재 전력은 Apple 무선 웹 테스트에서 추정되는 평균의 약 {ratio}배입니다. 100%%는 오늘의 용량이 가득 찼다는 뜻이며, 이 Mac이 공식 경부하로 돌아간다는 뜻은 아닙니다.",
+      "de": "Die aktuelle Leistung liegt etwa beim {ratio}-Fachen des aus Apples Webtest abgeleiteten Mittels. 100 %% bedeutet voller heutiger Akku, nicht Apples leichte Testlast.",
+      "es": "El consumo actual es unas {ratio}× la media implícita en la prueba de navegación web inalámbrica de Apple. El 100%% significa que la capacidad de hoy está llena, no que el Mac esté ejecutando la carga ligera oficial.",
+      "fr": "La consommation actuelle représente environ {ratio}× la moyenne implicite du test de navigation web sans fil d'Apple. 100%% signifie que la capacité du jour est pleine, pas que le Mac exécute la charge légère officielle.",
+      "it": "Il consumo attuale è circa {ratio}× la media implicita nel test web via Wi-Fi di Apple. 100%% significa che la capacità di oggi è piena, non che il Mac stia eseguendo il carico leggero ufficiale.",
+      "pt": "O consumo atual é cerca de {ratio}× a média implícita no teste de navegação sem fio da Apple. 100%% significa que a capacidade de hoje está cheia, não que o Mac esteja rodando a carga leve oficial."
+    },
+    "p.audit_test_config": {
+      "en": "Apple test system",
+      "zh-Hans": "Apple 测试机",
+      "zh-Hant": "Apple 測試機",
+      "ja": "Apple テスト機",
+      "ko": "Apple 테스트 기기",
+      "de": "Apple Testsystem",
+      "es": "Equipo de prueba de Apple",
+      "fr": "Machine de test Apple",
+      "it": "Sistema di test Apple",
+      "pt": "Sistema de teste da Apple"
+    },
+    "p.audit_your_config": {
+      "en": "Your Mac",
+      "zh-Hans": "你的电脑",
+      "zh-Hant": "你的電腦",
+      "ja": "あなたのMac",
+      "ko": "내 Mac",
+      "de": "Dein Mac",
+      "es": "Tu Mac",
+      "fr": "Votre Mac",
+      "it": "Il tuo Mac",
+      "pt": "Seu Mac"
+    },
+    "p.audit_conditions": {
+      "en": "Wireless web: 25 websites over Wi-Fi; display at 8 clicks from bottom and keyboard backlight off.",
+      "zh-Hans": "无线网页：Wi-Fi 浏览 25 个网站；屏幕亮度从最低调高 8 格，键盘背光关闭。",
+      "zh-Hant": "無線網頁：Wi-Fi 瀏覽 25 個網站；螢幕亮度從最低調高 8 格，鍵盤背光關閉。",
+      "ja": "Wi-Fiで25サイトを閲覧。画面は最低から8クリック、キーボード照明はオフ。",
+      "ko": "무선 웹: Wi-Fi로 25개 사이트를 열어 봅니다. 화면은 최저에서 8단계, 키보드 백라이트는 끕니다.",
+      "de": "WLAN-Web: 25 Websites; Display 8 Stufen über Minimum, Tastaturbeleuchtung aus.",
+      "es": "Navegación web inalámbrica: 25 sitios web por Wi-Fi; pantalla a 8 pasos desde el mínimo y retroiluminación del teclado apagada.",
+      "fr": "Navigation web sans fil : 25 sites en Wi-Fi ; luminosité à 8 crans au-dessus du minimum et rétroéclairage du clavier éteint.",
+      "it": "Test web wireless: 25 siti via Wi-Fi; luminosità a 8 tacche dal minimo e retroilluminazione della tastiera spenta.",
+      "pt": "Navegação sem fio: 25 sites por Wi-Fi; tela 8 cliques acima do mínimo e retroiluminação do teclado desligada."
+    },
+    "p.audit_method": {
+      "en": "Method: 53.8Wh ÷ 15h ≈ 3.59W average for the official web test; compare that with this battery's scaled full energy and system power.",
+      "zh-Hans": "换算方法：53.8Wh ÷ 15h ≈ 官方网页测试平均 3.59W；再用本机当前满充能量与系统功耗作同口径对比。",
+      "zh-Hant": "換算方法：53.8Wh ÷ 15h ≈ 官方網頁測試平均 3.59W；再用本機當前滿充能量與系統功耗作同口徑對比。",
+      "ja": "換算：53.8Wh ÷ 15h ≈ 公式Webテスト平均3.59W。本機の現在満充電エネルギーとシステム電力を同じ尺度で比較。",
+      "ko": "환산: 53.8Wh ÷ 15h ≈ 3.59W가 공식 웹 테스트의 평균입니다. 이를 이 배터리의 환산 완충 에너지와 시스템 전력과 같은 척도로 비교합니다.",
+      "de": "Methode: 53,8Wh ÷ 15h ≈ 3,59W im offiziellen Webtest; Vergleich mit aktueller Vollenergie und Systemleistung.",
+      "es": "Método: 53.8Wh ÷ 15h ≈ 3.59W de media en la prueba web oficial; compáralo con la energía a plena carga escalada de esta batería y con el consumo del sistema.",
+      "fr": "Méthode : 53.8Wh ÷ 15h ≈ 3.59W en moyenne pour le test web officiel ; à comparer avec l'énergie à pleine charge convertie de cette batterie et la consommation du système.",
+      "it": "Metodo: 53,8Wh ÷ 15h ≈ 3,59W di media nel test web ufficiale; poi confronta con l'energia a piena carica scalata di questa batteria e con il consumo di sistema.",
+      "pt": "Método: 53.8Wh ÷ 15h ≈ 3.59W de média no teste web oficial; compare isso com a energia de carga completa convertida desta bateria e com a potência do sistema."
+    }
+  }
+}

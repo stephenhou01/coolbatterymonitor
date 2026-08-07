@@ -7,6 +7,10 @@ design-qa.md
 # macOS
 .DS_Store
 
+# Python generated caches
+__pycache__/
+*.pyc
+
 # Xcode user state
 xcuserdata/
 *.xcuserstate

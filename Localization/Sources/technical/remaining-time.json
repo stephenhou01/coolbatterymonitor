@@ -1,0 +1,252 @@
+{
+  "_meta": {
+    "scope": "technical/remaining-time",
+    "title": "技术参数 / 剩余时间主卡",
+    "description": "剩余时间主卡及三套预测口径的说明。",
+    "consumers": [
+      "RemainingTimeHeroSection"
+    ]
+  },
+  "strings": {
+    "p.runtime_compare_title": {
+      "en": "Three runtime estimates",
+      "zh-Hans": "三种续航口径",
+      "zh-Hant": "三種續航口徑",
+      "ja": "3つの駆動時間の見方",
+      "ko": "세 가지 사용 시간 기준",
+      "de": "Drei Laufzeitangaben",
+      "es": "Tres estimaciones de autonomía",
+      "fr": "Trois estimations d’autonomie",
+      "it": "Tre stime di autonomia",
+      "pt": "Três estimativas de autonomia"
+    },
+    "p.runtime_compare_summary": {
+      "en": "The macOS system time is the primary result. The other two values convert the same remaining energy using stable and current power use.",
+      "zh-Hans": "主结果以 macOS 系统时间为准；下面两项是同一份剩余电量分别按稳健功耗和当前功耗换算的参考值。",
+      "zh-Hant": "主要結果以 macOS 系統時間為準；下方兩項是將同一份剩餘電量分別按穩健功耗與目前功耗換算的參考值。",
+      "ja": "主な結果は macOS のシステム時間です。下の2項目は、同じ残存エネルギーを安定時と現在の消費電力で換算した参考値です。",
+      "ko": "주요 결과는 macOS 시스템 시간입니다. 아래 두 값은 동일한 남은 에너지를 안정 전력과 현재 전력으로 환산한 참고치입니다.",
+      "de": "Die macOS-Systemzeit ist das Hauptergebnis. Die beiden weiteren Werte rechnen dieselbe Restenergie mit stabiler beziehungsweise aktueller Leistungsaufnahme um.",
+      "es": "El tiempo del sistema de macOS es el resultado principal. Los otros dos valores convierten la misma energía restante usando el consumo estable y el actual.",
+      "fr": "Le temps système de macOS reste le résultat principal. Les deux autres valeurs convertissent la même énergie restante selon la consommation stable et la consommation actuelle.",
+      "it": "Il tempo di sistema macOS è il risultato principale. Gli altri due valori convertono la stessa energia residua usando il consumo stabile e quello attuale.",
+      "pt": "O tempo do sistema macOS é o resultado principal. Os outros dois valores convertem a mesma energia restante usando o consumo estável e o consumo atual."
+    },
+    "p.runtime_system_label": {
+      "en": "macOS time remaining",
+      "zh-Hans": "macOS 剩余时间",
+      "zh-Hant": "macOS 剩餘時間",
+      "ja": "macOS の残り時間",
+      "ko": "macOS 남은 시간",
+      "de": "Verbleibende macOS-Zeit",
+      "es": "Tiempo restante de macOS",
+      "fr": "Autonomie restante macOS",
+      "it": "Autonomia restante di macOS",
+      "pt": "Tempo restante do macOS"
+    },
+    "p.runtime_system_note": {
+      "en": "Reads TimeRemaining directly and falls back to AvgTimeToEmpty when needed",
+      "zh-Hans": "直接读取 TimeRemaining；无效时回退 AvgTimeToEmpty",
+      "zh-Hant": "直接讀取 TimeRemaining；無效時改用 AvgTimeToEmpty",
+      "ja": "TimeRemaining を直接読み、無効な場合は AvgTimeToEmpty を使用します",
+      "ko": "TimeRemaining을 직접 읽고, 유효하지 않으면 AvgTimeToEmpty를 사용합니다",
+      "de": "Liest TimeRemaining direkt und verwendet bei Bedarf AvgTimeToEmpty",
+      "es": "Lee TimeRemaining directamente y usa AvgTimeToEmpty cuando es necesario",
+      "fr": "Lit directement TimeRemaining et utilise AvgTimeToEmpty si nécessaire",
+      "it": "Legge direttamente TimeRemaining e usa AvgTimeToEmpty quando necessario",
+      "pt": "Lê TimeRemaining diretamente e usa AvgTimeToEmpty quando necessário"
+    },
+    "p.runtime_system_read_live": {
+      "en": "TimeRemaining / AvgTimeToEmpty · last refresh {time} · the gauge refreshes about every {interval} s and each valid reading is stored in history",
+      "zh-Hans": "TimeRemaining / AvgTimeToEmpty · 上次刷新 {time} · 电量计约 {interval} 秒刷新一次，每次有效读数存一条历史",
+      "zh-Hant": "TimeRemaining / AvgTimeToEmpty · 上次刷新 {time} · 電量計約 {interval} 秒刷新一次，每次有效讀數存一筆歷史",
+      "ja": "TimeRemaining / AvgTimeToEmpty · 前回の更新 {time} · 残量計は約 {interval} 秒ごとに更新し、有効な読み取りは履歴に保存されます",
+      "ko": "TimeRemaining / AvgTimeToEmpty · 지난 갱신 {time} · 잔량계는 약 {interval}초마다 갱신되며 유효한 값은 기록에 저장됩니다",
+      "de": "TimeRemaining / AvgTimeToEmpty · letzte Aktualisierung {time} · die Ladeanzeige aktualisiert etwa alle {interval} s, jeder gültige Wert wird im Verlauf gespeichert",
+      "es": "TimeRemaining / AvgTimeToEmpty · última actualización {time} · el medidor se actualiza cada {interval} s aprox. y cada lectura válida se guarda en el historial",
+      "fr": "TimeRemaining / AvgTimeToEmpty · dernière actualisation {time} · la jauge s'actualise environ toutes les {interval} s et chaque mesure valide est enregistrée dans l'historique",
+      "it": "TimeRemaining / AvgTimeToEmpty · ultimo aggiornamento {time} · l'indicatore si aggiorna circa ogni {interval} s e ogni lettura valida finisce nello storico",
+      "pt": "TimeRemaining / AvgTimeToEmpty · última atualização {time} · o medidor atualiza cerca de cada {interval} s e cada leitura válida vai para o histórico"
+    },
+    "p.runtime_system_meaning": {
+      "en": "The same number as the menu bar, produced by the gauge chip inside the battery — we do not compute it: TimeRemaining is read first, AvgTimeToEmpty only when that is invalid, and 65535 or anything above 24 hours is discarded as invalid; while connected to power these fields are unavailable, so the app shows Unavailable instead of reusing a historical value. The gauge estimates from average current, so it needs a minute or two to catch up after the load jumps",
+      "zh-Hans": "和菜单栏同一个数字，由电池里的电量计芯片自己算出来，我们不参与计算：优先读 TimeRemaining，它无效时才退到 AvgTimeToEmpty，65535 和超过 24 小时的值一律当无效丢弃；接电时这两个字段不可用，界面明确显示不可用，不再回填历史值。电量计按平均电流估算，负载突然变重后要过一两分钟才跟上",
+      "zh-Hant": "和選單列同一個數字，由電池裡的電量計晶片自己算出來，我們不參與計算：優先讀 TimeRemaining，它無效時才改用 AvgTimeToEmpty，65535 和超過 24 小時的值一律當作無效；接電時這兩個欄位不可用，介面會明確顯示不可用，不再回填歷史值。電量計依平均電流估算，負載突然變重後要過一兩分鐘才跟上",
+      "ja": "メニューバーと同じ数値で、バッテリー内の計測チップ自身が算出します（当アプリは計算に関与しません）。まず TimeRemaining を読み、無効な場合のみ AvgTimeToEmpty を使用し、65535 や 24 時間を超える値は破棄します。電源接続中はこれらのフィールドを利用できないため、過去の値を再利用せず「利用不可」と表示します。平均電流から推定するため、負荷の急増に追いつくまで 1〜2 分かかります",
+      "ko": "메뉴 막대와 같은 값이며 배터리의 게이지 칩이 직접 계산합니다. TimeRemaining을 먼저 읽고 무효일 때만 AvgTimeToEmpty를 사용하며 65535나 24시간 초과 값은 버립니다. 전원 연결 중에는 이 필드를 사용할 수 없으므로 과거 값을 재사용하지 않고 사용 불가로 표시합니다. 평균 전류로 추정하므로 부하가 급증하면 반영까지 1~2분이 걸립니다",
+      "de": "Dieselbe Zahl wie in der Menüleiste, vom Gauge-Chip der Batterie berechnet: Zuerst wird TimeRemaining gelesen, AvgTimeToEmpty nur bei einem ungültigen Wert; 65535 und Werte über 24 Stunden werden verworfen. Am Netz sind diese Felder nicht verfügbar, daher zeigt die App Nicht verfügbar statt eines historischen Werts. Nach einem Lastsprung braucht die Schätzung ein bis zwei Minuten",
+      "es": "Es el mismo número de la barra de menús y lo calcula el chip medidor de la batería: primero se lee TimeRemaining y solo se usa AvgTimeToEmpty si no es válido; se descartan 65535 y los valores superiores a 24 horas. Con la corriente conectada estos campos no están disponibles, por lo que la app muestra No disponible en vez de reutilizar un valor histórico. Puede tardar uno o dos minutos en adaptarse a un cambio de carga",
+      "fr": "Il s'agit du même nombre que dans la barre des menus, calculé par la jauge de la batterie : TimeRemaining est lu en premier, AvgTimeToEmpty seulement s'il est invalide ; 65535 et les valeurs supérieures à 24 heures sont rejetés. Sur secteur, ces champs sont indisponibles : l'app affiche Indisponible au lieu de réutiliser une ancienne valeur. L'estimation peut demander une à deux minutes après une hausse de charge",
+      "it": "È lo stesso numero della barra dei menu, calcolato dal chip della batteria: viene letto prima TimeRemaining e solo se non è valido si usa AvgTimeToEmpty; 65535 e i valori oltre 24 ore vengono scartati. Con l'alimentazione collegata questi campi non sono disponibili, quindi l'app mostra Non disponibile invece di riutilizzare un valore storico. Dopo un aumento del carico servono uno o due minuti per adeguarsi",
+      "pt": "É o mesmo número da barra de menus, calculado pelo chip da bateria: TimeRemaining é lido primeiro e AvgTimeToEmpty só quando ele é inválido; 65535 e valores acima de 24 horas são descartados. Na tomada, esses campos ficam indisponíveis, então o app mostra Indisponível em vez de reutilizar um valor histórico. Após um aumento de carga, a estimativa pode levar um ou dois minutos para acompanhar"
+    },
+    "p.runtime_raw_unavailable": {
+      "en": "Unavailable",
+      "zh-Hans": "不可用",
+      "zh-Hant": "不可用",
+      "ja": "利用不可",
+      "ko": "사용할 수 없음",
+      "de": "Nicht verfügbar",
+      "es": "No disponible",
+      "fr": "Indisponible",
+      "it": "Non disponibile",
+      "pt": "Indisponível"
+    },
+    "p.runtime_unavailable": {
+      "en": "Unavailable",
+      "zh-Hans": "不可用",
+      "zh-Hant": "不可用",
+      "ja": "利用不可",
+      "ko": "사용할 수 없음",
+      "de": "Nicht verfügbar",
+      "es": "No disponible",
+      "fr": "Indisponible",
+      "it": "Non disponibile",
+      "pt": "Indisponível"
+    },
+    "p.runtime_system_on_ac_estimate": {
+      "en": "Connected to power: macOS does not provide discharge time remaining · measured-power estimate: {time}, for unplugged reference only",
+      "zh-Hans": "当前接电，macOS 不提供放电剩余时间 · 按实测功耗估算 {time}，仅作拔电参考",
+      "zh-Hant": "目前接電，macOS 不提供放電剩餘時間 · 按實測功耗預估 {time}，僅作拔電參考",
+      "ja": "電源接続中は macOS が放電時の残り時間を提供しません・実測電力による {time} は電源を外した場合の参考値です",
+      "ko": "전원 연결 중에는 macOS가 방전 남은 시간을 제공하지 않습니다 · 측정 전력 기준 {time}은 전원을 분리했을 때의 참고값입니다",
+      "de": "Am Netz liefert macOS keine verbleibende Entladezeit · {time} nach gemessener Leistung dient nur als Referenz nach dem Trennen",
+      "es": "Con la corriente conectada, macOS no ofrece el tiempo de descarga restante · {time} según el consumo medido es solo una referencia al desconectarla",
+      "fr": "Sur secteur, macOS ne fournit pas le temps de décharge restant · {time} selon la puissance mesurée sert uniquement de référence après débranchement",
+      "it": "Con l'alimentazione collegata, macOS non fornisce il tempo di scarica residuo · {time} in base alla potenza misurata è solo un riferimento dopo lo scollegamento",
+      "pt": "Na tomada, o macOS não fornece o tempo restante de descarga · {time} pela potência medida serve apenas como referência após desconectar"
+    },
+    "p.runtime_system_on_ac_note": {
+      "en": "Connected to power: macOS does not provide discharge time remaining · available after unplugging and using the battery",
+      "zh-Hans": "当前接电，macOS 不提供放电剩余时间 · 拔电使用后生成",
+      "zh-Hant": "目前接電，macOS 不提供放電剩餘時間 · 拔電使用後產生",
+      "ja": "電源接続中は macOS が放電時の残り時間を提供しません・電源を外して使用すると表示されます",
+      "ko": "전원 연결 중에는 macOS가 방전 남은 시간을 제공하지 않습니다 · 전원을 분리해 배터리를 사용하면 표시됩니다",
+      "de": "Am Netz liefert macOS keine verbleibende Entladezeit · nach dem Trennen und Akkubetrieb verfügbar",
+      "es": "Con la corriente conectada, macOS no ofrece el tiempo de descarga restante · disponible tras desconectarla y usar la batería",
+      "fr": "Sur secteur, macOS ne fournit pas le temps de décharge restant · disponible après débranchement et utilisation de la batterie",
+      "it": "Con l'alimentazione collegata, macOS non fornisce il tempo di scarica residuo · disponibile dopo lo scollegamento e l'uso della batteria",
+      "pt": "Na tomada, o macOS não fornece o tempo restante de descarga · disponível após desconectar e usar a bateria"
+    },
+    "p.runtime_system_unavailable_estimate": {
+      "en": "Estimated {time} from measured power · unplug and wait about 10 minutes, then check the system time again",
+      "zh-Hans": "按实测功耗预计可用 {time} · 拔掉电源后约等 10 分钟再查看系统时间",
+      "zh-Hant": "按實測功耗預估可用 {time} · 拔掉電源後約等 10 分鐘再查看系統時間",
+      "ja": "実測電力による予想使用時間 {time} · 電源を外して約10分待ってからシステム時間を再確認してください",
+      "ko": "측정 전력 기준 예상 사용 시간 {time} · 전원을 분리하고 약 10분 후 시스템 시간을 다시 확인하세요",
+      "de": "Nach gemessener Leistung voraussichtlich {time} · Netzteil trennen, etwa 10 Minuten warten und die Systemzeit erneut prüfen",
+      "es": "Autonomía estimada según el consumo medido: {time} · desconecta la corriente, espera unos 10 minutos y vuelve a comprobar el tiempo del sistema",
+      "fr": "Autonomie estimée d’après la puissance mesurée : {time} · débranchez l’alimentation, attendez environ 10 minutes, puis vérifiez à nouveau le temps système",
+      "it": "Autonomia stimata in base alla potenza misurata: {time} · scollega l’alimentazione, attendi circa 10 minuti e ricontrolla il tempo di sistema",
+      "pt": "Autonomia estimada pela potência medida: {time} · desligue da tomada, aguarde cerca de 10 minutos e verifique novamente o tempo do sistema"
+    },
+    "p.runtime_system_unavailable_note": {
+      "en": "No reliable system time yet · unplug and wait about 10 minutes, then check again",
+      "zh-Hans": "暂无可靠的系统时间 · 拔掉电源后约等 10 分钟再查看",
+      "zh-Hant": "暫無可靠的系統時間 · 拔掉電源後約等 10 分鐘再查看",
+      "ja": "信頼できるシステム時間はまだありません · 電源を外して約10分後に再確認してください",
+      "ko": "신뢰할 수 있는 시스템 시간이 없습니다 · 전원을 분리하고 약 10분 후 다시 확인하세요",
+      "de": "Noch keine verlässliche Systemzeit · Netzteil trennen und nach etwa 10 Minuten erneut prüfen",
+      "es": "Aún no hay un tiempo del sistema fiable · desconecta la corriente y vuelve a comprobarlo en unos 10 minutos",
+      "fr": "Aucun temps système fiable pour le moment · débranchez l’alimentation et vérifiez à nouveau dans environ 10 minutes",
+      "it": "Tempo di sistema attendibile non ancora disponibile · scollega l’alimentazione e ricontrolla tra circa 10 minuti",
+      "pt": "Ainda não há um tempo do sistema confiável · desligue da tomada e verifique novamente em cerca de 10 minutos"
+    },
+    "p.runtime_stable_label": {
+      "en": "Stable estimate",
+      "zh-Hans": "稳健估算",
+      "zh-Hant": "穩健估算",
+      "ja": "安定推定",
+      "ko": "안정 추정",
+      "de": "Stabile Schätzung",
+      "es": "Estimación estable",
+      "fr": "Estimation stable",
+      "it": "Stima stabile",
+      "pt": "Estimativa estável"
+    },
+    "p.runtime_stable_note": {
+      "en": "Answers \"how long will it last at the rate I have been using it\": it takes the middle value (median) of the power readings in the window rather than the average, so a brief spike cannot skew it. The window is at most 10 minutes, but five valid samples are already enough to produce a figure — right after launch it may cover only tens of seconds, so the card's subtitle states the span actually covered instead of a fixed 10 minutes",
+      "zh-Hans": "回答「按最近这段时间的用法还能撑多久」：取窗口内功耗的中间值（中位数）而不是平均值，一闪而过的高负载不会带偏它。窗口最长 10 分钟，但只要 5 个有效样本就出结果，所以刚启动时它可能只覆盖几十秒——卡片副标题写的是实际覆盖的时长，不是固定的 10 分钟",
+      "zh-Hant": "回答「按最近這段時間的用法還能撐多久」：取視窗內功耗的中間值（中位數）而不是平均值，一閃而過的高負載不會帶偏它。視窗最長 10 分鐘，但只要 5 個有效樣本就出結果，所以剛啟動時它可能只涵蓋幾十秒——卡片副標題寫的是實際涵蓋的時長，不是固定的 10 分鐘",
+      "ja": "「最近の使い方のままならどれくらい持つか」に答えます。ウインドウ内の消費電力の平均ではなく中央値を取るため、一瞬の高負荷に引きずられません。ウインドウは最長 10 分ですが、有効なサンプルが 5 個あれば結果を出すので、起動直後は数十秒しかカバーしていないことがあります。カードの副題には固定の 10 分ではなく、実際にカバーした長さを表示します",
+      "ko": "「최근 사용 방식대로면 얼마나 더 버티는가」에 답합니다. 창 안의 전력 값에서 평균이 아니라 중앙값을 취하므로 순간적인 고부하에 휘둘리지 않습니다. 창은 최대 10분이지만 유효 샘플 5개만 있으면 결과를 내므로, 실행 직후에는 수십 초만 포함할 수도 있습니다. 카드 부제에는 고정된 10분이 아니라 실제로 포함한 시간을 표시합니다",
+      "de": "Beantwortet „wie lange reicht es bei der Nutzung der letzten Zeit“: Genommen wird der mittlere Wert (Median) der Leistungsmesswerte im Fenster, nicht der Durchschnitt – ein kurzer Ausschlag verzerrt ihn also nicht. Das Fenster ist maximal 10 Minuten lang, aber fünf gültige Messwerte genügen bereits für ein Ergebnis; direkt nach dem Start kann es nur Dutzende Sekunden umfassen. Der Untertitel der Karte nennt daher die tatsächlich abgedeckte Dauer statt fester 10 Minuten",
+      "es": "Responde a \"cuánto durará al ritmo con el que lo he estado usando\": toma el valor central (mediana) de las lecturas de consumo de la ventana en lugar del promedio, así un pico momentáneo no la desvía. La ventana es de 10 minutos como máximo, pero bastan cinco muestras válidas para dar un resultado, así que recién iniciada puede cubrir solo decenas de segundos. Por eso el subtítulo de la tarjeta indica el intervalo realmente cubierto y no unos 10 minutos fijos",
+      "fr": "Répond à « combien de temps cela tiendra-t-il au rythme de ces dernières minutes » : on retient la valeur médiane des mesures de consommation de la fenêtre plutôt que la moyenne, pour qu'un pic passager ne la fausse pas. La fenêtre fait au maximum 10 minutes, mais cinq échantillons valides suffisent déjà pour afficher un résultat : juste après le lancement, elle peut ne couvrir que quelques dizaines de secondes. Le sous-titre de la fiche indique donc la durée réellement couverte, et non 10 minutes fixes",
+      "it": "Risponde a «quanto durerà al ritmo di questi ultimi minuti»: prende il valore centrale (mediana) delle letture di consumo nella finestra invece della media, così un picco momentaneo non la falsa. La finestra è di 10 minuti al massimo, ma bastano cinque campioni validi per produrre un risultato: subito dopo l'avvio può coprire solo decine di secondi. Per questo il sottotitolo della scheda indica l'intervallo realmente coperto e non 10 minuti fissi",
+      "pt": "Responde a \"quanto tempo vai durar no ritmo dos últimos minutos\": usa o valor central (mediana) das leituras de consumo da janela em vez da média, para que um pico passageiro não a distorça. A janela tem no máximo 10 minutos, mas cinco amostras válidas já bastam para gerar um resultado — logo após iniciar, pode cobrir apenas algumas dezenas de segundos. Por isso o subtítulo do cartão indica o intervalo realmente coberto, não 10 minutos fixos"
+    },
+    "p.runtime_stable_read": {
+      "en": "Newest sample read at {time} · valid samples in window: {samples} · sampled every 10 seconds",
+      "zh-Hans": "最新样本读取于 {time} · 窗口内有效样本：{samples} · 每 10 秒采样一次",
+      "zh-Hant": "最新樣本讀取於 {time} · 視窗內有效樣本：{samples} · 每 10 秒取樣一次",
+      "ja": "最新サンプルの読み取りは {time}・ウィンドウ内の有効サンプル：{samples} 件・10 秒ごとに取得",
+      "ko": "최신 샘플 읽은 시각 {time} · 구간 내 유효 샘플: {samples}개 · 10초마다 샘플링",
+      "de": "Neuester Messwert um {time} · gültige Messwerte im Fenster: {samples} · Messung alle 10 Sekunden",
+      "es": "Última muestra leída a las {time} · muestras válidas en la ventana: {samples} · se muestrea cada 10 segundos",
+      "fr": "Dernier échantillon lu à {time} · mesures valides dans la fenêtre : {samples} · échantillonnage toutes les 10 secondes",
+      "it": "Ultimo campione letto alle {time} · campioni validi nella finestra: {samples} · campionamento ogni 10 secondi",
+      "pt": "Amostra mais recente lida às {time} · amostras válidas na janela: {samples} · amostragem a cada 10 segundos"
+    },
+    "p.runtime_current_label": {
+      "en": "Current-load estimate",
+      "zh-Hans": "当前负载估算",
+      "zh-Hant": "目前負載預估",
+      "ja": "現在の負荷による予測",
+      "ko": "현재 부하 기준 예측",
+      "de": "Schätzung bei aktueller Last",
+      "es": "Estimación con la carga actual",
+      "fr": "Estimation selon la charge actuelle",
+      "it": "Stima con il carico attuale",
+      "pt": "Estimativa com a carga atual"
+    },
+    "p.runtime_current_note": {
+      "en": "Answers \"what if I keep using it exactly like right now\": it converts the latest single power reading with no smoothing at all, so it is the most sensitive to load changes and the easiest to land too high or too low. The gauge only publishes about every 60 seconds, so that \"latest\" can already be up to a minute old; past 120 seconds it is dropped and waits for fresh data",
+      "zh-Hans": "回答「如果一直像现在这样用」：按最新一次功率读数换算，不做任何平滑，所以对负载变化最敏感，也最容易偏高或偏低。电量计约每 60 秒才发布一次，这个「最新」最多可能已有一分钟历史；超过 120 秒就停用并等新数据",
+      "zh-Hant": "回答「如果一直像現在這樣用」：按最新一次功率讀數換算，不做任何平滑，所以對負載變化最敏感，也最容易偏高或偏低。電量計約每 60 秒才發布一次，這個「最新」最多可能已有一分鐘歷史；超過 120 秒就停用並等新資料",
+      "ja": "「今と同じ使い方を続けたら」に答えます。最新の消費電力 1 回分をそのまま換算し、平滑化は行わないため、負荷の変化に最も敏感で、高すぎ・低すぎになりやすい値です。計測チップの更新は約 60 秒ごとなので、この「最新」は最大で 1 分前のものになり得ます。120 秒を超えると使用を止めて新しいデータを待ちます",
+      "ko": "「지금처럼 계속 쓰면」에 답합니다. 가장 최근의 전력 측정값 하나를 그대로 환산하며 어떤 평활화도 하지 않으므로, 부하 변화에 가장 민감하고 지나치게 높거나 낮게 나오기 쉽습니다. 게이지는 약 60초마다 갱신되므로 이 「최신」 값은 최대 1분 전 것일 수 있고, 120초를 넘기면 사용을 멈추고 새 데이터를 기다립니다",
+      "de": "Beantwortet „was, wenn ich genau so weiternutze wie jetzt“: Umgerechnet wird ein einzelner, ungeglätteter Leistungsmesswert – dieser Wert reagiert am stärksten auf Lastwechsel und fällt am leichtesten zu hoch oder zu niedrig aus. Der Chip veröffentlicht nur etwa alle 60 Sekunden, dieses „aktuell“ kann also schon bis zu eine Minute alt sein; nach 120 Sekunden wird der Wert verworfen und auf neue Daten gewartet",
+      "es": "Responde a \"qué pasa si sigo usándolo justo así\": convierte una única lectura de consumo, la más reciente, sin ningún suavizado, por lo que es la más sensible a los cambios de carga y la que más fácilmente queda alta o baja. El chip solo publica cada 60 segundos aprox., así que esa lectura \"más reciente\" puede tener ya hasta un minuto; pasados 120 segundos se descarta y espera datos nuevos",
+      "fr": "Répond à « et si je continuais exactement comme maintenant » : la conversion se fait sur une seule mesure de consommation, la plus récente, sans aucun lissage ; c'est donc la valeur la plus sensible aux variations de charge et la plus facilement trop haute ou trop basse. La puce ne publie qu'environ toutes les 60 secondes : cette mesure « la plus récente » peut déjà avoir jusqu'à une minute. Au-delà de 120 secondes, elle est écartée en attendant de nouvelles données",
+      "it": "Risponde a «e se continuassi esattamente così»: converte una sola lettura di consumo, la più recente, senza alcun livellamento, quindi è la più sensibile ai cambi di carico e la più facilmente troppo alta o troppo bassa. Il chip pubblica solo circa ogni 60 secondi, perciò quella lettura «più recente» può già avere fino a un minuto; oltre i 120 secondi viene scartata in attesa di dati nuovi",
+      "pt": "Responde a \"e se eu continuar usando exatamente assim\": converte uma única leitura de consumo, a mais recente, sem nenhuma suavização, por isso é a mais sensível a mudanças de carga e a que mais facilmente fica alta ou baixa demais. O chip só publica a cada 60 segundos aproximadamente, então essa leitura \"mais recente\" pode já ter até um minuto; passados 120 segundos ela é descartada e aguarda dados novos"
+    },
+    "p.runtime_current_read": {
+      "en": "Read at {time} ({age} s ago) · refreshed every 10 seconds",
+      "zh-Hans": "读取于 {time}（{age} 秒前）· 每 10 秒刷新一次",
+      "zh-Hant": "讀取於 {time}（{age} 秒前）· 每 10 秒更新一次",
+      "ja": "読み取り {time}（{age} 秒前）· 10 秒ごとに更新",
+      "ko": "{time}에 읽음({age}초 전) · 10초마다 갱신",
+      "de": "Gelesen um {time} (vor {age} s) · Aktualisierung alle 10 Sekunden",
+      "es": "Leído a las {time} (hace {age} s) · se actualiza cada 10 segundos",
+      "fr": "Lu à {time} (il y a {age} s) · actualisé toutes les 10 secondes",
+      "it": "Letto alle {time} ({age} s fa) · aggiornato ogni 10 secondi",
+      "pt": "Lido às {time} (há {age} s) · atualizado a cada 10 segundos"
+    },
+    "p.runtime_current_read_stale": {
+      "en": "Last read at {time}, {age} s ago · refreshed every 10 seconds",
+      "zh-Hans": "上次读取于 {time}，已过 {age} 秒 · 每 10 秒刷新一次",
+      "zh-Hant": "上次讀取於 {time}，已過 {age} 秒 · 每 10 秒更新一次",
+      "ja": "前回の読み取りは {time}、{age} 秒経過 · 10 秒ごとに更新",
+      "ko": "마지막 읽은 시각 {time}, {age}초 경과 · 10초마다 갱신",
+      "de": "Zuletzt um {time} gelesen, vor {age} s · Aktualisierung alle 10 Sekunden",
+      "es": "Última lectura a las {time}, hace {age} s · se actualiza cada 10 segundos",
+      "fr": "Dernière lecture à {time}, il y a {age} s · actualisé toutes les 10 secondes",
+      "it": "Ultima lettura alle {time}, {age} s fa · aggiornato ogni 10 secondi",
+      "pt": "Última leitura às {time}, há {age} s · atualizado a cada 10 segundos"
+    },
+    "p.runtime_compare_source": {
+      "en": "The macOS time comes from AppleSmartBattery. The two calculated values use this Mac's remaining energy and measured power only for comparison and are never written to system runtime history.",
+      "zh-Hans": "macOS 系统时间来自 AppleSmartBattery；两项计算值由本机剩余能量和实测功耗推导，只作对照，不写入系统续航历史。",
+      "zh-Hant": "macOS 系統時間來自 AppleSmartBattery；兩項計算值由本機剩餘能量與實測功耗推導，只作對照，不寫入系統續航歷史。",
+      "ja": "macOS の時間は AppleSmartBattery から取得します。2つの計算値は、このMacの残存エネルギーと実測電力から比較用に算出し、システムの駆動時間履歴には保存しません。",
+      "ko": "macOS 시간은 AppleSmartBattery에서 가져옵니다. 두 계산값은 이 Mac의 남은 에너지와 측정 전력으로 비교용으로만 산출하며 시스템 사용 시간 기록에는 저장하지 않습니다.",
+      "de": "Die macOS-Zeit stammt aus AppleSmartBattery. Die beiden berechneten Werte nutzen Restenergie und gemessene Leistung dieses Mac nur zum Vergleich und werden nicht in den Systemverlauf geschrieben.",
+      "es": "El tiempo de macOS procede de AppleSmartBattery. Los otros dos valores se calculan con la energía restante y el consumo medido de este Mac solo para comparar y no se guardan en el historial del sistema.",
+      "fr": "Le temps macOS provient d’AppleSmartBattery. Les deux valeurs calculées utilisent l’énergie restante et la puissance mesurée de ce Mac uniquement à titre de comparaison et ne sont pas enregistrées dans l’historique système.",
+      "it": "Il tempo macOS proviene da AppleSmartBattery. I due valori calcolati usano l’energia residua e la potenza misurata di questo Mac solo per confronto e non vengono salvati nella cronologia di sistema.",
+      "pt": "O tempo do macOS vem do AppleSmartBattery. Os dois valores calculados usam a energia restante e a potência medida deste Mac apenas para comparação e não são gravados no histórico do sistema."
+    }
+  }
+}

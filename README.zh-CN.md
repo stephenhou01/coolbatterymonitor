@@ -125,15 +125,18 @@ xcodebuild -project BatteryMonitor.xcodeproj -scheme BatteryMonitor \
 测试：
 
 ```bash
-./Tests/run-insight-tests.sh   # 用真实源码跑模型与分析逻辑
-./Tests/run-l10n-tests.sh      # 语言包加载、回退、格式符防护
+./QATests/run-fixed-qa.sh all  # 固定签名 QA Host：图标 + 逻辑 + 本地化
 ./Scripts/verify-release.sh    # 本地完整发布前检查，不上传任何东西
 ```
 
-新增语言：往 `Localization/Languages/` 丢一个 JSON 文件后重新构建即可。不用改 Swift，
-也不用重跑 `xcodegen` —— 切换器在启动时自行发现语言包。语言包被当作不可信输入处理：
-加载时会用英文包校验格式符，因为 `String(format:)` 是 C 变参，如果某个包在代码传
-`Double` 的位置写了 `%d`，会造成内存不安全。
+运行型测试始终覆盖同一个
+`QATests/BuildValidation/AutomationHost/BatteryMonitor-QAHost.app`，执行结束后自动关闭。
+只跑一组时，把 `all` 换成 `icon`、`insight` 或 `l10n`。
+
+内置文案按页面/区块维护在 `Localization/Sources/`，运行
+`python3 Localization/build-language-packs.py write` 生成十个运行时语言包。新增语言时，
+在 `Localization/Sources/manifest.json` 增加语言元数据并为所有源条目补译文；不用改 Swift，也不用重跑
+`xcodegen`。生成语言包在运行时仍按不可信输入处理，并以英文包校验格式符。
 
 ---
 

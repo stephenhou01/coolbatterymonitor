@@ -4,9 +4,12 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 ROOT=$(pwd)
-DERIVED_DATA="$ROOT/.build/verify-release/DerivedData"
+DERIVED_DATA="$ROOT/QATests/BuildValidation/ReleaseCheck/DerivedData"
 
-for tool in xcodebuild swiftc python3 plutil rg lipo sips; do
+# 用 grep -E 而不是 rg：ripgrep 不是这台机器上装着的东西，而以前预检要求它，导致整个
+# 脚本从第一行就退出。交互 shell 里 `command -v rg` 看着有，那是 Claude Code 注入的
+# shell 函数，bash 里并不存在。下面所有模式都是 POSIX ERE，grep 是系统自带的。
+for tool in xcodebuild swiftc python3 plutil grep lipo sips; do
     if ! command -v "$tool" >/dev/null 2>&1; then
         echo "缺少工具：$tool" >&2
         exit 1
@@ -14,25 +17,37 @@ for tool in xcodebuild swiftc python3 plutil rg lipo sips; do
 done
 
 echo "▸ 检查测试脚本安全边界"
-if rg -n -- 'rm[[:space:]]+-[^[:space:]]*r|rm[[:space:]]+--recursive' Tests/run-*.sh; then
+if grep -nE -- 'rm[[:space:]]+-[^[:space:]]*r|rm[[:space:]]+--recursive' QATests/run-fixed-qa.sh; then
     echo "测试脚本仍含递归删除命令" >&2
     exit 1
 fi
-if rg -n -- '\$HOME/Library/Application Support/BatteryMonitor' Tests/run-*.sh; then
+if grep -nE -- '\$HOME/Library/Application Support/BatteryMonitor' QATests/run-fixed-qa.sh; then
     echo "测试脚本仍指向真实用户数据目录" >&2
     exit 1
 fi
 
 echo "▸ 检查发布配置"
-rg -q 'PRODUCT_BUNDLE_IDENTIFIER: com\.stephen\.BatteryMonitor' project.yml
-rg -q 'INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO' project.yml
-rg -q 'universal `arm64` \+ `x86_64` app' README.md
+grep -qE 'PRODUCT_BUNDLE_IDENTIFIER: com\.stephen\.BatteryMonitor' project.yml
+grep -qE 'INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO' project.yml
+# README 必须声明双架构支持，与下面对实际二进制的 lipo 检查互为对照 —— 一处说支持
+# Intel、另一处编出来只有 arm64，是会被用户当场发现的假宣传。
+# 原断言找的是 `universal \`arm64\` + \`x86_64\` app`，那句话在 4e25f65（双语 README）
+# 里被改写掉了，断言没跟着更新；又因为预检要求的 rg 不存在，脚本从第 9 行就退出，
+# 这处失配一直没被跑到过。断言跟着 README 现在的措辞走，不是反过来改 README。
+grep -qE 'Apple silicon and Intel Macs' README.md
 marketing_version=$(awk -F '"' '/MARKETING_VERSION:/ {print $2; exit}' project.yml)
 build_number=$(awk -F '"' '/CURRENT_PROJECT_VERSION:/ {print $2; exit}' project.yml)
 test -n "$marketing_version"
 test -n "$build_number"
 test "$marketing_version" = "1.2.0"
-test "$build_number" = "4"
+# 构建号每次送审都要递增，写死它等于每次都得先改这个脚本；漏改一次，set -e 就让
+# 后面所有关卡（图标、语言包、catalog、Release 编译）全部跑不到，而失败原因看起来
+# 像是「验证脚本挂了」而不是「断言过期了」。这里只要求它非空且是纯数字，真正的
+# 一致性由下面那条「app 的 CFBundleVersion 必须等于 project.yml」保证。
+grep -qE '^[0-9]+$' <<<"$build_number"
+
+echo "▸ 检查页面化本地化源"
+python3 Localization/build-language-packs.py check
 
 echo "▸ 检查 AppIcon 母版与完整尺寸集"
 for size in 16 32 64 128 256 512 1024; do
@@ -45,7 +60,7 @@ for size in 16 32 64 128 256 512 1024; do
     test "$height" = "$size"
     test "$alpha" = "yes"
 done
-./Tests/run-icon-alpha-test.sh
+./QATests/run-fixed-qa.sh icon
 
 echo "▸ 检查 plist 与语言包"
 plutil -lint ExportOptions.plist BatteryMonitor/BatteryMonitor.entitlements \
@@ -176,6 +191,39 @@ assert sources == {
     "IOPMCopyBatteryInfo": 2,
     "ProcessInfo": 5,
 }
+
+# The catalog's six display columns are localized through *Key lookups, so those keys
+# are as much a release surface as the ones written literally in Swift.
+catalog_key_fields = (
+    "groupKey", "unitKey", "meaningKey", "reliabilityKey", "recommendationKey", "noteKey",
+)
+catalog_keys = {
+    field[name]
+    for field in catalog["fields"]
+    for name in catalog_key_fields
+    if field.get(name)
+}
+# 1. Every declared key must resolve to a non-empty, non-identity value in all ten packs.
+for code, strings in sorted(pack_strings.items()):
+    unresolved = sorted(
+        key for key in catalog_keys
+        if not strings.get(key) or strings[key] == key
+    )
+    assert not unresolved, f"catalog keys unresolved in {code}: {unresolved[:12]}"
+# 2. Pin the count so a regenerated catalog cannot silently drop localization.
+assert len(catalog_keys) == 147, f"expected 147 distinct catalog keys, got {len(catalog_keys)}"
+# 3-4. Coupling guards.  The Chinese raw values are not dead weight: they are the
+# zh-Hans copy *and* the tokens SystemFieldMetadata.isMeaningfulByDefault and
+# SystemFieldValueConversion match against.  Stripping them in favour of keys alone
+# leaves the table looking correct while the "useful by default" filter and the unit
+# conversions silently stop matching, so assert a few known raw values survive.
+catalog_units = {field["unit"] for field in catalog["fields"]}
+missing_units = {"分钟", "秒", "原始温标"} - catalog_units
+assert not missing_units, f"catalog lost raw unit values relied on for conversion: {missing_units}"
+catalog_groups = {field["group"] for field in catalog["fields"]}
+assert catalog_groups & {"标识", "身份"}, (
+    "catalog lost the identifier group raw value that keeps serial numbers out of the default tab"
+)
 PY
 
 echo "▸ 检查 Xcode 工程"
@@ -223,8 +271,8 @@ assert catalog.is_file(), "built app missing SystemFieldCatalog.json"
 PY
 
 echo "▸ 运行逻辑与本地化测试"
-./Tests/run-insight-tests.sh
-./Tests/run-l10n-tests.sh
+./QATests/run-fixed-qa.sh insight
+./QATests/run-fixed-qa.sh l10n
 
 echo
 echo "✅ 发布前本地验证通过"

@@ -1,0 +1,217 @@
+{
+  "_meta": {
+    "scope": "overview/power-flow",
+    "title": "总览 / 能量流向",
+    "description": "适配器、电池、整机三个节点及能量流向说明。",
+    "consumers": [
+      "DashboardOverviewPage",
+      "PowerFlowDiagram"
+    ]
+  },
+  "strings": {
+    "shell.adapter_output_power": {
+      "en": "Adapter output power",
+      "zh-Hans": "适配器输出功率",
+      "zh-Hant": "轉接器輸出功率",
+      "ja": "アダプタ出力電力",
+      "ko": "어댑터 출력 전력",
+      "de": "Netzteil-Ausgangsleistung",
+      "es": "Potencia de salida del adaptador",
+      "fr": "Puissance de sortie de l’adaptateur",
+      "it": "Potenza in uscita dell’alimentatore",
+      "pt": "Potência de saída do adaptador"
+    },
+    "shell.whole_mac_input": {
+      "en": "Whole-Mac live input",
+      "zh-Hans": "整机实时输入",
+      "zh-Hant": "整機即時輸入",
+      "ja": "Mac全体の実入力",
+      "ko": "Mac 전체 실시간 입력",
+      "de": "Live-Eingang des gesamten Mac",
+      "es": "Entrada en vivo de todo el Mac",
+      "fr": "Entrée en direct du Mac entier",
+      "it": "Ingresso live dell’intero Mac",
+      "pt": "Entrada em tempo real de todo o Mac"
+    },
+    "shell.state_full": {
+      "en": "Fully charged · running on the adapter",
+      "zh-Hans": "已充满 · 电源供电",
+      "zh-Hant": "已充滿 · 電源供電",
+      "ja": "満充電 · 電源から給電中",
+      "ko": "완전 충전 · 어댑터로 구동",
+      "de": "Vollgeladen · Betrieb am Netzteil",
+      "es": "Carga completa · funcionando con el adaptador",
+      "fr": "Charge complète · alimenté par l'adaptateur",
+      "it": "Carica completa · alimentato dall'alimentatore",
+      "pt": "Carga completa · usando o adaptador"
+    },
+    "shell.state_plugged_idle": {
+      "en": "Plugged in · not charging",
+      "zh-Hans": "已接电源 · 未充电",
+      "zh-Hant": "已接電源 · 未充電",
+      "ja": "電源接続中 · 充電していません",
+      "ko": "전원 연결됨 · 충전 안 함",
+      "de": "Am Netzteil · lädt nicht",
+      "es": "Conectado · sin cargar",
+      "fr": "Branché · ne charge pas",
+      "it": "Collegato · non in carica",
+      "pt": "Ligado · não está a carregar"
+    },
+    "shell.state_plugged_discharging": {
+      "en": "Plugged in · battery discharging",
+      "zh-Hans": "已接电源 · 电池放电中",
+      "zh-Hant": "已接電源 · 電池放電中",
+      "ja": "電源接続中 · バッテリー放電中",
+      "ko": "전원 연결됨 · 배터리 방전 중",
+      "de": "Am Netzteil · Batterie entlädt sich",
+      "es": "Conectado · la batería se está descargando",
+      "fr": "Branché · la batterie se décharge",
+      "it": "Collegato · batteria in scarica",
+      "pt": "Conectado · bateria descarregando"
+    },
+    "shell.battery_current": {
+      "en": "Current",
+      "zh-Hans": "电流",
+      "zh-Hant": "電流",
+      "ja": "電流",
+      "ko": "전류",
+      "de": "Strom",
+      "es": "Corriente",
+      "fr": "Courant",
+      "it": "Corrente",
+      "pt": "Corrente"
+    },
+    "shell.time_to_full": {
+      "en": "Full in",
+      "zh-Hans": "充满还需",
+      "zh-Hant": "充滿還需",
+      "ja": "満充電まで",
+      "ko": "완충까지",
+      "de": "Voll in",
+      "es": "Lleno en",
+      "fr": "Plein dans",
+      "it": "Pieno tra",
+      "pt": "Cheio em"
+    },
+    "shell.flow_adapter": {
+      "en": "Adapter",
+      "zh-Hans": "充电器",
+      "zh-Hant": "充電器",
+      "ja": "電源アダプタ",
+      "ko": "어댑터",
+      "de": "Netzteil",
+      "es": "Adaptador",
+      "fr": "Adaptateur",
+      "it": "Alimentatore",
+      "pt": "Adaptador"
+    },
+    "shell.flow_battery": {
+      "en": "Battery",
+      "zh-Hans": "电池",
+      "zh-Hant": "電池",
+      "ja": "バッテリー",
+      "ko": "배터리",
+      "de": "Akku",
+      "es": "Batería",
+      "fr": "Batterie",
+      "it": "Batteria",
+      "pt": "Bateria"
+    },
+    "shell.flow_mac": {
+      "en": "This Mac",
+      "zh-Hans": "这台 Mac",
+      "zh-Hant": "這台 Mac",
+      "ja": "この Mac",
+      "ko": "이 Mac",
+      "de": "Dieser Mac",
+      "es": "Este Mac",
+      "fr": "Ce Mac",
+      "it": "Questo Mac",
+      "pt": "Este Mac"
+    },
+    "shell.flow_idle": {
+      "en": "No measurable power is flowing right now",
+      "zh-Hans": "此刻没有可测到的功率流动",
+      "zh-Hant": "此刻沒有可測到的功率流動",
+      "ja": "現在、測定できる電力の流れはありません",
+      "ko": "지금은 측정 가능한 전력 흐름이 없습니다",
+      "de": "Derzeit fließt keine messbare Leistung",
+      "es": "Ahora mismo no circula potencia medible",
+      "fr": "Aucune puissance mesurable ne circule actuellement",
+      "it": "Al momento non circola potenza misurabile",
+      "pt": "Neste momento não circula potência mensurável"
+    },
+    "shell.flow_derived": {
+      "en": "This Mac reports no battery current, so only total draw is shown",
+      "zh-Hans": "本机没有返回电池电流，只能显示整机功率",
+      "zh-Hant": "本機沒有回傳電池電流，僅能顯示整機功率",
+      "ja": "このMacはバッテリー電流を返さないため、システム全体の消費電力のみ表示します",
+      "ko": "이 Mac은 배터리 전류를 제공하지 않아 전체 소비 전력만 표시합니다",
+      "de": "Dieser Mac meldet keinen Batteriestrom, daher wird nur die Gesamtaufnahme angezeigt",
+      "es": "Este Mac no informa la corriente de la batería, por lo que solo se muestra el consumo total",
+      "fr": "Ce Mac ne renvoie pas le courant de la batterie ; seule la consommation totale est affichée",
+      "it": "Questo Mac non riporta la corrente della batteria, quindi mostra solo il consumo totale",
+      "pt": "Este Mac não informa a corrente da bateria, portanto só é exibido o consumo total"
+    },
+    "shell.flow_forecast_measured": {
+      "en": "≈ is a forecast from the last two minutes of measured speed; the slowdown near a full charge is not modelled",
+      "zh-Hans": "≈ 按最近两分钟实测速度预测，未计入接近满电时的降速",
+      "zh-Hant": "≈ 依最近兩分鐘實測速度預測，未計入接近滿電時的降速",
+      "ja": "≈ は直近2分間の実測速度による予測です。満充電間際の減速は考慮していません",
+      "ko": "≈는 최근 2분간 실측 속도로 계산한 예측이며, 완충 직전 감속은 반영하지 않습니다",
+      "de": "≈ ist eine Prognose aus der in den letzten zwei Minuten gemessenen Geschwindigkeit; die Verlangsamung nahe der Volladung ist nicht berücksichtigt",
+      "es": "≈ es una previsión basada en la velocidad medida en los últimos dos minutos; no incluye la desaceleración cerca de la carga completa",
+      "fr": "≈ est une prévision basée sur la vitesse mesurée ces deux dernières minutes ; le ralentissement près de la charge complète n'est pas pris en compte",
+      "it": "≈ è una previsione basata sulla velocità misurata negli ultimi due minuti; non tiene conto del rallentamento vicino alla carica completa",
+      "pt": "≈ é uma previsão a partir da velocidade medida nos últimos dois minutos; não inclui a desaceleração perto da carga completa"
+    },
+    "shell.flow_forecast_derived": {
+      "en": "≈ is calculated from the present current; it reads high just after plugging in and switches to measured after about two minutes",
+      "zh-Hans": "≈ 按当前电流推算，刚插电时会偏高，约两分钟后转为实测",
+      "zh-Hant": "≈ 依目前電流推算，剛插電時會偏高，約兩分鐘後轉為實測",
+      "ja": "≈ は現在の電流からの推算です。接続直後は高めに出ますが、約2分後に実測へ切り替わります",
+      "ko": "≈는 현재 전류로 추산한 값입니다. 연결 직후에는 높게 나오며 약 2분 후 실측으로 전환됩니다",
+      "de": "≈ wird aus dem aktuellen Strom berechnet; direkt nach dem Anschließen fällt der Wert zu hoch aus und wechselt nach etwa zwei Minuten zur Messung",
+      "es": "≈ se calcula a partir de la corriente actual; resulta alto justo después de conectar y pasa a valores medidos tras unos dos minutos",
+      "fr": "≈ est calculé à partir du courant actuel ; la valeur est élevée juste après le branchement et passe à la mesure après environ deux minutes",
+      "it": "≈ è calcolato dalla corrente attuale; risulta alto subito dopo il collegamento e passa alla misura dopo circa due minuti",
+      "pt": "≈ é calculado a partir da corrente atual; fica alto logo após conectar e passa para o valor medido após cerca de dois minutos"
+    },
+    "shell.flow_a11y_battery_to_mac": {
+      "en": "Battery is supplying this Mac with {watts} W",
+      "zh-Hans": "电池向这台 Mac 供电 {watts} W",
+      "zh-Hant": "電池向這台 Mac 供電 {watts} W",
+      "ja": "バッテリーがこの Mac に {watts} W を供給しています",
+      "ko": "배터리가 이 Mac에 {watts} W를 공급하고 있습니다",
+      "de": "Der Akku versorgt diesen Mac mit {watts} W",
+      "es": "La batería alimenta este Mac con {watts} W",
+      "fr": "La batterie alimente ce Mac avec {watts} W",
+      "it": "La batteria alimenta questo Mac con {watts} W",
+      "pt": "A bateria alimenta este Mac com {watts} W"
+    },
+    "shell.flow_a11y_adapter_to_battery": {
+      "en": "Adapter is charging the battery at {watts} W",
+      "zh-Hans": "充电器向电池充电 {watts} W",
+      "zh-Hant": "充電器向電池充電 {watts} W",
+      "ja": "電源アダプタがバッテリーを {watts} W で充電しています",
+      "ko": "어댑터가 배터리를 {watts} W로 충전하고 있습니다",
+      "de": "Das Netzteil lädt den Akku mit {watts} W",
+      "es": "El adaptador carga la batería a {watts} W",
+      "fr": "L'adaptateur charge la batterie à {watts} W",
+      "it": "L'alimentatore carica la batteria a {watts} W",
+      "pt": "O adaptador carrega a bateria a {watts} W"
+    },
+    "shell.flow_a11y_adapter_to_mac": {
+      "en": "Adapter is supplying this Mac with {watts} W",
+      "zh-Hans": "充电器向这台 Mac 供电 {watts} W",
+      "zh-Hant": "充電器向這台 Mac 供電 {watts} W",
+      "ja": "電源アダプタがこの Mac に {watts} W を供給しています",
+      "ko": "어댑터가 이 Mac에 {watts} W를 공급하고 있습니다",
+      "de": "Das Netzteil versorgt diesen Mac mit {watts} W",
+      "es": "El adaptador alimenta este Mac con {watts} W",
+      "fr": "L'adaptateur alimente ce Mac avec {watts} W",
+      "it": "L'alimentatore alimenta questo Mac con {watts} W",
+      "pt": "O adaptador alimenta este Mac com {watts} W"
+    }
+  }
+}

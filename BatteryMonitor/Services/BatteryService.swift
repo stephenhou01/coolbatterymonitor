@@ -8,6 +8,9 @@ class BatteryService: ObservableObject {
     @Published var batteryData = BatteryData()
     @Published var chargingHistory: [ChargingSession] = []
     @Published var realtimeData: [RealtimeDataPoint] = []
+    /// Three-minute permanent archive loaded only for the chart's trailing
+    /// 24-hour window. Older daily files remain on disk and are never pruned.
+    @Published private(set) var archivedRealtimeData: [RealtimeDataPoint] = []
     /// Four-layer live evidence merged with the 464-row metadata catalog.
     @Published private(set) var systemDataSnapshot = SystemDataSnapshot()
     @Published private(set) var isLiveRefreshEnabled = true
@@ -32,7 +35,10 @@ class BatteryService: ObservableObject {
     private let refreshInterval = BatteryService.liveRefreshInterval
     private var lastKnownPercent: Int? = nil
     private var lastKnownPercentTime: Date? = nil
-    private let maxRealtimePoints = 180
+    /// Keep one complete day of ten-second telemetry so every metric drawer can
+    /// switch between 10 minutes, 1 hour and 24 hours without inventing points.
+    /// The chart downsamples only for drawing; calculations keep the raw samples.
+    static let maxRealtimePoints = Int(24 * 60 * 60 / liveRefreshInterval) + 1
     private let maxRuntimeSamples = 10_000
     /// Runtime history changes at the fuel-gauge cadence, but encoding and
     /// rewriting up to 10,000 samples every minute is needless disk activity.
@@ -61,6 +67,14 @@ class BatteryService: ObservableObject {
     private var historyCacheURL: URL { cacheDir.appendingPathComponent("history_cache.json") }
     private var socHistoryURL: URL { cacheDir.appendingPathComponent("soc_history.json") }
     private var runtimeHistoryURL: URL { cacheDir.appendingPathComponent("runtime_history.json") }
+    private var realtimeHistoryURL: URL { cacheDir.appendingPathComponent("realtime_history.json") }
+    private var realtimeHistoryDirty = false
+    private var lastRealtimeHistorySave: Date?
+    private var telemetryArchiveDirectory: URL {
+        cacheDir.appendingPathComponent("TelemetryHistory", isDirectory: true)
+    }
+    private var telemetryArchiveDirtyDay: String?
+    private var lastTelemetryArchiveSave: Date?
 
     /// 自记录的每日 SOC / 温度 / 满充存放快照。习惯评分、周报、循环速率都靠它。
     private var socHistory = SOCHistory()
@@ -95,6 +109,8 @@ class BatteryService: ObservableObject {
         loadCachedHistory()
         loadSOCHistory()
         loadRuntimeHistory()
+        loadRealtimeHistory()
+        loadTelemetryArchive()
         fetchData()
         guard isLiveRefreshEnabled else { return }
         scheduleTimer()
@@ -270,6 +286,7 @@ class BatteryService: ObservableObject {
         recordChargingSession(data)
 
         // Add real-time data point
+        let pointSnapshot = DashboardMetricSnapshot(data: data, realtimeData: [])
         let dataPoint = RealtimeDataPoint(
             timestamp: data.lastUpdated,
             voltage: data.voltage,
@@ -289,15 +306,24 @@ class BatteryService: ObservableObject {
             isOnAC: data.isOnAC,
             rawCurrentCapacity: data.hardwareDetail.presentRawFields.contains("AppleRawCurrentCapacity")
                 ? data.hardwareDetail.appleRawCurrentCapacity
-                : nil
+                : nil,
+            adapterRatedPower: data.chargerWattage > 0 ? Double(data.chargerWattage) : nil,
+            adapterOutputPower: pointSnapshot.adapterOutputPowerWatts,
+            chargingPower: pointSnapshot.batteryChargingPowerWatts,
+            cycleCount: data.cycleCount,
+            healthPercent: pointSnapshot.healthPercent
         )
 
         self.batteryData = data
         self.systemDataSnapshot = SystemDataCollector.collect(registry: batteryInfo)
         self.realtimeData.append(dataPoint)
-        if self.realtimeData.count > self.maxRealtimePoints {
-            self.realtimeData.removeFirst(self.realtimeData.count - self.maxRealtimePoints)
+        if self.realtimeData.count > Self.maxRealtimePoints {
+            self.realtimeData.removeFirst(self.realtimeData.count - Self.maxRealtimePoints)
         }
+        self.realtimeHistoryDirty = true
+        recordTelemetryArchive(dataPoint)
+        saveRealtimeHistoryIfNeeded()
+        saveTelemetryArchiveIfNeeded()
         // Needs the freshly appended sample, so it runs after the buffer update.
         self.chargeSpeed = ChargeSpeedEstimate.resolve(data: data,
                                                       samples: self.realtimeData,
@@ -423,6 +449,129 @@ class BatteryService: ObservableObject {
 
     private func flushPersistentState() {
         saveRuntimeHistoryIfNeeded(force: true)
+        saveRealtimeHistoryIfNeeded(force: true)
+        saveTelemetryArchiveIfNeeded(force: true)
+    }
+
+    // MARK: - Rolling Realtime History
+
+    /// Restore only physically valid samples from the trailing 24-hour window.
+    /// A small future tolerance accepts the next poll across a clock adjustment,
+    /// while rejecting corrupted timestamps far ahead of the current time.
+    static func retainedRealtimeSamples(
+        _ samples: [RealtimeDataPoint],
+        now: Date
+    ) -> [RealtimeDataPoint] {
+        let start = now.addingTimeInterval(-24 * 60 * 60)
+        let end = now.addingTimeInterval(liveRefreshInterval)
+        return Array(samples.filter {
+            $0.timestamp >= start && $0.timestamp <= end
+                && $0.voltage.isFinite
+                && $0.amperage.isFinite
+                && $0.power.isFinite
+                && $0.temperature.isFinite
+        }
+        .sorted { $0.timestamp < $1.timestamp }
+        .suffix(maxRealtimePoints))
+    }
+
+    private func loadRealtimeHistory(now: Date = Date()) {
+        guard let data = try? Data(contentsOf: realtimeHistoryURL),
+              let decoded = try? JSONDecoder().decode([RealtimeDataPoint].self, from: data) else {
+            realtimeData = []
+            realtimeHistoryDirty = false
+            return
+        }
+        realtimeData = Self.retainedRealtimeSamples(decoded, now: now)
+        realtimeHistoryDirty = false
+        lastRealtimeHistorySave = (try? FileManager.default.attributesOfItem(atPath: realtimeHistoryURL.path)[.modificationDate]) as? Date
+    }
+
+    /// The ten-second sampler stays memory-only during normal operation. Write
+    /// once on pause or normal termination so a restart can still show the last
+    /// 24 hours without turning a battery monitor into a disk-write workload.
+    private func saveRealtimeHistoryIfNeeded(force: Bool = false, now: Date = Date()) {
+        guard Self.shouldPersistRuntimeHistory(
+            dirty: realtimeHistoryDirty,
+            lastSaved: lastRealtimeHistorySave,
+            now: now,
+            force: force
+        ) else { return }
+        let retained = Self.retainedRealtimeSamples(realtimeData, now: now)
+        guard let data = try? JSONEncoder().encode(retained) else { return }
+        do {
+            try data.write(to: realtimeHistoryURL, options: .atomic)
+            realtimeData = retained
+            realtimeHistoryDirty = false
+            lastRealtimeHistorySave = now
+        } catch {
+            // Keep dirty so a later pause/termination can retry.
+        }
+    }
+
+    // MARK: - Permanent Three-Minute Telemetry Archive
+
+    private static func telemetryDayKey(_ date: Date, calendar: Calendar = .current) -> String {
+        let parts = calendar.dateComponents([.year, .month, .day], from: date)
+        return String(format: "%04d-%02d-%02d", parts.year ?? 0, parts.month ?? 0, parts.day ?? 0)
+    }
+
+    private func telemetryArchiveURL(dayKey: String) -> URL {
+        telemetryArchiveDirectory.appendingPathComponent("\(dayKey).json")
+    }
+
+    private func recordTelemetryArchive(_ point: RealtimeDataPoint) {
+        archivedRealtimeData = TelemetryHistoryArchive.appending(point, to: archivedRealtimeData)
+        archivedRealtimeData = TelemetryHistoryArchive.retainedForCharts(
+            archivedRealtimeData,
+            now: point.timestamp
+        )
+        telemetryArchiveDirtyDay = Self.telemetryDayKey(point.timestamp)
+    }
+
+    private func loadTelemetryArchive(now: Date = Date()) {
+        let manager = FileManager.default
+        try? manager.createDirectory(at: telemetryArchiveDirectory, withIntermediateDirectories: true)
+        let calendar = Calendar.current
+        let dates = [now, now.addingTimeInterval(-24 * 60 * 60), now.addingTimeInterval(-48 * 60 * 60)]
+        let dayKeys = Set(dates.map { Self.telemetryDayKey($0, calendar: calendar) })
+        var loaded: [RealtimeDataPoint] = []
+        var newestModification: Date?
+        for dayKey in dayKeys {
+            let url = telemetryArchiveURL(dayKey: dayKey)
+            if let data = try? Data(contentsOf: url),
+               let points = try? JSONDecoder().decode([RealtimeDataPoint].self, from: data) {
+                loaded.append(contentsOf: points)
+            }
+            if let modified = (try? manager.attributesOfItem(atPath: url.path)[.modificationDate]) as? Date,
+               newestModification == nil || modified > newestModification! {
+                newestModification = modified
+            }
+        }
+        let unique = Dictionary(grouping: loaded, by: \.timestamp).compactMap { $0.value.last }
+        archivedRealtimeData = TelemetryHistoryArchive.retainedForCharts(unique, now: now)
+        telemetryArchiveDirtyDay = nil
+        lastTelemetryArchiveSave = newestModification
+    }
+
+    private func saveTelemetryArchiveIfNeeded(force: Bool = false, now: Date = Date()) {
+        guard let dirtyDay = telemetryArchiveDirtyDay,
+              Self.shouldPersistRuntimeHistory(
+                dirty: true,
+                lastSaved: lastTelemetryArchiveSave,
+                now: now,
+                force: force
+              ) else { return }
+        let points = archivedRealtimeData.filter { Self.telemetryDayKey($0.timestamp) == dirtyDay }
+        guard !points.isEmpty, let encoded = try? JSONEncoder().encode(points) else { return }
+        do {
+            try FileManager.default.createDirectory(at: telemetryArchiveDirectory, withIntermediateDirectories: true)
+            try encoded.write(to: telemetryArchiveURL(dayKey: dirtyDay), options: .atomic)
+            telemetryArchiveDirtyDay = nil
+            lastTelemetryArchiveSave = now
+        } catch {
+            // Keep the dirty day so the next five-minute or terminal flush retries.
+        }
     }
 
     // MARK: - IOKit Battery Properties

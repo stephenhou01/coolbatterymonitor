@@ -190,8 +190,7 @@ struct ChargingSession: Identifiable, Equatable, Codable {
 }
 
 // Real-time data point for live charts
-struct RealtimeDataPoint: Identifiable {
-    let id = UUID()
+struct RealtimeDataPoint: Identifiable, Codable {
     let timestamp: Date
     let voltage: Double      // V
     let amperage: Double     // mA (signed)
@@ -214,6 +213,20 @@ struct RealtimeDataPoint: Identifiable {
     /// displayed SOC moves 2–3 points, so ±1 of quantisation is a ±35% error on
     /// the rate. This counter is ~1 mAh out of ~5000. nil when the field is absent.
     let rawCurrentCapacity: Int?
+    /// Values captured with the same timestamp so the overview help charts and
+    /// the Trends page can use one honest history source instead of rebuilding
+    /// old readings from the latest battery snapshot.
+    let adapterRatedPower: Double?
+    let adapterOutputPower: Double?
+    let chargingPower: Double?
+    let cycleCount: Int?
+    let healthPercent: Double?
+    /// Raw samples have a weight of one. Three-minute archive buckets carry the
+    /// number of real polls they summarize, which lets an interrupted bucket be
+    /// resumed after relaunch without counting an average as one fresh sample.
+    var sampleCount: Int = 1
+
+    var id: Date { timestamp }
 
     init(
         timestamp: Date,
@@ -226,7 +239,13 @@ struct RealtimeDataPoint: Identifiable {
         adapterVoltage: Double? = nil,
         adapterCurrent: Double? = nil,
         isOnAC: Bool = false,
-        rawCurrentCapacity: Int? = nil
+        rawCurrentCapacity: Int? = nil,
+        adapterRatedPower: Double? = nil,
+        adapterOutputPower: Double? = nil,
+        chargingPower: Double? = nil,
+        cycleCount: Int? = nil,
+        healthPercent: Double? = nil,
+        sampleCount: Int = 1
     ) {
         self.timestamp = timestamp
         self.voltage = voltage
@@ -239,5 +258,39 @@ struct RealtimeDataPoint: Identifiable {
         self.adapterCurrent = adapterCurrent
         self.isOnAC = isOnAC
         self.rawCurrentCapacity = rawCurrentCapacity
+        self.adapterRatedPower = adapterRatedPower
+        self.adapterOutputPower = adapterOutputPower
+        self.chargingPower = chargingPower
+        self.cycleCount = cycleCount
+        self.healthPercent = healthPercent
+        self.sampleCount = max(1, sampleCount)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case timestamp, voltage, amperage, power, temperature, percent
+        case inputPower, adapterVoltage, adapterCurrent, isOnAC, rawCurrentCapacity
+        case adapterRatedPower, adapterOutputPower, chargingPower, cycleCount, healthPercent
+        case sampleCount
+    }
+
+    init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        timestamp = try values.decode(Date.self, forKey: .timestamp)
+        voltage = try values.decode(Double.self, forKey: .voltage)
+        amperage = try values.decode(Double.self, forKey: .amperage)
+        power = try values.decode(Double.self, forKey: .power)
+        temperature = try values.decode(Double.self, forKey: .temperature)
+        percent = try values.decode(Int.self, forKey: .percent)
+        inputPower = try values.decodeIfPresent(Double.self, forKey: .inputPower)
+        adapterVoltage = try values.decodeIfPresent(Double.self, forKey: .adapterVoltage)
+        adapterCurrent = try values.decodeIfPresent(Double.self, forKey: .adapterCurrent)
+        isOnAC = try values.decodeIfPresent(Bool.self, forKey: .isOnAC) ?? false
+        rawCurrentCapacity = try values.decodeIfPresent(Int.self, forKey: .rawCurrentCapacity)
+        adapterRatedPower = try values.decodeIfPresent(Double.self, forKey: .adapterRatedPower)
+        adapterOutputPower = try values.decodeIfPresent(Double.self, forKey: .adapterOutputPower)
+        chargingPower = try values.decodeIfPresent(Double.self, forKey: .chargingPower)
+        cycleCount = try values.decodeIfPresent(Int.self, forKey: .cycleCount)
+        healthPercent = try values.decodeIfPresent(Double.self, forKey: .healthPercent)
+        sampleCount = max(1, try values.decodeIfPresent(Int.self, forKey: .sampleCount) ?? 1)
     }
 }

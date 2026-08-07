@@ -1,0 +1,228 @@
+{
+  "_meta": {
+    "scope": "technical/power-center",
+    "title": "技术参数 / 功率中心",
+    "description": "功率图、实时刷新、统计窗口和活跃进程。",
+    "consumers": [
+      "PowerCenterSection"
+    ]
+  },
+  "strings": {
+    "p.power_center_title": {
+      "en": "Live power and app activity",
+      "zh-Hans": "当前功耗与程序活动",
+      "zh-Hant": "當前功耗與程式活動",
+      "ja": "現在の消費電力とアプリの活動",
+      "ko": "실시간 전력과 앱 활동",
+      "de": "Live-Leistung und App-Aktivität",
+      "es": "Potencia en vivo y actividad de las apps",
+      "fr": "Puissance en direct et activité des apps",
+      "it": "Potenza in tempo reale e attività delle app",
+      "pt": "Potência ao vivo e atividade dos apps"
+    },
+    "p.power_center_subtitle": {
+      "en": "The blue line is whole-computer power. Processes explain what was active without pretending CPU usage is exact per-process wattage.",
+      "zh-Hans": "蓝线是整台电脑的实时功率；右侧进程只解释当时谁更活跃，不把 CPU 占用伪装成精确瓦数。",
+      "zh-Hant": "藍線是整台電腦的即時功率；右側行程只解釋當時誰更活躍，不把 CPU 佔用偽裝成精確瓦數。",
+      "ja": "青い線は Mac 全体の電力です。プロセス一覧はその時点でどれが活発だったかを説明するだけで、CPU 使用率をプロセスごとの正確なワット数として扱うことはしません。",
+      "ko": "파란 선은 Mac 전체의 실시간 전력입니다. 프로세스는 그때 무엇이 더 활발했는지 설명할 뿐이며, CPU 사용률을 프로세스별 정확한 와트로 포장하지 않습니다.",
+      "de": "Die blaue Linie zeigt die Leistung des gesamten Macs. Die Prozesse erklären nur, was gerade aktiv war, und geben die CPU-Auslastung nicht als exakte Wattzahl pro Prozess aus.",
+      "es": "La línea azul es la potencia de todo el equipo. Los procesos explican qué estaba activo, sin hacer pasar el uso de CPU por vatios exactos por proceso.",
+      "fr": "La courbe bleue correspond à la puissance de tout l'ordinateur. Les processus expliquent ce qui était actif, sans faire passer l'utilisation du CPU pour un wattage exact par processus.",
+      "it": "La linea blu è la potenza dell'intero computer. I processi spiegano cosa era attivo, senza far credere che l'uso della CPU sia il consumo esatto di ciascun processo.",
+      "pt": "A linha azul é a potência do computador inteiro. Os processos explicam o que estava ativo, sem fingir que o uso de CPU é a potência exata de cada processo."
+    },
+    "p.live_10s": {
+      "en": "Every 10 seconds",
+      "zh-Hans": "每 10 秒",
+      "zh-Hant": "每 10 秒",
+      "ja": "10 秒ごと",
+      "ko": "10초마다",
+      "de": "Alle 10 Sekunden",
+      "es": "Cada 10 segundos",
+      "fr": "Toutes les 10 secondes",
+      "it": "Ogni 10 secondi",
+      "pt": "A cada 10 segundos"
+    },
+    "p.live_paused": {
+      "en": "Paused",
+      "zh-Hans": "已暂停",
+      "zh-Hant": "已暫停",
+      "ja": "一時停止中",
+      "ko": "일시 중지됨",
+      "de": "Angehalten",
+      "es": "En pausa",
+      "fr": "En pause",
+      "it": "In pausa",
+      "pt": "Pausado"
+    },
+    "p.pause_refresh": {
+      "en": "Pause",
+      "zh-Hans": "暂停",
+      "zh-Hant": "暫停",
+      "ja": "一時停止",
+      "ko": "일시 중지",
+      "de": "Pause",
+      "es": "Pausar",
+      "fr": "Mettre en pause",
+      "it": "Pausa",
+      "pt": "Pausar"
+    },
+    "p.resume_refresh": {
+      "en": "Resume",
+      "zh-Hans": "继续",
+      "zh-Hant": "繼續",
+      "ja": "再開",
+      "ko": "계속",
+      "de": "Fortsetzen",
+      "es": "Reanudar",
+      "fr": "Reprendre",
+      "it": "Riprendi",
+      "pt": "Retomar"
+    },
+    "p.refresh_now": {
+      "en": "Refresh now",
+      "zh-Hans": "立即刷新",
+      "zh-Hant": "立即刷新",
+      "ja": "今すぐ更新",
+      "ko": "지금 새로 고침",
+      "de": "Jetzt aktualisieren",
+      "es": "Actualizar ahora",
+      "fr": "Actualiser maintenant",
+      "it": "Aggiorna ora",
+      "pt": "Atualizar agora"
+    },
+    "p.current_power_short": {
+      "en": "Current",
+      "zh-Hans": "当前",
+      "zh-Hant": "當前",
+      "ja": "現在",
+      "ko": "현재",
+      "de": "Aktuell",
+      "es": "Actual",
+      "fr": "Actuel",
+      "it": "Attuale",
+      "pt": "Atual"
+    },
+    "p.window_average": {
+      "en": "Window average",
+      "zh-Hans": "窗口均值",
+      "zh-Hant": "視窗平均值",
+      "ja": "ウインドウ平均",
+      "ko": "구간 평균",
+      "de": "Fenster-Mittelwert",
+      "es": "Media de la ventana",
+      "fr": "Moyenne de la fenêtre",
+      "it": "Media della finestra",
+      "pt": "Média da janela"
+    },
+    "p.window_peak": {
+      "en": "Window peak",
+      "zh-Hans": "窗口峰值",
+      "zh-Hant": "視窗峰值",
+      "ja": "ウインドウピーク",
+      "ko": "구간 최고",
+      "de": "Fenster-Spitzenwert",
+      "es": "Pico de la ventana",
+      "fr": "Pic de la fenêtre",
+      "it": "Picco della finestra",
+      "pt": "Pico da janela"
+    },
+    "p.power_collecting": {
+      "en": "Collecting live power; the line appears after 20 seconds",
+      "zh-Hans": "正在收集实时功率；20 秒后会出现折线",
+      "zh-Hant": "正在收集即時功率；20 秒後會出現折線",
+      "ja": "リアルタイムの電力を収集中です。20 秒後に折れ線が表示されます",
+      "ko": "실시간 전력을 수집하는 중입니다. 20초 후에 선이 나타납니다",
+      "de": "Live-Leistung wird erfasst; die Linie erscheint nach 20 Sekunden",
+      "es": "Recopilando la potencia en vivo; la línea aparece a los 20 segundos",
+      "fr": "Collecte de la puissance en direct ; la courbe apparaît après 20 secondes",
+      "it": "Raccolta della potenza in tempo reale; la linea appare dopo 20 secondi",
+      "pt": "Coletando a potência ao vivo; a linha aparece depois de 20 segundos"
+    },
+    "p.power_axis_time": {
+      "en": "X-axis: time",
+      "zh-Hans": "横轴：时间",
+      "zh-Hant": "橫軸：時間",
+      "ja": "横軸：時間",
+      "ko": "가로축: 시간",
+      "de": "X-Achse: Zeit",
+      "es": "Eje X: tiempo",
+      "fr": "Axe X : temps",
+      "it": "Asse X: tempo",
+      "pt": "Eixo X: tempo"
+    },
+    "p.power_axis_watts": {
+      "en": "Y-axis: whole-computer power (W)",
+      "zh-Hans": "纵轴：整机功率（W）",
+      "zh-Hant": "縱軸：整機功率（W）",
+      "ja": "縦軸：Mac 全体の電力 (W)",
+      "ko": "세로축: Mac 전체 전력(W)",
+      "de": "Y-Achse: Leistung des gesamten Macs (W)",
+      "es": "Eje Y: potencia de todo el equipo (W)",
+      "fr": "Axe Y : puissance de tout l'ordinateur (W)",
+      "it": "Asse Y: potenza dell'intero computer (W)",
+      "pt": "Eixo Y: potência do computador inteiro (W)"
+    },
+    "p.power_hover_hint": {
+      "en": "Hover to inspect each moment",
+      "zh-Hans": "悬停查看每个时刻",
+      "zh-Hant": "懸停查看每個時刻",
+      "ja": "ポインタを重ねると各時点の値を確認できます",
+      "ko": "포인터를 올리면 각 시점을 확인할 수 있습니다",
+      "de": "Mit dem Zeiger über die Linie fahren, um jeden Zeitpunkt zu lesen",
+      "es": "Pasa el puntero para ver cada momento",
+      "fr": "Survolez pour examiner chaque instant",
+      "it": "Passa il puntatore per esaminare ogni istante",
+      "pt": "Passe o ponteiro para inspecionar cada instante"
+    },
+    "p.active_processes": {
+      "en": "Active apps and processes",
+      "zh-Hans": "此刻活跃的程序与进程",
+      "zh-Hant": "此刻活躍的程式與行程",
+      "ja": "アクティブなアプリとプロセス",
+      "ko": "지금 활동 중인 앱과 프로세스",
+      "de": "Aktive Apps und Prozesse",
+      "es": "Apps y procesos activos",
+      "fr": "Apps et processus actifs",
+      "it": "App e processi attivi",
+      "pt": "Apps e processos ativos"
+    },
+    "p.no_active_processes": {
+      "en": "No readable process data right now",
+      "zh-Hans": "当前没有可读取的进程数据",
+      "zh-Hant": "目前沒有可讀取的行程資料",
+      "ja": "現在読み取れるプロセスデータはありません",
+      "ko": "현재 읽을 수 있는 프로세스 데이터가 없습니다",
+      "de": "Derzeit keine lesbaren Prozessdaten",
+      "es": "No hay datos de procesos accesibles ahora",
+      "fr": "Aucune donnée de processus lisible actuellement",
+      "it": "Nessun dato di processo leggibile al momento",
+      "pt": "Nenhum dado de processo legível no momento"
+    },
+    "p.process_collecting": {
+      "en": "Reading process activity…",
+      "zh-Hans": "正在读取进程活动…",
+      "zh-Hant": "正在讀取行程活動…",
+      "ja": "プロセスの活動を読み取り中…",
+      "ko": "프로세스 활동을 읽는 중…",
+      "de": "Prozessaktivität wird gelesen…",
+      "es": "Leyendo la actividad de los procesos…",
+      "fr": "Lecture de l'activité des processus…",
+      "it": "Lettura dell'attività dei processi…",
+      "pt": "Lendo a atividade dos processos…"
+    },
+    "p.process_context_note": {
+      "en": "Why not show watts per app? macOS does not expose reliable process-level wattage here; CPU%% explains workload context but cannot split whole-computer power.",
+      "zh-Hans": "为什么不显示每个程序多少瓦？macOS 这里没有给出可靠的进程级瓦数；CPU%% 只能帮助解释负载组合，不能直接分摊整机功耗。",
+      "zh-Hant": "為什麼不顯示每個程式多少瓦？macOS 這裡沒有給出可靠的行程級瓦數；CPU%% 只能幫助解釋負載組合，不能直接分攤整機功耗。",
+      "ja": "なぜアプリごとのワット数を表示しないのか？ macOS はここで信頼できるプロセス単位のワット数を公開していません。CPU%% は負荷の内訳を説明できますが、Mac 全体の消費電力をそのまま按分することはできません。",
+      "ko": "앱마다 몇 와트인지 왜 표시하지 않나요? macOS는 여기에서 신뢰할 수 있는 프로세스별 소비 전력을 제공하지 않습니다. CPU%%는 부하 상황을 설명하는 데 도움이 되지만 Mac 전체 전력을 나눠 배분할 수는 없습니다.",
+      "de": "Warum keine Wattangabe pro App? macOS liefert hier keine verlässlichen Wattwerte pro Prozess; CPU%% erklärt den Lastkontext, lässt sich aber nicht auf die Leistung des gesamten Macs aufteilen.",
+      "es": "¿Por qué no mostramos los vatios de cada app? macOS no expone aquí unos vatios fiables por proceso; el %% de CPU ayuda a entender el contexto de carga, pero no permite repartir la potencia de todo el equipo.",
+      "fr": "Pourquoi ne pas afficher les watts par app ? macOS n'expose pas ici de wattage fiable au niveau des processus ; le CPU%% aide à comprendre le contexte de charge mais ne permet pas de répartir la puissance de tout l'ordinateur.",
+      "it": "Perché non mostrare i watt per app? Qui macOS non espone un consumo affidabile a livello di processo; la CPU%% spiega il contesto del carico ma non può ripartire la potenza dell'intero computer.",
+      "pt": "Por que não mostrar watts por app? O macOS não expõe aqui uma potência confiável por processo; o CPU%% ajuda a explicar o contexto da carga, mas não permite dividir a potência do computador inteiro."
+    }
+  }
+}

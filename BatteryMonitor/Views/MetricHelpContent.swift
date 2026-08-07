@@ -26,10 +26,134 @@ struct MetricHelpResult: Identifiable, Equatable {
 }
 
 struct MetricHelpTrendPoint: Identifiable, Equatable {
+    enum Quality: Equatable { case measured, fitted }
+
     let timestamp: Date
     let value: Double
+    var quality: Quality = .measured
+    var segmentID: Int = 0
+    var sampleCount: Int = 1
 
     var id: Date { timestamp }
+}
+
+enum MetricHelpTrendRange: String, CaseIterable, Identifiable {
+    case tenMinutes
+    case oneHour
+    case twentyFourHours
+
+    var id: String { rawValue }
+
+    var duration: TimeInterval {
+        switch self {
+        case .tenMinutes: return 10 * 60
+        case .oneHour: return 60 * 60
+        case .twentyFourHours: return 24 * 60 * 60
+        }
+    }
+
+    var title: String {
+        switch self {
+        case .tenMinutes:
+            return dashboardText("p.trend_last_10min", fallback: "最近 10 分钟")
+        case .oneHour:
+            return dashboardText("p.trend_last_1h", fallback: "最近 1 小时")
+        case .twentyFourHours:
+            return dashboardText("p.trend_last_24h", fallback: "最近 24 小时")
+        }
+    }
+
+    var targetPointCount: Int {
+        switch self {
+        case .tenMinutes: return 10
+        case .oneHour: return 20
+        case .twentyFourHours: return 40
+        }
+    }
+
+    var bucketDuration: TimeInterval {
+        duration / Double(targetPointCount)
+    }
+
+    var samplingSummary: String {
+        switch self {
+        case .tenMinutes: return "10 × 1 min"
+        case .oneHour: return "20 × 3 min"
+        case .twentyFourHours: return "40 × 36 min"
+        }
+    }
+
+    /// All ranges use fixed, closed mean buckets: 10 min = 10 one-minute
+    /// buckets, 1 h = 20 three-minute buckets, and 24 h = 40 thirty-six-minute
+    /// buckets. The still-open bucket is deliberately omitted, so ten-second
+    /// polling cannot make a chart promise a faster visible cadence.
+    /// Only short bounded holes are fitted; longer offline periods remain
+    /// separate line segments.
+    func chartPoints(from points: [MetricHelpTrendPoint], maximumCount: Int = 240) -> [MetricHelpTrendPoint] {
+        let sorted = points.filter { $0.value.isFinite }.sorted { $0.timestamp < $1.timestamp }
+        guard let latest = sorted.last?.timestamp else { return [] }
+        let interval = bucketDuration
+        let end = Date(
+            timeIntervalSince1970: floor(latest.timeIntervalSince1970 / interval) * interval
+        )
+        let start = end.addingTimeInterval(-duration)
+        let visible = sorted.filter { $0.timestamp >= start && $0.timestamp < end }
+        return bucketed(visible, start: start, count: targetPointCount)
+    }
+
+    private func bucketed(_ points: [MetricHelpTrendPoint], start: Date, count: Int) -> [MetricHelpTrendPoint] {
+        guard count > 0 else { return [] }
+        let interval = duration / Double(count)
+        var buckets = Array(repeating: [MetricHelpTrendPoint](), count: count)
+        for point in points {
+            let index = Int(floor(point.timestamp.timeIntervalSince(start) / interval))
+            guard buckets.indices.contains(index) else { continue }
+            buckets[index].append(point)
+        }
+
+        var slots: [MetricHelpTrendPoint?] = buckets.enumerated().map { index, bucket in
+            guard !bucket.isEmpty else { return nil }
+            let weight = bucket.reduce(0) { $0 + max(1, $1.sampleCount) }
+            let value = bucket.reduce(0.0) { $0 + $1.value * Double(max(1, $1.sampleCount)) } / Double(weight)
+            return MetricHelpTrendPoint(
+                timestamp: start.addingTimeInterval((Double(index) + 0.5) * interval),
+                value: value,
+                quality: .measured,
+                sampleCount: weight
+            )
+        }
+
+        let maximumFittedRun = self == .oneHour ? 2 : 1
+        var index = 0
+        while index < slots.count {
+            guard slots[index] == nil else { index += 1; continue }
+            let gapStart = index
+            while index < slots.count, slots[index] == nil { index += 1 }
+            let gapEnd = index
+            let gapLength = gapEnd - gapStart
+            guard gapLength <= maximumFittedRun,
+                  gapStart > 0, gapEnd < slots.count,
+                  let left = slots[gapStart - 1], let right = slots[gapEnd] else { continue }
+            for offset in 0..<gapLength {
+                let fraction = Double(offset + 1) / Double(gapLength + 1)
+                slots[gapStart + offset] = MetricHelpTrendPoint(
+                    timestamp: start.addingTimeInterval((Double(gapStart + offset) + 0.5) * interval),
+                    value: left.value + (right.value - left.value) * fraction,
+                    quality: .fitted,
+                    sampleCount: 0
+                )
+            }
+        }
+
+        var segment = 0
+        var foundGap = false
+        return slots.compactMap { slot in
+            guard var point = slot else { foundGap = true; return nil }
+            if foundGap { segment += 1; foundGap = false }
+            point.segmentID = segment
+            return point
+        }
+    }
 }
 
 /// A trend chart carried by a help panel. Kept as data rather than a view so
@@ -96,10 +220,9 @@ struct MetricHelpContent: Identifiable, Equatable {
     var readAt: MetricReadStamp? = nil
     var comparisonResults: [MetricHelpResult] = []
     var powerContract: MetricPowerContract? = nil
-    /// Optional history for metrics that actually move within the ten-minute
-    /// buffer. Cycle count and health are deliberately left without one: over
-    /// ten minutes they are a flat line, and drawing one would imply the app
-    /// has resolution it does not.
+    /// Optional history for metrics that move within the rolling 24-hour
+    /// buffer. Cycle count and health are deliberately left without one because
+    /// the ten-second sampler does not add meaningful resolution for them.
     var trend: MetricHelpTrend? = nil
 }
 

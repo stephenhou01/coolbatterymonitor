@@ -68,19 +68,25 @@ struct MetricTrendChart: View {
     var body: some View {
         Chart {
             ForEach(trend.points) { point in
-                AreaMark(
-                    x: .value("Time", point.timestamp),
-                    yStart: .value("Baseline", domain.lowerBound),
-                    yEnd: .value("Value", point.value)
-                )
-                .foregroundStyle(trend.tint.opacity(0.08))
-
                 LineMark(
                     x: .value("Time", point.timestamp),
-                    y: .value("Value", point.value)
+                    y: .value("Value", point.value),
+                    series: .value("Segment", point.segmentID)
                 )
                 .foregroundStyle(trend.tint)
                 .lineStyle(StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
+
+                if point.quality == .fitted {
+                    PointMark(
+                        x: .value("Fitted time", point.timestamp),
+                        y: .value("Fitted value", point.value)
+                    )
+                    .foregroundStyle(AppTheme.surfaceRaised)
+                    .symbolSize(28)
+                    .annotation(position: .overlay) {
+                        Circle().stroke(trend.tint, lineWidth: 1).frame(width: 6, height: 6)
+                    }
+                }
             }
 
             if let ceiling = trend.ceiling, ceiling > 0 {
@@ -160,6 +166,7 @@ struct MetricHelpDrawer: View {
     let content: MetricHelpContent
     let onClose: () -> Void
     @FocusState private var closeFocused: Bool
+    @State private var selectedTrendRange: MetricHelpTrendRange = .tenMinutes
     var body: some View {
         HStack(spacing: 0) {
             Button(action: onClose) {
@@ -212,6 +219,7 @@ struct MetricHelpDrawer: View {
         .ignoresSafeArea()
         .transition(.opacity.combined(with: .move(edge: .trailing)))
         .onAppear { closeFocused = true }
+        .onChange(of: content.id) { _, _ in selectedTrendRange = .tenMinutes }
         .onExitCommand(perform: onClose)
         .accessibilityElement(children: .contain)
     }
@@ -243,7 +251,7 @@ struct MetricHelpDrawer: View {
     }
 
     private var resultBlock: some View {
-        VStack(alignment: .leading, spacing: 9) {
+        return VStack(alignment: .leading, spacing: 9) {
             drawerEyebrow(dashboardText("p.help_current", fallback: "当前结果"))
 
             if let contract = content.powerContract {
@@ -386,29 +394,53 @@ struct MetricHelpDrawer: View {
     }
 
     private func trendCard(_ trend: MetricHelpTrend) -> some View {
-        VStack(alignment: .leading, spacing: 9) {
+        let visibleTrend = MetricHelpTrend(
+            title: trend.title,
+            latestText: trend.latestText,
+            note: trend.note,
+            unit: trend.unit,
+            tint: trend.tint,
+            points: selectedTrendRange.chartPoints(from: trend.points),
+            ceiling: trend.ceiling,
+            baselineAtZero: trend.baselineAtZero,
+            waitingText: trend.waitingText
+        )
+        return VStack(alignment: .leading, spacing: 9) {
             HStack(alignment: .firstTextBaseline) {
-                drawerEyebrow(trend.title)
+                drawerEyebrow(visibleTrend.title)
                 Spacer()
-                Text(trend.latestText)
+                Text(visibleTrend.latestText)
                     .font(.system(size: 11, weight: .semibold, design: .monospaced))
-                    .foregroundStyle(trend.tint)
+                    .foregroundStyle(visibleTrend.tint)
             }
 
-            if trend.isPlottable {
-                MetricTrendChart(trend: trend)
+            Picker("", selection: $selectedTrendRange) {
+                ForEach(MetricHelpTrendRange.allCases) { range in
+                    Text(range.title).tag(range)
+                }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .accessibilityLabel(dashboardText("p.trend_range", fallback: "趋势时间范围"))
+
+            Text(selectedTrendRange.samplingSummary)
+                .font(.system(size: 9, weight: .medium, design: .monospaced))
+                .foregroundStyle(AppTheme.textTertiary)
+
+            if visibleTrend.isPlottable {
+                MetricTrendChart(trend: visibleTrend)
             } else {
                 HStack(spacing: 9) {
                     Image(systemName: "chart.xyaxis.line")
                         .foregroundStyle(AppTheme.textTertiary)
-                    Text(trend.waitingText)
+                    Text(visibleTrend.waitingText)
                         .font(.system(size: 10.5))
                         .foregroundStyle(AppTheme.textTertiary)
                 }
                 .frame(maxWidth: .infinity, minHeight: 72, alignment: .center)
             }
 
-            Text(trend.note)
+            Text(visibleTrend.note)
                 .font(.system(size: 9.5))
                 .foregroundStyle(AppTheme.textTertiary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -436,7 +468,10 @@ struct MetricHelpDrawer: View {
     /// mostly republish once a minute, so seconds would imply a precision the
     /// series does not have.
     static func trendHoverText(_ point: MetricHelpTrendPoint, unit: String = "W") -> String {
-        "\(MetricFieldFreshness.minuteText(point.timestamp)) · \(LNum("%.1f", point.value)) \(unit)"
+        let fitted = point.quality == .fitted
+            ? " · \(dashboardText("p.trend_fitted", fallback: "拟合"))"
+            : ""
+        return "\(MetricFieldFreshness.minuteText(point.timestamp)) · \(LNum("%.1f", point.value)) \(unit)\(fitted)"
     }
 
     private func comparisonResultCard(_ item: MetricHelpResult, primary: Bool) -> some View {

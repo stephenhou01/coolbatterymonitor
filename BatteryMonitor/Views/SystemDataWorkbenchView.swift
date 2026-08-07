@@ -54,10 +54,18 @@ struct SystemDataWorkbenchView: View {
 
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines).localizedLowercase
         guard !query.isEmpty else { return base }
+        // Search what the user can actually read: path/value/source are English
+        // identifiers in every language, the rest follows the current language.
+        // Deliberately not searching the raw Chinese too — in an English UI,
+        // matching 温度 would leak implementation details and make the result
+        // count disagree with the visible text. Reliability and unit are new
+        // here: both are visible columns that were previously unsearchable.
         return base.filter {
             [
-                $0.metadata.path, $0.value, $0.metadata.group, $0.metadata.meaning,
-                $0.metadata.note, $0.metadata.source,
+                $0.metadata.path, $0.value, $0.metadata.source,
+                $0.metadata.localizedGroup, $0.metadata.localizedMeaning,
+                $0.metadata.localizedNote, $0.metadata.localizedUnit,
+                $0.metadata.localizedReliability,
             ].joined(separator: " ").localizedLowercase.contains(query)
         }
     }
@@ -232,12 +240,12 @@ struct SystemDataWorkbenchView: View {
                 .textSelection(.enabled)
                 .lineLimit(2)
                 .frame(width: 210, alignment: .leading)
-            Text(field.metadata.unit.isEmpty ? "—" : field.metadata.unit)
+            Text(field.metadata.localizedUnit.isEmpty ? "—" : field.metadata.localizedUnit)
                 .font(.system(size: 8.8, design: .monospaced))
                 .foregroundStyle(AppTheme.textTertiary)
                 .frame(width: 86, alignment: .leading)
             VStack(alignment: .leading, spacing: 2) {
-                Text(field.metadata.meaning)
+                Text(field.metadata.localizedMeaning)
                     .font(.system(size: 9.2))
                     .foregroundStyle(AppTheme.textSecondary)
                     .lineLimit(2)
@@ -249,11 +257,11 @@ struct SystemDataWorkbenchView: View {
                 }
             }
             .frame(width: 355, alignment: .leading)
-            Text(field.metadata.group)
+            Text(field.metadata.localizedGroup)
                 .font(.system(size: 8.7, weight: .semibold))
                 .foregroundStyle(AppTheme.chargingCyan.opacity(0.85))
                 .frame(width: 105, alignment: .leading)
-            Text(field.metadata.reliability)
+            Text(field.metadata.localizedReliability)
                 .font(.system(size: 8.6))
                 .foregroundStyle(AppTheme.textTertiary)
                 .lineLimit(2)

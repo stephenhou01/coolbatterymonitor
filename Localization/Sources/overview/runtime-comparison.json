@@ -1,0 +1,204 @@
+{
+  "_meta": {
+    "scope": "overview/runtime-comparison",
+    "title": "总览 / 续航时间对照",
+    "description": "系统、稳健和当前负载三套剩余时间口径。",
+    "consumers": [
+      "DashboardOverviewPage"
+    ]
+  },
+  "strings": {
+    "shell.runtime_comparison": {
+      "en": "Runtime comparison",
+      "zh-Hans": "续航时间对照",
+      "zh-Hant": "續航時間對照",
+      "ja": "駆動時間の比較",
+      "ko": "사용 시간 비교",
+      "de": "Laufzeitvergleich",
+      "es": "Comparación de autonomía",
+      "fr": "Comparaison des autonomies",
+      "it": "Confronto delle autonomie",
+      "pt": "Comparação de autonomia"
+    },
+    "shell.apple_runtime": {
+      "en": "Apple system time",
+      "zh-Hans": "Apple 系统读取时间",
+      "zh-Hant": "Apple 系統讀取時間",
+      "ja": "Apple システムの時間",
+      "ko": "Apple 시스템 시간",
+      "de": "Apple-Systemzeit",
+      "es": "Tiempo del sistema de Apple",
+      "fr": "Temps système Apple",
+      "it": "Tempo di sistema Apple",
+      "pt": "Tempo do sistema Apple"
+    },
+    "shell.apple_runtime_unavailable": {
+      "en": "Connected to power: macOS does not provide discharge time remaining · available after unplugging",
+      "zh-Hans": "当前接电时 macOS 不提供放电剩余时间 · 拔电使用后生成",
+      "zh-Hant": "目前接電時 macOS 不提供放電剩餘時間 · 拔電使用後產生",
+      "ja": "電源接続中は macOS が放電時の残り時間を提供しません・電源を外して使用すると表示されます",
+      "ko": "전원 연결 중에는 macOS가 방전 남은 시간을 제공하지 않습니다 · 전원을 분리해 사용하면 표시됩니다",
+      "de": "Am Netz liefert macOS keine verbleibende Entladezeit · nach dem Trennen verfügbar",
+      "es": "Con la corriente conectada, macOS no ofrece el tiempo de descarga restante · disponible tras desconectarla",
+      "fr": "Sur secteur, macOS ne fournit pas le temps de décharge restant · disponible après débranchement",
+      "it": "Con l'alimentazione collegata, macOS non fornisce il tempo di scarica residuo · disponibile dopo lo scollegamento",
+      "pt": "Na tomada, o macOS não fornece o tempo restante de descarga · disponível após desconectar"
+    },
+    "shell.apple_runtime_waiting": {
+      "en": "macOS has not provided a valid time remaining yet · keep using the battery and check again",
+      "zh-Hans": "macOS 暂未提供有效剩余时间 · 继续使用电池后再查看",
+      "zh-Hant": "macOS 暫未提供有效剩餘時間 · 繼續使用電池後再查看",
+      "ja": "macOS はまだ有効な残り時間を提供していません・バッテリーを引き続き使用してから再確認してください",
+      "ko": "macOS가 아직 유효한 남은 시간을 제공하지 않았습니다 · 배터리를 계속 사용한 뒤 다시 확인하세요",
+      "de": "macOS hat noch keine gültige Restzeit geliefert · Akku weiter verwenden und erneut prüfen",
+      "es": "macOS aún no ha ofrecido un tiempo restante válido · sigue usando la batería y vuelve a comprobarlo",
+      "fr": "macOS n'a pas encore fourni de temps restant valide · continuez sur batterie puis vérifiez à nouveau",
+      "it": "macOS non ha ancora fornito un tempo residuo valido · continua a usare la batteria e ricontrolla",
+      "pt": "O macOS ainda não forneceu um tempo restante válido · continue usando a bateria e verifique novamente"
+    },
+    "shell.apple_runtime_collecting": {
+      "en": "Apple system estimate · collecting actual battery use from the last 24 hours",
+      "zh-Hans": "Apple 官方系统预估 · 正在积累近 24 小时实际电池使用",
+      "zh-Hant": "Apple 官方系統預估 · 正在累積近 24 小時實際電池使用",
+      "ja": "Apple システム予測・直近24時間の実使用を記録中",
+      "ko": "Apple 시스템 예측 · 최근 24시간의 실제 배터리 사용을 기록 중",
+      "de": "Apple-Systemschätzung · tatsächliche Akkunutzung der letzten 24 Stunden wird erfasst",
+      "es": "Estimación del sistema de Apple · recopilando el uso real de la batería de las últimas 24 horas",
+      "fr": "Estimation système Apple · collecte de l'utilisation réelle de la batterie sur les 24 dernières heures",
+      "it": "Stima di sistema Apple · raccolta dell'uso reale a batteria delle ultime 24 ore",
+      "pt": "Estimativa do sistema Apple · coletando o uso real da bateria nas últimas 24 horas"
+    },
+    "shell.apple_runtime_recent": {
+      "en": "Apple system estimate · about {hours} hours of actual battery use recorded in the last 24 hours",
+      "zh-Hans": "Apple 官方系统预估 · 近 24 小时记录约 {hours} 小时实际电池使用",
+      "zh-Hant": "Apple 官方系統預估 · 近 24 小時記錄約 {hours} 小時實際電池使用",
+      "ja": "Apple システム予測・直近24時間に約 {hours} 時間の実使用を記録",
+      "ko": "Apple 시스템 예측 · 최근 24시간에 약 {hours}시간의 실제 배터리 사용을 기록",
+      "de": "Apple-Systemschätzung · ca. {hours} Std. tatsächliche Akkunutzung in den letzten 24 Std.",
+      "es": "Estimación del sistema de Apple · unas {hours} horas de uso real de la batería registradas en las últimas 24 horas",
+      "fr": "Estimation système Apple · environ {hours} heures d'utilisation réelle de la batterie enregistrées sur les 24 dernières heures",
+      "it": "Stima di sistema Apple · circa {hours} ore di uso reale a batteria registrate nelle ultime 24 ore",
+      "pt": "Estimativa do sistema Apple · cerca de {hours} horas de uso real da bateria registradas nas últimas 24 horas"
+    },
+    "shell.apple_runtime_recent_last": {
+      "en": "Latest Apple system estimate · about {hours} hours of actual battery use recorded in the last 24 hours",
+      "zh-Hans": "最近一次 Apple 官方系统预估 · 近 24 小时记录约 {hours} 小时实际电池使用",
+      "zh-Hant": "最近一次 Apple 官方系統預估 · 近 24 小時記錄約 {hours} 小時實際電池使用",
+      "ja": "直近の Apple システム予測・直近24時間に約 {hours} 時間の実使用を記録",
+      "ko": "가장 최근 Apple 시스템 예측 · 최근 24시간에 약 {hours}시간의 실제 배터리 사용을 기록",
+      "de": "Letzte Apple-Systemschätzung · ca. {hours} Std. tatsächliche Akkunutzung in den letzten 24 Std.",
+      "es": "Última estimación del sistema de Apple · unas {hours} horas de uso real de la batería registradas en las últimas 24 horas",
+      "fr": "Dernière estimation système Apple · environ {hours} heures d'utilisation réelle de la batterie enregistrées sur les 24 dernières heures",
+      "it": "Ultima stima di sistema Apple · circa {hours} ore di uso reale a batteria registrate nelle ultime 24 ore",
+      "pt": "Última estimativa do sistema Apple · cerca de {hours} horas de uso real da bateria registradas nas últimas 24 horas"
+    },
+    "shell.stable_runtime_basis": {
+      "en": "Typical power over the last {minutes} min",
+      "zh-Hans": "近 {minutes} 分钟典型功耗",
+      "zh-Hant": "近 {minutes} 分鐘典型功耗",
+      "ja": "直近 {minutes} 分の代表的な消費電力",
+      "ko": "최근 {minutes}분의 대표 전력",
+      "de": "Typische Leistung der letzten {minutes} Min.",
+      "es": "Consumo típico de los últimos {minutes} min",
+      "fr": "Consommation typique des {minutes} dernières min",
+      "it": "Consumo tipico degli ultimi {minutes} min",
+      "pt": "Consumo típico dos últimos {minutes} min"
+    },
+    "shell.stable_runtime_collecting": {
+      "en": "Collecting samples {samples}/5",
+      "zh-Hans": "正在积累样本 {samples}/5",
+      "zh-Hant": "正在累積樣本 {samples}/5",
+      "ja": "サンプル収集中 {samples}/5",
+      "ko": "샘플 수집 중 {samples}/5",
+      "de": "Messwerte werden gesammelt {samples}/5",
+      "es": "Recogiendo muestras {samples}/5",
+      "fr": "Collecte des mesures {samples}/5",
+      "it": "Raccolta campioni {samples}/5",
+      "pt": "Coletando amostras {samples}/5"
+    },
+    "shell.current_runtime_basis": {
+      "en": "Latest reading {power} W · about once a minute",
+      "zh-Hans": "最新读数 {power} W · 约每分钟更新",
+      "zh-Hant": "最新讀數 {power} W · 約每分鐘更新",
+      "ja": "最新の測定値 {power} W · 約1分ごと",
+      "ko": "최신 측정값 {power} W · 약 1분마다",
+      "de": "Letzter Messwert {power} W · ca. minütlich",
+      "es": "Última lectura {power} W · cada minuto aprox.",
+      "fr": "Dernière mesure {power} W · env. chaque minute",
+      "it": "Ultima lettura {power} W · circa ogni minuto",
+      "pt": "Última leitura {power} W · cerca de 1× por minuto"
+    },
+    "shell.derived_runtime_unavailable": {
+      "en": "No rated energy data for this model, so the two derived estimates cannot be computed",
+      "zh-Hans": "本机型号缺少额定电量数据，无法换算稳健估算与当前负载估算",
+      "zh-Hant": "本機型號缺少額定電量資料，無法換算穩健估算與目前負載估算",
+      "ja": "この機種の設計容量データがないため、2つの推定値は計算できません",
+      "ko": "이 모델의 정격 용량 데이터가 없어 두 파생 추정값을 계산할 수 없습니다",
+      "de": "Für dieses Modell fehlen die Nennkapazitätsdaten, daher lassen sich die beiden abgeleiteten Schätzungen nicht berechnen",
+      "es": "No hay datos de energía nominal para este modelo, así que las dos estimaciones derivadas no se pueden calcular",
+      "fr": "Aucune donnée d'énergie nominale pour ce modèle : les deux estimations dérivées sont impossibles",
+      "it": "Mancano i dati di energia nominale per questo modello, quindi le due stime derivate non sono calcolabili",
+      "pt": "Não há dados de energia nominal para este modelo, por isso as duas estimativas derivadas não podem ser calculadas"
+    },
+    "shell.stable_runtime_basis_seconds": {
+      "en": "Typical power over the last {seconds} s",
+      "zh-Hans": "近 {seconds} 秒典型功耗",
+      "zh-Hant": "近 {seconds} 秒典型功耗",
+      "ja": "直近 {seconds} 秒の代表的な消費電力",
+      "ko": "최근 {seconds}초의 대표 전력",
+      "de": "Typische Leistung der letzten {seconds} s",
+      "es": "Consumo típico de los últimos {seconds} s",
+      "fr": "Consommation typique des {seconds} dernières s",
+      "it": "Consumo tipico degli ultimi {seconds} s",
+      "pt": "Consumo típico dos últimos {seconds} s"
+    },
+    "shell.instant_runtime": {
+      "en": "Instant-power estimate",
+      "zh-Hans": "瞬时功率预计",
+      "zh-Hant": "即時功率預估",
+      "ja": "瞬時電力による予測",
+      "ko": "순시 전력 기준 예측",
+      "de": "Schätzung mit Momentanleistung",
+      "es": "Estimación con potencia instantánea",
+      "fr": "Estimation à puissance instantanée",
+      "it": "Stima da potenza istantanea",
+      "pt": "Estimativa por potência instantânea"
+    },
+    "shell.instant_runtime_note": {
+      "en": "Assumes the current {power} W instant power continues",
+      "zh-Hans": "按当前 {power} W 瞬时功率持续计算",
+      "zh-Hant": "依目前 {power} W 即時功率持續計算",
+      "ja": "現在の瞬時電力 {power} W が続くとして計算",
+      "ko": "현재 순시 전력 {power} W가 계속된다고 가정합니다",
+      "de": "Berechnet bei gleichbleibender Momentanleistung von {power} W",
+      "es": "Supone que se mantienen los {power} W de potencia instantánea actuales",
+      "fr": "Suppose que la puissance instantanée actuelle de {power} W se maintient",
+      "it": "Ipotizza che la potenza istantanea attuale di {power} W si mantenga",
+      "pt": "Considera que a potência instantânea atual de {power} W continua"
+    },
+    "shell.instant_runtime_waiting": {
+      "en": "Waiting for valid instant-power data",
+      "zh-Hans": "等待有效的瞬时功率数据",
+      "zh-Hant": "等待有效的即時功率資料",
+      "ja": "有効な瞬時電力データを待機中",
+      "ko": "유효한 순시 전력 데이터를 기다리는 중",
+      "de": "Warten auf gültige Momentanleistungsdaten",
+      "es": "Esperando datos válidos de potencia instantánea",
+      "fr": "En attente de données de puissance instantanée valides",
+      "it": "In attesa di dati validi di potenza istantanea",
+      "pt": "Aguardando dados válidos de potência instantânea"
+    },
+    "shell.system_runtime_basis": {
+      "en": "Gauge chip's own algorithm · updates about once a minute",
+      "zh-Hans": "电量计芯片自身算法 · 约每分钟更新",
+      "zh-Hant": "電量計晶片自身演算法 · 約每分鐘更新",
+      "ja": "計測チップ自身のアルゴリズム · 約1分ごとに更新",
+      "ko": "게이지 칩 자체 알고리즘 · 약 1분마다 갱신",
+      "de": "Eigener Algorithmus des Gauge-Chips · ca. minütlich",
+      "es": "Algoritmo propio del chip medidor · cada minuto aprox.",
+      "fr": "Algorithme propre à la puce de jauge · env. chaque minute",
+      "it": "Algoritmo proprio del chip di misura · circa ogni minuto",
+      "pt": "Algoritmo do próprio chip medidor · cerca de 1× por minuto"
+    }
+  }
+}

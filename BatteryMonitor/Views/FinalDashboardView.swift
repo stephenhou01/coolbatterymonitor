@@ -17,7 +17,11 @@ struct FinalDashboardView: View {
     @State private var sessionRuntimeSamples: [RuntimeSample] = []
 
     private var snapshot: DashboardMetricSnapshot {
-        DashboardMetricSnapshot(data: batteryData, realtimeData: realtimeData)
+        DashboardMetricSnapshot(
+            data: batteryData,
+            realtimeData: realtimeData,
+            archivedRealtimeData: batteryService.archivedRealtimeData
+        )
     }
 
     private var chartSamples: [RuntimeSample] {
@@ -47,6 +51,9 @@ struct FinalDashboardView: View {
                 isLive: batteryService.isLiveRefreshEnabled,
                 onToggleLive: toggleLiveRefresh,
                 onRefresh: refreshNow,
+                onProcessPanelVisibilityChanged: { visible in
+                    processService.setHighFrequencyConsumer(.technicalPowerCenter, visible: visible)
+                },
                 selectedHelp: $selectedHelp
             )
 

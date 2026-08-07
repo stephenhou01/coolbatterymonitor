@@ -14,6 +14,7 @@ struct DashboardTrendsPage: View {
                     subtitle: dashboardText("shell.trends_subtitle", fallback: "把实时波动与长期记录分开看")
                 )
                 RealtimeMonitorView(dataPoints: batteryService.realtimeData,
+                                    archivedDataPoints: batteryService.archivedRealtimeData,
                                     batteryData: batteryService.batteryData)
                 RuntimeHistorySummaryCard(samples: batteryService.runtimeSamples,
                                           fallbackMinutes: batteryService.batteryData.timeRemainingMinutes)
@@ -29,6 +30,12 @@ struct DashboardTrendsPage: View {
             .frame(maxWidth: .infinity)
         }
         .background(AppTheme.background)
+        .onAppear {
+            processService.setHighFrequencyConsumer(.trendsPage, visible: true)
+        }
+        .onDisappear {
+            processService.setHighFrequencyConsumer(.trendsPage, visible: false)
+        }
     }
 }
 

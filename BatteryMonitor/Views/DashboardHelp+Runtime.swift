@@ -10,46 +10,43 @@ extension DashboardHelp {
         let referenceMinutes = currentMinutes ?? stableMinutes
         let hasLiveSystemReading = !s.data.isOnAC
             && s.data.timeRemainingMinutes.map(RuntimeSample.isValid(minutes:)) == true
-        let validFallbackSample = s.systemRuntimeFallbackSample.flatMap { sample in
-            RuntimeSample.isValid(minutes: sample.minutesRemaining) ? sample : nil
-        }
-        let systemReadTime = hasLiveSystemReading
-            ? s.data.lastUpdated
-            : validFallbackSample?.timestamp
         let systemNote: String
         if systemMinutes == nil, let referenceMinutes {
+            let key = s.data.isOnAC
+                ? "p.runtime_system_on_ac_estimate"
+                : "p.runtime_system_unavailable_estimate"
+            let fallback = s.data.isOnAC
+                ? "当前接电，macOS 不提供放电剩余时间 · 按实测功耗估算 {time}，仅作拔电参考"
+                : "按实测功耗预计可用 {time} · 拔掉电源后约等 10 分钟再查看系统时间"
             systemNote = dashboardText(
-                "p.runtime_system_unavailable_estimate",
-                fallback: "按实测功耗预计可用 {time} · 拔掉电源后约等 10 分钟再查看系统时间",
+                key,
+                fallback: fallback,
                 replacements: ["time": runtime(referenceMinutes)]
             )
         } else if systemMinutes == nil {
+            let key = s.data.isOnAC
+                ? "p.runtime_system_on_ac_note"
+                : "p.runtime_system_unavailable_note"
+            let fallback = s.data.isOnAC
+                ? "当前接电，macOS 不提供放电剩余时间 · 拔电使用后生成"
+                : "暂无可靠的系统时间 · 拔掉电源后约等 10 分钟再查看"
             systemNote = dashboardText(
-                "p.runtime_system_unavailable_note",
-                fallback: "暂无可靠的系统时间 · 拔掉电源后约等 10 分钟再查看"
+                key,
+                fallback: fallback
             )
-        } else if let systemReadTime {
+        } else if hasLiveSystemReading {
             // Lead with what the number means, then how it is kept up to date:
             // the mechanism alone left readers unable to tell the three cards
             // apart, or to know when to distrust one.
             let meaning = dashboardText(
                 "p.runtime_system_meaning",
-                fallback: "和菜单栏同一个数字，由电池里的电量计芯片自己算出来，我们不参与计算：优先读 TimeRemaining，它无效时才退到 AvgTimeToEmpty，65535 和超过 24 小时的值一律当无效丢弃；接电时电量计会停掉这两个字段，此时显示的是最近一次有效读数。电量计按平均电流估算，负载突然变重后要过一两分钟才跟上"
+                fallback: "和菜单栏同一个数字，由电池里的电量计芯片自己算出来，我们不参与计算：优先读 TimeRemaining，它无效时才退到 AvgTimeToEmpty，65535 和超过 24 小时的值一律当无效丢弃；接电时这两个字段不可用，界面明确显示不可用，不再回填历史值。电量计按平均电流估算，负载突然变重后要过一两分钟才跟上"
             )
-            let key = hasLiveSystemReading
-                ? "p.runtime_system_read_live"
-                : "p.runtime_system_read_last"
-            let fallback = hasLiveSystemReading
-                ? "TimeRemaining / AvgTimeToEmpty · 上次刷新 {time} · 电量计约 {interval} 秒刷新一次，每次有效读数存一条历史"
-                : "TimeRemaining / AvgTimeToEmpty · 最近一次有效读数在 {time}，之后系统一直没给出有效值"
             systemNote = meaning + " · " + dashboardText(
-                key,
-                fallback: fallback,
+                "p.runtime_system_read_live",
+                fallback: "TimeRemaining / AvgTimeToEmpty · 上次刷新 {time} · 电量计约 {interval} 秒刷新一次，每次有效读数存一条历史",
                 replacements: [
-                    // A stale fallback sample can be hours or days old, so that
-                    // variant keeps the date; live reads are always same-day and
-                    // match the bare clock used by the field rows below.
-                    "time": runtimeReadTimestamp(systemReadTime, includeDate: !hasLiveSystemReading),
+                    "time": runtimeReadTimestamp(s.data.lastUpdated),
                     "interval": "\(MetricFieldFreshness.gaugeRefreshSeconds)",
                 ]
             )
@@ -122,8 +119,8 @@ extension DashboardHelp {
                 field("Derived.CurrentPowerSampleAge", s.currentPowerAgeSeconds, "s",
                       updateClass: .untimed),
             ],
-            formula: "systemMinutes = valid(TimeRemaining) ?? valid(AvgTimeToEmpty) ?? latestPersistedSystemSample\nremainingWh = designWh × currentCapacity ÷ designCapacity\nstableMinutes = remainingWh ÷ median(last10mPower) × 60\ncurrentLoadMinutes = remainingWh ÷ currentSystemPower × 60",
-            substitution: "system: \(runtimeRawValue(detail.timeRemainingRaw)) / \(runtimeRawValue(detail.avgTimeToEmpty)); latest persisted \(runtimeRawValue(s.systemRuntimeFallbackSample?.minutesRemaining)) → \(systemValue)\nremaining: \(f(s.designEnergyWh)) × \(s.currentCapacity) ÷ \(s.designCapacity) = \(f(s.remainingEnergyWh)) Wh\nstable: \(f(s.remainingEnergyWh)) ÷ \(f(s.stablePowerWatts)) × 60 = \(optional(stableMinutes)) min\ncurrent: \(f(s.remainingEnergyWh)) ÷ \(f(s.currentPowerWatts)) × 60 = \(optional(currentMinutes)) min",
+            formula: "systemMinutes = onBattery ? (valid(TimeRemaining) ?? valid(AvgTimeToEmpty)) : unavailable\nremainingWh = designWh × currentCapacity ÷ designCapacity\nstableMinutes = remainingWh ÷ median(last10mPower) × 60\ncurrentLoadMinutes = remainingWh ÷ currentSystemPower × 60",
+            substitution: "system: \(runtimeRawValue(detail.timeRemainingRaw)) / \(runtimeRawValue(detail.avgTimeToEmpty)) → \(systemValue)\nremaining: \(f(s.designEnergyWh)) × \(s.currentCapacity) ÷ \(s.designCapacity) = \(f(s.remainingEnergyWh)) Wh\nstable: \(f(s.remainingEnergyWh)) ÷ \(f(s.stablePowerWatts)) × 60 = \(optional(stableMinutes)) min\ncurrent: \(f(s.remainingEnergyWh)) ÷ \(f(s.currentPowerWatts)) × 60 = \(optional(currentMinutes)) min",
             source: dashboardText("p.runtime_compare_source", fallback: "macOS 系统时间来自 AppleSmartBattery；两项计算值由本机剩余能量和实测功耗推导，只作对照，不写入系统续航历史。"),
             readAt: s.rawFieldReadAt,
             results: [

@@ -3,9 +3,9 @@ import Observation
 
 // MARK: - Localization System
 //
-// 翻译内容不在这个文件里 —— 语言包是 Localization/Languages/*.json，作为 folder
-// reference 打进 bundle 的 Contents/Resources/Languages/。加一种语言 = 丢一个
-// JSON 文件，这里一行都不用改。
+// 翻译内容不在这个文件里 —— 编辑权威是按页面拆分的 Localization/Sources/**/*.json；
+// Localization/build-language-packs.py 将它们生成到 Localization/Languages/*.json，
+// 再作为 folder reference 打进 bundle 的 Contents/Resources/Languages/。这里不写译文。
 //
 // 装载有两个来源，后者按 key 覆盖前者：
 //   1. bundle 内的 Languages/

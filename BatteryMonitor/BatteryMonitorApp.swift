@@ -59,7 +59,10 @@ struct BatteryMonitorApp: App {
 /// is still respected by normal macOS window restoration.
 private enum DashboardWindowSizing {
     static let preferred = CGSize(width: 1040, height: 680)
-    static let minimum = CGSize(width: 800, height: 560)
+    // The overview's 760 pt content rail plus the sidebar and page insets needs
+    // the preferred width. Allowing an 800 pt window clipped long localized
+    // labels and the right-hand runtime column instead of reflowing them.
+    static let minimum = CGSize(width: 1040, height: 560)
     static let migrationKey = "dashboard.window.compactDefault.v1"
     static let screenMargin: CGFloat = 56
 }

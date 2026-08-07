@@ -142,16 +142,22 @@ xcodebuild -project BatteryMonitor.xcodeproj -scheme BatteryMonitor \
 Tests:
 
 ```bash
-./Tests/run-insight-tests.sh   # models + analysis against the real source
-./Tests/run-l10n-tests.sh      # language pack loading, fallback, format guards
+./QATests/run-fixed-qa.sh all  # fixed signed QA Host: icon + logic + localization
 ./Scripts/verify-release.sh    # full local pre-release check, uploads nothing
 ```
 
-Adding a language: drop one JSON file into `Localization/Languages/` and rebuild.
-No Swift changes and no `xcodegen` re-run — the switcher discovers packs at
-launch. Packs are treated as untrusted input: format specifiers are validated
-against the English pack at load time, because `String(format:)` is a C variadic
-and a pack writing `%d` where the code passes a `Double` would be memory-unsafe.
+The runtime suite always overwrites the same signed app at
+`QATests/BuildValidation/AutomationHost/BatteryMonitor-QAHost.app`, runs it, and
+closes it before returning. Pass `icon`, `insight`, or `l10n` instead of `all`
+to run one phase.
+
+Built-in copy is maintained by page and section under `Localization/Sources/`.
+Run `python3 Localization/build-language-packs.py write` to generate the ten
+runtime packs; adding a language means adding its metadata to
+`Localization/Sources/manifest.json`
+and a translation to every source entry. No Swift change or `xcodegen` re-run is
+needed. Generated packs are still treated as untrusted input at runtime: format
+specifiers are validated against English because `String(format:)` is C variadic.
 
 ---
 

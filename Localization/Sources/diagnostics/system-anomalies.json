@@ -1,0 +1,169 @@
+{
+  "_meta": {
+    "scope": "diagnostics/system-anomalies",
+    "title": "诊断 / 系统异常",
+    "description": "系统异常名称和诊断结果。",
+    "consumers": [
+      "DashboardDiagnosticsPage",
+      "SystemDataCollector"
+    ]
+  },
+  "strings": {
+    "system.anomaly.permanent_failure": {
+      "en": "The battery controller reported a non-zero permanent failure status.",
+      "zh-Hans": "电池控制器报告了非零永久故障状态。",
+      "zh-Hant": "電池控制器回報了非零永久故障狀態。",
+      "ja": "バッテリーコントローラがゼロ以外の恒久障害状態を報告しました。",
+      "ko": "배터리 컨트롤러가 0이 아닌 영구 오류 상태를 보고했습니다.",
+      "de": "Der Akkucontroller meldet einen dauerhaften Fehlerstatus ungleich null.",
+      "es": "El controlador de la batería informó de un estado de fallo permanente distinto de cero.",
+      "fr": "Le contrôleur de batterie a signalé un état de défaillance permanente non nul.",
+      "it": "Il controller della batteria ha segnalato uno stato di guasto permanente diverso da zero.",
+      "pt": "O controlador da bateria comunicou um estado de falha permanente diferente de zero."
+    },
+    "system.anomaly.health_not_normal": {
+      "en": "The system battery health state is not Good or Normal.",
+      "zh-Hans": "系统电池健康状态不是 Good / Normal。",
+      "zh-Hant": "系統電池健康狀態不是 Good 或 Normal。",
+      "ja": "システムのバッテリー状態が Good または Normal ではありません。",
+      "ko": "시스템 배터리 상태가 Good 또는 Normal이 아닙니다.",
+      "de": "Der Systemstatus des Akkus ist weder Good noch Normal.",
+      "es": "El estado de salud de la batería del sistema no es Good ni Normal.",
+      "fr": "L’état de santé système de la batterie n’est ni Good ni Normal.",
+      "it": "Lo stato di salute della batteria del sistema non è Good o Normal.",
+      "pt": "O estado de saúde da bateria do sistema não é Good nem Normal."
+    },
+    "system.anomaly.thermal_critical": {
+      "en": "The system thermal state is critical.",
+      "zh-Hans": "系统热状态已到 critical。",
+      "zh-Hant": "系統熱狀態已達 critical。",
+      "ja": "システムの熱状態が critical です。",
+      "ko": "시스템 열 상태가 critical입니다.",
+      "de": "Der Wärmezustand des Systems ist critical.",
+      "es": "El estado térmico del sistema es critical.",
+      "fr": "L’état thermique du système est critical.",
+      "it": "Lo stato termico del sistema è critical.",
+      "pt": "O estado térmico do sistema é critical."
+    },
+    "system.anomaly.thermal_serious": {
+      "en": "The system thermal state is serious.",
+      "zh-Hans": "系统热状态已到 serious。",
+      "zh-Hant": "系統熱狀態已達 serious。",
+      "ja": "システムの熱状態が serious です。",
+      "ko": "시스템 열 상태가 serious입니다.",
+      "de": "Der Wärmezustand des Systems ist serious.",
+      "es": "El estado térmico del sistema es serious.",
+      "fr": "L’état thermique du système est serious.",
+      "it": "Lo stato termico del sistema è serious.",
+      "pt": "O estado térmico do sistema é serious."
+    },
+    "system.anomaly.battery_warning_final": {
+      "en": "The system has entered the final low-battery warning level.",
+      "zh-Hans": "系统进入最终低电量警告。",
+      "zh-Hant": "系統已進入最終低電量警告。",
+      "ja": "システムが最終低バッテリー警告に入りました。",
+      "ko": "시스템이 최종 배터리 부족 경고 단계에 진입했습니다.",
+      "de": "Das System hat die letzte Warnstufe bei niedrigem Akkustand erreicht.",
+      "es": "El sistema ha entrado en el nivel final de aviso de batería baja.",
+      "fr": "Le système a atteint le niveau final d’alerte de batterie faible.",
+      "it": "Il sistema ha raggiunto il livello finale di avviso batteria scarica.",
+      "pt": "O sistema entrou no nível final de aviso de bateria fraca."
+    },
+    "system.anomaly.battery_warning_early": {
+      "en": "The system has entered the early low-battery warning level.",
+      "zh-Hans": "系统进入提前低电量警告。",
+      "zh-Hant": "系統已進入提前低電量警告。",
+      "ja": "システムが早期低バッテリー警告に入りました。",
+      "ko": "시스템이 조기 배터리 부족 경고 단계에 진입했습니다.",
+      "de": "Das System hat die frühe Warnstufe bei niedrigem Akkustand erreicht.",
+      "es": "El sistema ha entrado en el nivel anticipado de aviso de batería baja.",
+      "fr": "Le système a atteint le niveau précoce d’alerte de batterie faible.",
+      "it": "Il sistema ha raggiunto il livello anticipato di avviso batteria scarica.",
+      "pt": "O sistema entrou no nível antecipado de aviso de bateria fraca."
+    },
+    "system.anomaly.cell_spread_warning": {
+      "en": "Cell-voltage spread exceeds 50 mV; review it together with load and trend data.",
+      "zh-Hans": "电芯压差超过 50 mV，需要结合负载和趋势复核。",
+      "zh-Hant": "電芯壓差超過 50 mV，需要配合負載與趨勢複核。",
+      "ja": "セル電圧差が 50 mV を超えています。負荷と傾向を合わせて確認してください。",
+      "ko": "셀 전압 차이가 50 mV를 넘었습니다. 부하와 추세를 함께 확인하세요.",
+      "de": "Die Zellspannungsdifferenz liegt über 50 mV; zusammen mit Last und Verlauf prüfen.",
+      "es": "La diferencia de voltaje entre celdas supera 50 mV; revísala junto con la carga y la tendencia.",
+      "fr": "L’écart de tension entre cellules dépasse 50 mV ; vérifiez-le avec la charge et la tendance.",
+      "it": "La differenza di tensione tra le celle supera 50 mV; verificala insieme al carico e alla tendenza.",
+      "pt": "A diferença de tensão entre células excede 50 mV; reveja-a com a carga e a tendência."
+    },
+    "system.anomaly.cell_spread_attention": {
+      "en": "Cell-voltage spread exceeds 20 mV; continue observing the trend on this Mac.",
+      "zh-Hans": "电芯压差超过 20 mV，建议继续观察同机趋势。",
+      "zh-Hant": "電芯壓差超過 20 mV，建議繼續觀察同機趨勢。",
+      "ja": "セル電圧差が 20 mV を超えています。この Mac で傾向を観察してください。",
+      "ko": "셀 전압 차이가 20 mV를 넘었습니다. 이 Mac의 추세를 계속 관찰하세요.",
+      "de": "Die Zellspannungsdifferenz liegt über 20 mV; den Verlauf auf diesem Mac weiter beobachten.",
+      "es": "La diferencia de voltaje entre celdas supera 20 mV; sigue observando la tendencia en este Mac.",
+      "fr": "L’écart de tension entre cellules dépasse 20 mV ; continuez à observer la tendance sur ce Mac.",
+      "it": "La differenza di tensione tra le celle supera 20 mV; continua a osservare la tendenza su questo Mac.",
+      "pt": "A diferença de tensão entre células excede 20 mV; continue a observar a tendência neste Mac."
+    },
+    "system.anomaly.temperature_high": {
+      "en": "Battery temperature is at or above 45°C.",
+      "zh-Hans": "电池温度达到 45°C 以上。",
+      "zh-Hant": "電池溫度達到 45°C 以上。",
+      "ja": "バッテリー温度が 45°C 以上です。",
+      "ko": "배터리 온도가 45°C 이상입니다.",
+      "de": "Die Akkutemperatur liegt bei mindestens 45°C.",
+      "es": "La temperatura de la batería es de 45°C o más.",
+      "fr": "La température de la batterie est supérieure ou égale à 45°C.",
+      "it": "La temperatura della batteria è pari o superiore a 45°C.",
+      "pt": "A temperatura da bateria é igual ou superior a 45°C."
+    },
+    "system.anomaly.temperature_low": {
+      "en": "Low temperature can temporarily reduce usable runtime.",
+      "zh-Hans": "低温会暂时压缩可用续航。",
+      "zh-Hant": "低溫會暫時縮短可用續航。",
+      "ja": "低温では使用可能時間が一時的に短くなることがあります。",
+      "ko": "낮은 온도에서는 사용 시간이 일시적으로 줄어들 수 있습니다.",
+      "de": "Niedrige Temperaturen können die nutzbare Laufzeit vorübergehend verkürzen.",
+      "es": "Una temperatura baja puede reducir temporalmente la autonomía disponible.",
+      "fr": "Une température basse peut réduire temporairement l’autonomie disponible.",
+      "it": "La bassa temperatura può ridurre temporaneamente l’autonomia disponibile.",
+      "pt": "A baixa temperatura pode reduzir temporariamente a autonomia disponível."
+    },
+    "system.anomaly.diagnostic_nonzero": {
+      "en": "A diagnostic count or reason code is non-zero; review it with history and related metrics.",
+      "zh-Hans": "诊断计数或原因码非零，建议结合历史与其他指标复核。",
+      "zh-Hant": "診斷計數或原因碼非零，建議結合歷史與相關指標複核。",
+      "ja": "診断カウントまたは理由コードがゼロ以外です。履歴と関連指標を合わせて確認してください。",
+      "ko": "진단 횟수 또는 원인 코드가 0이 아닙니다. 기록과 관련 지표를 함께 확인하세요.",
+      "de": "Ein Diagnosezähler oder Ursachencode ist ungleich null; mit Verlauf und verwandten Messwerten prüfen.",
+      "es": "Un contador de diagnóstico o código de motivo no es cero; revísalo con el historial y las métricas relacionadas.",
+      "fr": "Un compteur de diagnostic ou un code de motif est non nul ; vérifiez-le avec l’historique et les indicateurs associés.",
+      "it": "Un contatore diagnostico o codice motivo è diverso da zero; verificalo con la cronologia e le metriche correlate.",
+      "pt": "Um contador de diagnóstico ou código de motivo é diferente de zero; reveja-o com o histórico e as métricas relacionadas."
+    },
+    "shell.diagnosing": {
+      "en": "Reading battery data and generating diagnostics…",
+      "zh-Hans": "正在读取电池并生成诊断…",
+      "zh-Hant": "正在讀取電池並產生診斷…",
+      "ja": "バッテリーを読み取り、診断を生成しています…",
+      "ko": "배터리 데이터를 읽고 진단을 생성하는 중…",
+      "de": "Batteriedaten werden gelesen und die Diagnose wird erstellt …",
+      "es": "Leyendo los datos de la batería y generando el diagnóstico…",
+      "fr": "Lecture des données de la batterie et génération du diagnostic…",
+      "it": "Lettura dei dati della batteria e creazione della diagnosi…",
+      "pt": "Lendo os dados da bateria e gerando o diagnóstico…"
+    },
+    "shell.system_anomalies": {
+      "en": "System field anomaly check",
+      "zh-Hans": "系统字段异常筛查",
+      "zh-Hant": "系統欄位異常篩選",
+      "ja": "システムフィールドの異常チェック",
+      "ko": "시스템 필드 이상 점검",
+      "de": "Auffällige Systemfelder",
+      "es": "Cribado de anomalías en campos del sistema",
+      "fr": "Contrôle des anomalies de champs système",
+      "it": "Verifica anomalie nei campi di sistema",
+      "pt": "Verificação de anomalias nos campos do sistema"
+    }
+  }
+}

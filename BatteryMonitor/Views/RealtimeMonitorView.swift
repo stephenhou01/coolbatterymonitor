@@ -3,14 +3,17 @@ import Charts
 
 struct RealtimeMonitorView: View {
     let dataPoints: [RealtimeDataPoint]
+    let archivedDataPoints: [RealtimeDataPoint]
     let batteryData: BatteryData
     @State private var selectedMetric: MetricType = .power
-    @State private var selectedRange: TimeRange = .oneMinute
-    /// Pointer position on the x axis, from Charts' own `chartXSelection`.
+    @State private var selectedRange: MetricHelpTrendRange = .tenMinutes
     @State private var selectedDate: Date?
 
-    enum MetricType: String, CaseIterable {
+    enum MetricType: String, CaseIterable, Identifiable {
         case voltage, amperage, power, temperature, percent
+        case adapterRatedPower, adapterOutputPower, chargingPower, cycleCount, health
+
+        var id: String { rawValue }
 
         var displayName: String {
             switch self {
@@ -19,6 +22,11 @@ struct RealtimeMonitorView: View {
             case .power: return L("rt.power")
             case .temperature: return L("rt.temperature")
             case .percent: return L("rt.percent")
+            case .adapterRatedPower: return L("shell.adapter")
+            case .adapterOutputPower: return L("shell.adapter_output_power")
+            case .chargingPower: return L("menu.metric.charge_power")
+            case .cycleCount: return L("menu.metric.cycles")
+            case .health: return L("menu.metric.health")
             }
         }
 
@@ -29,34 +37,37 @@ struct RealtimeMonitorView: View {
             case .power: return "p.help_summary_power"
             case .temperature: return "tip.temperature"
             case .percent: return "tip.percent"
+            case .adapterRatedPower: return "p.help_summary_adapter_power"
+            case .adapterOutputPower: return "p.help_summary_adapter_output_power"
+            case .chargingPower: return "p.help_summary_charging_power"
+            case .cycleCount: return "p.help_summary_cycle_count"
+            case .health: return "p.help_summary_health"
+            }
+        }
+
+        var unit: String {
+            switch self {
+            case .voltage: return "V"
+            case .amperage: return "mA"
+            case .power, .adapterRatedPower, .adapterOutputPower, .chargingPower: return "W"
+            case .temperature: return "℃"
+            case .percent, .health: return "%"
+            case .cycleCount: return ""
             }
         }
     }
 
-    enum TimeRange: String, CaseIterable {
-        case thirtySec, oneMinute, threeMinutes
-
-        var displayName: String {
-            switch self {
-            case .thirtySec: return L("rt.30s")
-            case .oneMinute: return L("rt.1m")
-            case .threeMinutes: return L("rt.3m")
-            }
-        }
-
-        var seconds: TimeInterval {
-            switch self {
-            case .thirtySec: return 30
-            case .oneMinute: return 60
-            case .threeMinutes: return 180
-            }
-        }
+    private var historySource: [RealtimeDataPoint] {
+        TelemetryHistoryArchive.mergedHistory(archive: archivedDataPoints, raw: dataPoints)
     }
 
-    private var visiblePoints: [RealtimeDataPoint] {
-        guard let last = dataPoints.last else { return dataPoints }
-        let cutoff = last.timestamp.addingTimeInterval(-selectedRange.seconds)
-        return dataPoints.filter { $0.timestamp >= cutoff }
+    private var visiblePoints: [MetricHelpTrendPoint] {
+        selectedRange.chartPoints(from: historySource.compactMap { point in
+            guard let value = metricValue(point), value.isFinite else { return nil }
+            return MetricHelpTrendPoint(timestamp: point.timestamp,
+                                        value: value,
+                                        sampleCount: point.sampleCount)
+        })
     }
 
     var body: some View {
@@ -81,38 +92,38 @@ struct RealtimeMonitorView: View {
                 Spacer()
             }
 
-            // Metric selector 独占一行，避免长语言与标题互相挤压。
-            Picker("", selection: $selectedMetric) {
-                ForEach(MetricType.allCases, id: \.self) { metric in
-                    Text(metric.displayName).tag(metric)
-                }
-            }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-
-            HStack(spacing: 8) {
-                ForEach(TimeRange.allCases, id: \.self) { range in
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 5), spacing: 6) {
+                ForEach(MetricType.allCases) { metric in
                     Button {
-                        selectedRange = range
+                        selectedMetric = metric
+                        selectedDate = nil
                     } label: {
-                        Text(range.displayName)
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundStyle(selectedRange == range ? AppTheme.chargingCyan : AppTheme.textTertiary)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 5)
-                            .background(
-                                Capsule().fill(selectedRange == range
-                                    ? AppTheme.chargingCyan.opacity(0.15)
-                                    : AppTheme.contrastOverlay(0.03))
-                            )
+                        Text(metric.displayName)
+                            .font(.system(size: 10.5, weight: .semibold))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.72)
+                            .frame(maxWidth: .infinity, minHeight: 30)
+                            .foregroundStyle(selectedMetric == metric ? AppTheme.selectionText : AppTheme.textSecondary)
+                            .background(RoundedRectangle(cornerRadius: 7)
+                                .fill(selectedMetric == metric ? chartColor(for: metric) : AppTheme.contrastOverlay(0.035)))
                     }
                     .buttonStyle(.plain)
                     .pointerOnHover()
                 }
+            }
+
+            HStack(spacing: 10) {
+                Picker("", selection: $selectedRange) {
+                    ForEach(MetricHelpTrendRange.allCases) { range in
+                        Text(range.title).tag(range)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .frame(maxWidth: 430)
                 Spacer()
-                // BatteryService 的真实 UI 轮询周期是 10 秒；不要继续显示旧版 3 秒文案。
-                Text(L("p.live_10s"))
-                    .font(.system(size: 10))
+                Text(selectedRange.samplingSummary)
+                    .font(.system(size: 10, weight: .medium, design: .monospaced))
                     .foregroundStyle(AppTheme.textTertiary)
             }
 
@@ -137,36 +148,46 @@ struct RealtimeMonitorView: View {
                 Text(L("rt.collecting"))
                     .font(.system(size: 13))
                     .foregroundStyle(AppTheme.textSecondary)
-                Text(L("p.live_10s"))
+                Text(selectedRange.samplingSummary)
                     .font(.system(size: 11))
                     .foregroundStyle(AppTheme.textTertiary)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
             Chart {
+                if Set(visiblePoints.map(\.segmentID)).count == 1 {
+                    ForEach(visiblePoints) { point in
+                        AreaMark(
+                            x: .value(L("rt.time"), point.timestamp),
+                            y: .value(selectedMetric.displayName, point.value)
+                        )
+                        .foregroundStyle(LinearGradient(
+                            colors: [chartColor.opacity(0.24), chartColor.opacity(0.02)],
+                            startPoint: .top, endPoint: .bottom
+                        ))
+                        .interpolationMethod(selectedRange == .tenMinutes ? .stepEnd : .linear)
+                    }
+                }
+
                 ForEach(visiblePoints) { point in
                     LineMark(
                         x: .value(L("rt.time"), point.timestamp),
-                        y: .value(selectedMetric.displayName, metricValue(point))
+                        y: .value(selectedMetric.displayName, point.value),
+                        series: .value("Segment", point.segmentID)
                     )
                     .foregroundStyle(chartColor)
-                    // IOKit 数值在两次真实刷新之间保持不变。阶梯线如实表达采样，
-                    // 避免 Catmull-Rom 凭空制造从未观测到的中间峰谷。
-                    .interpolationMethod(.stepEnd)
+                    .interpolationMethod(selectedRange == .tenMinutes ? .stepEnd : .linear)
                     .lineStyle(StrokeStyle(lineWidth: 2))
 
-                    AreaMark(
-                        x: .value(L("rt.time"), point.timestamp),
-                        y: .value(selectedMetric.displayName, metricValue(point))
-                    )
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [chartColor.opacity(0.3), chartColor.opacity(0.02)],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-                    .interpolationMethod(.stepEnd)
+                    if point.quality == .fitted {
+                        PointMark(x: .value("Fitted time", point.timestamp),
+                                  y: .value("Fitted value", point.value))
+                            .foregroundStyle(AppTheme.surfaceRaised)
+                            .symbolSize(28)
+                            .annotation(position: .overlay) {
+                                Circle().stroke(chartColor, lineWidth: 1).frame(width: 6, height: 6)
+                            }
+                    }
                 }
 
                 if let hovered = hoveredPoint {
@@ -189,7 +210,7 @@ struct RealtimeMonitorView: View {
                         }
                     PointMark(
                         x: .value(L("rt.time"), hovered.timestamp),
-                        y: .value(selectedMetric.displayName, metricValue(hovered))
+                        y: .value(selectedMetric.displayName, hovered.value)
                     )
                     .foregroundStyle(chartColor)
                     .symbolSize(46)
@@ -202,7 +223,9 @@ struct RealtimeMonitorView: View {
                         .foregroundStyle(AppTheme.cardBorder)
                     AxisValueLabel {
                         if let date = value.as(Date.self) {
-                            Text(date, format: .dateTime.hour().minute().second())
+                            Text(date, format: selectedRange == .tenMinutes
+                                 ? .dateTime.hour().minute().second()
+                                 : .dateTime.hour().minute())
                                 .font(.system(size: 9))
                                 .foregroundStyle(AppTheme.textTertiary)
                         }
@@ -265,50 +288,68 @@ struct RealtimeMonitorView: View {
 
     // MARK: - Helpers
 
-    /// Snapped to a real sample rather than interpolated, so every number the
-    /// readout shows was actually measured.
-    private var hoveredPoint: RealtimeDataPoint? {
+    private var hoveredPoint: MetricHelpTrendPoint? {
         guard let selectedDate else { return nil }
         return visiblePoints.min {
             abs($0.timestamp.timeIntervalSince(selectedDate)) < abs($1.timestamp.timeIntervalSince(selectedDate))
         }
     }
 
-    /// Seconds, not minutes: this chart's widest window is three minutes, so a
-    /// minute-granularity label would collapse most of the series into one
-    /// timestamp. The ten-minute help-panel trends round to the minute instead.
-    private func hoverReadout(_ point: RealtimeDataPoint) -> String {
-        let time = point.timestamp.formatted(.dateTime.hour().minute().second())
-        return "\(time) · \(LNum("%.1f", metricValue(point))) \(hoverUnit)"
+    private func hoverReadout(_ point: MetricHelpTrendPoint) -> String {
+        let time = point.timestamp.formatted(selectedRange == .tenMinutes
+            ? .dateTime.hour().minute().second()
+            : .dateTime.hour().minute())
+        let fitted = point.quality == .fitted ? " · \(dashboardText("p.trend_fitted", fallback: "拟合"))" : ""
+        return "\(time) · \(formatted(point.value))\(fitted)"
     }
 
-    private var hoverUnit: String {
-        switch selectedMetric {
-        case .voltage: return "V"
-        case .amperage: return "mA"
-        case .power: return "W"
-        case .temperature: return "℃"
-        case .percent: return "%"
-        }
-    }
-
-    private func metricValue(_ point: RealtimeDataPoint) -> Double {
+    private func metricValue(_ point: RealtimeDataPoint) -> Double? {
         switch selectedMetric {
         case .voltage: return point.voltage
         case .amperage: return point.amperage
         case .power: return point.power
         case .temperature: return point.temperature
         case .percent: return Double(point.percent)
+        case .adapterRatedPower:
+            return point.adapterRatedPower ?? {
+                guard let volts = point.adapterVoltage, let amps = point.adapterCurrent else { return nil }
+                return volts * amps
+            }()
+        case .adapterOutputPower: return point.adapterOutputPower
+        case .chargingPower: return point.chargingPower
+        case .cycleCount: return point.cycleCount.map(Double.init)
+        case .health: return point.healthPercent
+        }
+    }
+
+    private func formatted(_ value: Double) -> String {
+        switch selectedMetric {
+        case .cycleCount: return LNum("%.0f", value)
+        case .percent, .health: return LNum("%.1f%%", value)
+        case .voltage: return LNum("%.2f V", value)
+        case .amperage: return LNum("%.0f mA", value)
+        case .temperature: return LNum("%.1f ℃", value)
+        case .power, .adapterRatedPower, .adapterOutputPower, .chargingPower:
+            return LNum("%.1f W", value)
         }
     }
 
     private var chartColor: Color {
-        switch selectedMetric {
+        chartColor(for: selectedMetric)
+    }
+
+    private func chartColor(for metric: MetricType) -> Color {
+        switch metric {
         case .voltage: return AppTheme.accentPurple
         case .amperage: return AppTheme.chargingCyan
         case .power: return AppTheme.chargingBlue
         case .temperature: return AppTheme.batteryYellow
         case .percent: return AppTheme.batteryGreen
+        case .adapterRatedPower: return AppTheme.batteryYellow
+        case .adapterOutputPower: return AppTheme.chargingCyan
+        case .chargingPower: return AppTheme.batteryGreen
+        case .cycleCount: return AppTheme.accentPurple
+        case .health: return AppTheme.batteryGreen
         }
     }
 
@@ -319,6 +360,10 @@ struct RealtimeMonitorView: View {
         case .power: return L("rt.y_power")
         case .temperature: return L("rt.y_temperature")
         case .percent: return L("rt.y_percent")
+        case .adapterRatedPower, .adapterOutputPower, .chargingPower:
+            return "\(selectedMetric.displayName) (W)"
+        case .cycleCount: return selectedMetric.displayName
+        case .health: return "\(selectedMetric.displayName) (%)"
         }
     }
 

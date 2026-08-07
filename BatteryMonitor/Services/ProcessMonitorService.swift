@@ -20,8 +20,32 @@ class ProcessMonitorService: ObservableObject {
     /// Process activity is context for the ten-second power chart. It is never
     /// presented as a per-process watt allocation.
     static let liveRefreshInterval: TimeInterval = 10
-    private let refreshInterval = ProcessMonitorService.liveRefreshInterval
-    private let totalMemMB = Double(ProcessInfo.processInfo.physicalMemory) / 1024.0 / 1024.0
+    /// 没有任何进程界面可见时仍给菜单栏保留低频上下文，但不再每 10 秒扫描数百个进程。
+    static let backgroundRefreshInterval: TimeInterval = 60
+    /// 超过这个间隔说明中间经历了暂停、睡眠或调度停顿。旧前值不能再冒充「当前窗口」。
+    static let baselineResetInterval: TimeInterval = 150
+    enum HighFrequencyConsumer: Hashable, Sendable {
+        case technicalPowerCenter
+        case trendsPage
+        case menuBar
+    }
+    private var highFrequencyConsumers: Set<HighFrequencyConsumer> = []
+    private var effectiveRefreshInterval: TimeInterval {
+        Self.refreshInterval(hasHighFrequencyConsumer: !highFrequencyConsumers.isEmpty)
+    }
+    /// 这两个状态只在主线程读写；真正的 pid 前值在采样队列中按本次标记清空。
+    private var forceBaselineReset = false
+    private var lastSamplingStartedAt: TimeInterval?
+
+    static func refreshInterval(hasHighFrequencyConsumer: Bool) -> TimeInterval {
+        hasHighFrequencyConsumer ? liveRefreshInterval : backgroundRefreshInterval
+    }
+
+    static func shouldResetBaseline(lastSamplingStartedAt: TimeInterval?,
+                                    nextSamplingStartedAt: TimeInterval) -> Bool {
+        guard let lastSamplingStartedAt else { return false }
+        return nextSamplingStartedAt - lastSamplingStartedAt > baselineResetInterval
+    }
     /// 按 groupKey 而不是 pid 索引：一行是 app + 子进程的聚合，代表 pid 会变，
     /// 按 pid 存历史会在子进程进出时把曲线接断。
     private var cpuHistoryByGroup: [String: [Double]] = [:]
@@ -69,13 +93,13 @@ class ProcessMonitorService: ObservableObject {
 
     private func scheduleTimer() {
         timer?.invalidate()
-        let t = Timer(timeInterval: refreshInterval, repeats: true) { [weak self] _ in
+        let interval = effectiveRefreshInterval
+        let t = Timer(timeInterval: interval, repeats: true) { [weak self] _ in
             self?.fetchProcesses()
         }
         // Align this wake-up with the battery refresh whenever macOS can do so.
-        // The panel still receives a sample every ten seconds, while idle wake
-        // pressure is lower than two rigid independent timers.
-        t.tolerance = min(1.5, refreshInterval * 0.15)
+        // 相关界面可见时仍是十秒；后台低频模式也允许系统合并唤醒。
+        t.tolerance = min(10, interval * 0.15)
         RunLoop.main.add(t, forMode: .common)
         timer = t
     }
@@ -92,8 +116,30 @@ class ProcessMonitorService: ObservableObject {
             fetchProcesses()
             scheduleTimer()
         } else {
+            // 恢复后的第一拍只建立新基线，避免把整个暂停期平均成「此刻 CPU」。
+            forceBaselineReset = true
             stopMonitoring()
         }
+    }
+
+    /// 进程明细只有在相关界面可见时才需要 10 秒刷新；其余时间降到 60 秒。
+    /// 用集合而不是计数，避免 SwiftUI 重复 onAppear/onDisappear 把状态加坏。
+    func setHighFrequencyConsumer(_ consumer: HighFrequencyConsumer, visible: Bool) {
+        guard Thread.isMainThread else {
+            DispatchQueue.main.async { [weak self] in
+                self?.setHighFrequencyConsumer(consumer, visible: visible)
+            }
+            return
+        }
+        let changed: Bool
+        if visible {
+            changed = highFrequencyConsumers.insert(consumer).inserted
+        } else {
+            changed = highFrequencyConsumers.remove(consumer) != nil
+        }
+        guard changed, isLiveRefreshEnabled else { return }
+        if visible { fetchProcesses() }
+        scheduleTimer()
     }
 
     func fetchProcesses() {
@@ -107,9 +153,19 @@ class ProcessMonitorService: ObservableObject {
         }
         guard !isSampling else { return }   // 刷新连点时丢弃重入，避免并发写坏采样状态
         isSampling = true
+        let samplingStartedAt = Date().timeIntervalSince1970
+        let exceededValidWindow = Self.shouldResetBaseline(
+            lastSamplingStartedAt: lastSamplingStartedAt,
+            nextSamplingStartedAt: samplingStartedAt
+        )
+        let shouldResetBaseline = forceBaselineReset || exceededValidWindow
+        forceBaselineReset = false
+        lastSamplingStartedAt = samplingStartedAt
+        if shouldResetBaseline { previousCPULoad = nil }
         let candidates = applicationCandidates()
         DispatchQueue.global(qos: .utility).async { [weak self] in
             guard let self = self else { return }
+            if shouldResetBaseline { self.previousCPUTimes.removeAll() }
             // 全机 tick 要在进程采样前后各取一次？不需要 —— 它是累计值，与上一拍求差
             // 覆盖的正好是同一段 10 秒窗口，和进程 CPU% 的窗口对齐。
             let loadSample = SystemCPULoad.sample()
@@ -242,7 +298,8 @@ class ProcessMonitorService: ObservableObject {
     }
 
     /// 采样结果。`visiblePerCorePercent` 是**全部**可读进程的 CPU% 合计（每核口径），
-    /// 不是 `groups` 那 24 组的合计 —— 用截断后的合计去减会低估可见、高估系统进程。
+    /// 不是 `groups` 那 24 组的合计 —— 用截断后的合计去减会低估可读进程、
+    /// 高估未归因负载。
     private struct SampleResult {
         let groups: [RawProcess]
         let visiblePerCorePercent: Double
@@ -274,7 +331,9 @@ class ProcessMonitorService: ObservableObject {
             guard let root = roots[entry.pid],
                   let sample = sampleProcess(pid: entry.pid, now: now) else { continue }
             sampledPids.insert(entry.pid)
-            visiblePerCorePercent += sample.cpuPercent
+            // 新 PID 的第一拍是生命周期平均值，只用于该行的临时展示；顶部归因必须
+            // 等第二拍拿到与全机相同窗口的差值后再纳入。
+            if sample.isWindowSample { visiblePerCorePercent += sample.cpuPercent }
 
             let candidate = candidatesByPID[root]
             // app 行按 bundleID 归组，不按 root pid：NSWorkspace 可能报出同一个 app
@@ -356,7 +415,7 @@ class ProcessMonitorService: ObservableObject {
         for candidate in candidates {
             guard let sample = sampleProcess(pid: candidate.pid, now: now) else { continue }
             sampledPids.insert(candidate.pid)
-            visiblePerCorePercent += sample.cpuPercent
+            if sample.isWindowSample { visiblePerCorePercent += sample.cpuPercent }
             let key = "app:\(candidate.groupIdentifier)"
             if let current = groups[key] {
                 groups[key] = RawProcess(
@@ -389,7 +448,11 @@ class ProcessMonitorService: ObservableObject {
 
     /// 读单个进程的 CPU% 和常驻内存。返回 nil 表示这个 pid 读不到 ——
     /// root 进程一律如此，即使完全不沙箱也读不到。
-    private func sampleProcess(pid: Int32, now: TimeInterval) -> (cpuPercent: Double, memoryMB: Double)? {
+    private func sampleProcess(pid: Int32, now: TimeInterval) -> (
+        cpuPercent: Double,
+        memoryMB: Double,
+        isWindowSample: Bool
+    )? {
         var taskInfo = proc_taskinfo()
         let taskInfoSize = Int32(MemoryLayout<proc_taskinfo>.size)
         guard proc_pidinfo(pid, PROC_PIDTASKINFO, 0, &taskInfo, taskInfoSize) == taskInfoSize
@@ -399,6 +462,7 @@ class ProcessMonitorService: ObservableObject {
         // 所有进程的 cpuPercent 都是 0，列表会一直卡在「正在加载进程列表…」。
         let totalCPUTime = taskInfo.pti_total_user &+ taskInfo.pti_total_system
         var cpuPercent: Double = 0
+        var isWindowSample = false
 
         if let prev = previousCPUTimes[pid] {
             let prevTotal = prev.user &+ prev.system
@@ -407,6 +471,7 @@ class ProcessMonitorService: ObservableObject {
             // 间隔太短（连点刷新）时差值没有意义，保留上一次的读数而不是显示 0
             if timeDelta >= Self.minSampleInterval {
                 cpuPercent = Self.cpuPercent(ticksDelta: delta, seconds: timeDelta)
+                isWindowSample = true
             } else {
                 cpuPercent = prev.lastPercent
             }
@@ -422,7 +487,8 @@ class ProcessMonitorService: ObservableObject {
 
         // A zero delta is a valid observation: the app is running but idle.
         return (cpuPercent: Self.sanitizedCPUPercent(cpuPercent),
-                memoryMB: Double(taskInfo.pti_resident_size) / 1024.0 / 1024.0)
+                memoryMB: Double(taskInfo.pti_resident_size) / 1024.0 / 1024.0,
+                isWindowSample: isWindowSample)
     }
 
     /// 可执行文件绝对路径，带缓存。路径在进程存活期内不变，所以只在首次见到这个

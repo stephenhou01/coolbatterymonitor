@@ -1,0 +1,145 @@
+{
+  "_meta": {
+    "scope": "app-shell/navigation",
+    "title": "App 外壳 / 导航",
+    "description": "侧边栏、页面入口、页面副标题和窗口级导航文案。",
+    "consumers": [
+      "ContentView",
+      "DashboardShellView"
+    ]
+  },
+  "strings": {
+    "shell.overview": {
+      "en": "Overview",
+      "zh-Hans": "总览",
+      "zh-Hant": "總覽",
+      "ja": "概要",
+      "ko": "개요",
+      "de": "Übersicht",
+      "es": "Resumen",
+      "fr": "Vue d'ensemble",
+      "it": "Panoramica",
+      "pt": "Visão geral"
+    },
+    "shell.technical": {
+      "en": "Technical details",
+      "zh-Hans": "技术参数",
+      "zh-Hant": "技術參數",
+      "ja": "技術情報",
+      "ko": "기술 세부 정보",
+      "de": "Technische Daten",
+      "es": "Datos técnicos",
+      "fr": "Détails techniques",
+      "it": "Dati tecnici",
+      "pt": "Detalhes técnicos"
+    },
+    "shell.trends": {
+      "en": "Trends",
+      "zh-Hans": "趋势",
+      "zh-Hant": "趨勢",
+      "ja": "トレンド",
+      "ko": "추세",
+      "de": "Trends",
+      "es": "Tendencias",
+      "fr": "Tendances",
+      "it": "Tendenze",
+      "pt": "Tendências"
+    },
+    "shell.diagnostics": {
+      "en": "Diagnostics",
+      "zh-Hans": "诊断",
+      "zh-Hant": "診斷",
+      "ja": "診断",
+      "ko": "진단",
+      "de": "Diagnose",
+      "es": "Diagnóstico",
+      "fr": "Diagnostic",
+      "it": "Diagnosi",
+      "pt": "Diagnóstico"
+    },
+    "shell.settings": {
+      "en": "Settings",
+      "zh-Hans": "设置",
+      "zh-Hant": "設定",
+      "ja": "設定",
+      "ko": "설정",
+      "de": "Einstellungen",
+      "es": "Ajustes",
+      "fr": "Réglages",
+      "it": "Impostazioni",
+      "pt": "Ajustes"
+    },
+    "shell.sidebar_subtitle": {
+      "en": "Your Mac battery dashboard",
+      "zh-Hans": "你的 Mac 电池仪表盘",
+      "zh-Hant": "你的 Mac 電池儀表板",
+      "ja": "Mac のバッテリーダッシュボード",
+      "ko": "Mac 배터리 대시보드",
+      "de": "Dein Mac-Batterie-Dashboard",
+      "es": "El panel de la batería de tu Mac",
+      "fr": "Le tableau de bord de la batterie de votre Mac",
+      "it": "La dashboard della batteria del tuo Mac",
+      "pt": "O painel da bateria do seu Mac"
+    },
+    "shell.local_only": {
+      "en": "Data stays on this Mac",
+      "zh-Hans": "数据仅保存在这台 Mac",
+      "zh-Hant": "資料僅儲存在這台 Mac",
+      "ja": "データはこの Mac 内にのみ保存されます",
+      "ko": "데이터는 이 Mac에만 저장됩니다",
+      "de": "Daten bleiben nur auf diesem Mac",
+      "es": "Los datos se quedan en este Mac",
+      "fr": "Les données restent sur ce Mac",
+      "it": "I dati restano su questo Mac",
+      "pt": "Os dados ficam neste Mac"
+    },
+    "shell.technical_subtitle": {
+      "en": "All metrics, formulas, sources, and raw system fields remain available",
+      "zh-Hans": "完整保留所有指标、公式、来源和系统原始字段",
+      "zh-Hant": "完整保留所有指標、公式、來源和系統原始欄位",
+      "ja": "すべての指標、計算式、出典、システムの生データを保持",
+      "ko": "모든 지표, 계산식, 출처, 시스템 원시 필드를 그대로 제공합니다",
+      "de": "Alle Kennzahlen, Formeln, Quellen und Rohdaten des Systems bleiben vollständig erhalten",
+      "es": "Se mantienen disponibles todas las métricas, fórmulas, fuentes y campos brutos del sistema",
+      "fr": "Tous les indicateurs, formules, sources et champs système bruts restent disponibles",
+      "it": "Restano disponibili tutte le metriche, le formule, le fonti e i campi di sistema grezzi",
+      "pt": "Todas as métricas, fórmulas, fontes e campos brutos do sistema continuam disponíveis"
+    },
+    "shell.trends_subtitle": {
+      "en": "Separate live fluctuations from long-term history",
+      "zh-Hans": "把实时波动与长期记录分开看",
+      "zh-Hant": "將即時波動與長期記錄分開查看",
+      "ja": "リアルタイムの変動と長期記録を分けて確認",
+      "ko": "실시간 변동과 장기 기록을 구분해 확인",
+      "de": "Echtzeitschwankungen und Langzeitverlauf getrennt betrachten",
+      "es": "Separar las fluctuaciones en vivo del historial a largo plazo",
+      "fr": "Séparer les fluctuations en direct de l'historique à long terme",
+      "it": "Distingue le fluttuazioni in tempo reale dalla cronologia di lungo periodo",
+      "pt": "Separe as oscilações ao vivo do histórico de longo prazo"
+    },
+    "shell.diagnostics_subtitle": {
+      "en": "Conclusions first, then supporting evidence",
+      "zh-Hans": "先给结论，再展开证据",
+      "zh-Hant": "先給結論，再展開依據",
+      "ja": "先に結論を示し、その後に根拠を展開",
+      "ko": "결론을 먼저, 그다음 근거",
+      "de": "Zuerst das Ergebnis, dann die Belege",
+      "es": "Primero las conclusiones, después las pruebas",
+      "fr": "D'abord les conclusions, puis les éléments à l'appui",
+      "it": "Prima le conclusioni, poi le prove a supporto",
+      "pt": "Primeiro as conclusões, depois as evidências"
+    },
+    "shell.settings_subtitle": {
+      "en": "Language, appearance, and live sampling",
+      "zh-Hans": "语言、外观和实时采样",
+      "zh-Hant": "語言、外觀和即時取樣",
+      "ja": "言語、外観、リアルタイムサンプリング",
+      "ko": "언어, 외관, 실시간 샘플링",
+      "de": "Sprache, Darstellung und Echtzeitmessung",
+      "es": "Idioma, apariencia y muestreo en vivo",
+      "fr": "Langue, apparence et échantillonnage en direct",
+      "it": "Lingua, aspetto e campionamento live",
+      "pt": "Idioma, aparência e amostragem ao vivo"
+    }
+  }
+}

@@ -84,12 +84,23 @@ struct ChargeSpeedEstimate: Equatable {
         samples: [RealtimeDataPoint],
         now: Date = Date()
     ) -> ChargeSpeedEstimate? {
-        guard data.isCharging, !data.isFullyCharged else { return nil }
+        // Same charging verdict as the state line and the charging-power card.
+        // Reading `data.isCharging` directly here would put the flow diagram's
+        // `≈+x%/5m` badge (PowerFlowDiagram, shown only when an estimate exists)
+        // on a different rule from the green adapter→battery edge beside it,
+        // which is lit from `batteryPowerWatts` — a lit edge with no number next
+        // to it. The snapshot has to be built before the guard that uses it.
+        let snapshot = DashboardMetricSnapshot(data: data, realtimeData: samples)
+        guard snapshot.isEffectivelyCharging else { return nil }
 
+        // No separate `!isFullyCharged` guard: the flag can be set while current
+        // is still going in, and rejecting that case would leave the state line
+        // saying "charging" and the time-to-full row populated while the speed
+        // silently vanished. A pack with no headroom is caught right below, which
+        // is the condition that actually matters.
         let headroom = 100 - Double(max(0, min(100, data.percent)))
         guard headroom > 0 else { return nil }
 
-        let snapshot = DashboardMetricSnapshot(data: data, realtimeData: samples)
         let capacity = fullChargeCapacity(data)
         guard capacity > 0 else { return nil }
 

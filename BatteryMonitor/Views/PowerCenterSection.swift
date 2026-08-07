@@ -15,6 +15,7 @@ struct PowerCenterSection: View {
     let isLive: Bool
     let onToggleLive: () -> Void
     let onRefresh: () -> Void
+    let onProcessPanelVisibilityChanged: (Bool) -> Void
     @Binding var selectedHelp: MetricHelpContent?
 
     @State private var selectedDate: Date?
@@ -66,6 +67,8 @@ struct PowerCenterSection: View {
         }
         .padding(20)
         .finalDashboardCard(accent: AppTheme.chargingBlue)
+        .onAppear { onProcessPanelVisibilityChanged(true) }
+        .onDisappear { onProcessPanelVisibilityChanged(false) }
     }
 
     private var liveControls: some View {
@@ -207,7 +210,7 @@ struct PowerCenterSection: View {
         .overlay(RoundedRectangle(cornerRadius: 13).stroke(AppTheme.contrastOverlay(0.055), lineWidth: 1))
     }
 
-    /// 全机 / 可见应用 / 系统进程 三列。
+    /// 全机 / 可读进程 / 未归因负载 三列。
     ///
     /// 这三个数是**整机口径**（所有核加起来 100%），而下面每行的 CPU% 是
     /// **每核口径**（100% = 占满一个核，多核聚合行可以超过 100%）。两者单位不同，
@@ -271,9 +274,14 @@ struct PowerCenterSection: View {
 
             machineCPURow
 
+            Text(L("proc.cpu_scale_note"))
+                .font(.system(size: 8.5, weight: .medium))
+                .foregroundStyle(AppTheme.textTertiary)
+                .fixedSize(horizontal: false, vertical: true)
+
             if processes.isEmpty {
                 Text(hasProcessSample
-                     ? dashboardText("p.no_active_processes", fallback: "当前没有达到展示门槛的活跃进程")
+                     ? dashboardText("p.no_active_processes", fallback: "当前没有可读取的进程数据")
                      : dashboardText("p.process_collecting", fallback: "正在读取进程活动…"))
                     .font(.system(size: 10.5))
                     .foregroundStyle(AppTheme.textTertiary)

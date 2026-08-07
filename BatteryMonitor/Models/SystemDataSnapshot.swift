@@ -30,7 +30,39 @@ struct SystemFieldMetadata: Codable, Equatable, Identifiable {
     let valueStars: Int
     let note: String
 
+    /// Language-pack keys for the six display attributes above. Optional so an
+    /// older catalog file still decodes. The Chinese values stay put: they are the
+    /// zh-Hans copy *and* the tokens that `isMeaningfulByDefault` and
+    /// `SystemFieldValueConversion` compare against, so they must not be replaced.
+    /// `var` with a default, not `let` — a `let` carrying an initial value is skipped
+    /// by the synthesized `init(from:)`, which would silently leave every key nil no
+    /// matter what the catalog says. The default lets the two call sites in
+    /// SystemDataCollector that build metadata for macOS-added fields at runtime omit
+    /// keys entirely: they already pass localized text, and `display` reads an absent
+    /// key as "the raw value is the answer".
+    var groupKey: String? = nil
+    var unitKey: String? = nil
+    var meaningKey: String? = nil
+    var reliabilityKey: String? = nil
+    var recommendationKey: String? = nil
+    var noteKey: String? = nil
+
     var id: String { "\(source)|\(path)" }
+
+    /// Runtime-discovered fields (added by macOS after the workbook) arrive with
+    /// no key but with already-localized text, so an empty key means "the raw
+    /// value is the answer". One rule covers both kinds of field.
+    private static func display(_ key: String?, _ raw: String) -> String {
+        guard let key, !key.isEmpty else { return raw }
+        return hardwareText(key, raw)
+    }
+
+    var localizedGroup: String { Self.display(groupKey, group) }
+    var localizedUnit: String { Self.display(unitKey, unit) }
+    var localizedMeaning: String { Self.display(meaningKey, meaning) }
+    var localizedReliability: String { Self.display(reliabilityKey, reliability) }
+    var localizedRecommendation: String { Self.display(recommendationKey, recommendation) }
+    var localizedNote: String { Self.display(noteKey, note) }
 
     /// Useful by default means that the workbook rated the field at least two
     /// stars. Identifiers stay out of the first view so screenshots do not leak
@@ -82,24 +114,26 @@ struct SystemFieldReading: Identifiable, Equatable {
 
     var help: MetricHelpContent {
         let unavailable = dashboardText("p.system_data_unavailable", fallback: "本次快照系统没有返回这个字段。")
-        let summary = isAvailable ? metadata.meaning : unavailable
-        let note = metadata.note.isEmpty ? summary : "\(summary)\n\n\(metadata.note)"
+        let summary = isAvailable ? metadata.localizedMeaning : unavailable
+        let localizedNote = metadata.localizedNote
+        let note = localizedNote.isEmpty ? summary : "\(summary)\n\n\(localizedNote)"
         return MetricHelpContent(
             id: helpID,
             title: metadata.path,
             summary: note,
             result: valueWithUnit,
-            rawFields: [.init(name: metadata.path, value: value, unit: metadata.unit)],
+            rawFields: [.init(name: metadata.path, value: value, unit: metadata.localizedUnit)],
             formula: "\(metadata.source) → \(metadata.path)",
             substitution: "\(metadata.path) → \(valueWithUnit)",
-            source: "\(metadata.reliability) · \(metadata.recommendation)",
+            source: "\(metadata.localizedReliability) · \(metadata.localizedRecommendation)",
             readAt: readAt.map(MetricReadStamp.ourRead)
         )
     }
 
     var valueWithUnit: String {
-        guard !metadata.unit.isEmpty, value != "—" else { return value }
-        return "\(value) \(metadata.unit)"
+        let unit = metadata.localizedUnit
+        guard !unit.isEmpty, value != "—" else { return value }
+        return "\(value) \(unit)"
     }
 
     /// Raw reading with a human-scale conversion appended where the raw unit is

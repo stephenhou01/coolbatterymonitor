@@ -1,0 +1,156 @@
+{
+  "_meta": {
+    "scope": "settings/preferences",
+    "title": "设置",
+    "description": "外观、语言、实时刷新、隐私和菜单栏入口。",
+    "consumers": [
+      "DashboardSettingsPage"
+    ]
+  },
+  "strings": {
+    "appearance.system": {
+      "en": "System",
+      "zh-Hans": "跟随系统",
+      "zh-Hant": "跟隨系統",
+      "ja": "システム設定に従う",
+      "ko": "시스템 설정에 따름",
+      "de": "Systemeinstellung",
+      "es": "Sistema",
+      "fr": "Système",
+      "it": "Sistema",
+      "pt": "Sistema"
+    },
+    "appearance.light": {
+      "en": "Light",
+      "zh-Hans": "浅色",
+      "zh-Hant": "淺色",
+      "ja": "ライト",
+      "ko": "라이트",
+      "de": "Hell",
+      "es": "Claro",
+      "fr": "Clair",
+      "it": "Chiaro",
+      "pt": "Clara"
+    },
+    "appearance.dark": {
+      "en": "Dark",
+      "zh-Hans": "深色",
+      "zh-Hant": "深色",
+      "ja": "ダーク",
+      "ko": "다크",
+      "de": "Dunkel",
+      "es": "Oscuro",
+      "fr": "Sombre",
+      "it": "Scuro",
+      "pt": "Escura"
+    },
+    "shell.appearance": {
+      "en": "Appearance",
+      "zh-Hans": "外观",
+      "zh-Hant": "外觀",
+      "ja": "外観",
+      "ko": "외관",
+      "de": "Darstellung",
+      "es": "Apariencia",
+      "fr": "Apparence",
+      "it": "Aspetto",
+      "pt": "Aparência"
+    },
+    "shell.live_refresh": {
+      "en": "Live updates",
+      "zh-Hans": "实时更新",
+      "zh-Hant": "即時更新",
+      "ja": "リアルタイム更新",
+      "ko": "실시간 갱신",
+      "de": "Live-Aktualisierung",
+      "es": "Actualización en vivo",
+      "fr": "Mise à jour en direct",
+      "it": "Aggiornamenti live",
+      "pt": "Atualização ao vivo"
+    },
+    "shell.privacy_note": {
+      "en": "All samples and history stay on this Mac and are never uploaded to a server.",
+      "zh-Hans": "所有采样和历史数据都只保存在这台 Mac，不上传服务器。",
+      "zh-Hant": "所有取樣和歷史資料都只儲存在這台 Mac，不會上傳至伺服器。",
+      "ja": "すべてのサンプルと履歴データはこの Mac 内にのみ保存され、サーバーにはアップロードされません。",
+      "ko": "모든 샘플과 기록은 이 Mac에만 저장되며 서버로 업로드되지 않습니다.",
+      "de": "Alle Mess- und Verlaufsdaten werden nur auf diesem Mac gespeichert und nicht auf einen Server hochgeladen.",
+      "es": "Todas las muestras y el historial se quedan en este Mac y nunca se suben a un servidor.",
+      "fr": "Toutes les mesures et l'historique restent sur ce Mac et ne sont jamais envoyés à un serveur.",
+      "it": "Tutti i campioni e la cronologia restano su questo Mac e non vengono mai caricati su un server.",
+      "pt": "Todas as amostras e o histórico ficam neste Mac e nunca são enviados a um servidor."
+    },
+    "shell.dynamic_trends": {
+      "en": "Live trends",
+      "zh-Hans": "动态趋势",
+      "zh-Hant": "動態趨勢",
+      "ja": "リアルタイムトレンド",
+      "ko": "실시간 추세",
+      "de": "Dynamische Trends",
+      "es": "Tendencias en vivo",
+      "fr": "Tendances en direct",
+      "it": "Tendenze in tempo reale",
+      "pt": "Tendências ao vivo"
+    },
+    "shell.last_minutes": {
+      "en": "Recent samples",
+      "zh-Hans": "最近采样",
+      "zh-Hant": "最近取樣",
+      "ja": "直近のサンプル",
+      "ko": "최근 샘플",
+      "de": "Letzte Messwerte",
+      "es": "Muestras recientes",
+      "fr": "Mesures récentes",
+      "it": "Campioni recenti",
+      "pt": "Amostras recentes"
+    },
+    "shell.instant_power": {
+      "en": "Instantaneous power",
+      "zh-Hans": "瞬时功率",
+      "zh-Hant": "即時功率",
+      "ja": "瞬時電力",
+      "ko": "순시 전력",
+      "de": "Momentanleistung",
+      "es": "Potencia instantánea",
+      "fr": "Puissance instantanée",
+      "it": "Potenza istantanea",
+      "pt": "Potência instantânea"
+    },
+    "shell.current": {
+      "en": "Current",
+      "zh-Hans": "电流",
+      "zh-Hant": "電流",
+      "ja": "電流",
+      "ko": "전류",
+      "de": "Stromstärke",
+      "es": "Corriente",
+      "fr": "Courant",
+      "it": "Corrente",
+      "pt": "Corrente"
+    },
+    "shell.top_processes": {
+      "en": "Active apps Top 3",
+      "zh-Hans": "CPU 活跃应用 Top 3",
+      "zh-Hant": "CPU 活躍 App Top 3",
+      "ja": "アクティブなアプリ Top 3",
+      "ko": "활성 앱 Top 3",
+      "de": "Aktive Apps – Top 3",
+      "es": "Top 3 de apps activas",
+      "fr": "Top 3 des apps actives",
+      "it": "Top 3 app attive",
+      "pt": "Top 3 de apps ativos"
+    },
+    "shell.cpu_context": {
+      "en": "CPU activity context",
+      "zh-Hans": "CPU 活动参考",
+      "zh-Hant": "CPU 活動參考",
+      "ja": "CPU アクティビティの参考",
+      "ko": "CPU 활동 참고",
+      "de": "CPU-Aktivität als Kontext",
+      "es": "Contexto de actividad de la CPU",
+      "fr": "Contexte d'activité CPU",
+      "it": "Attività CPU di riferimento",
+      "pt": "Contexto de atividade da CPU"
+    }
+  }
+}

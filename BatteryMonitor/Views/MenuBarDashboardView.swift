@@ -102,6 +102,12 @@ struct MenuBarDashboardView: View {
             AppearanceWindowBridge(mode: appearance.mode, usesTransparentBackground: true)
                 .frame(width: 0, height: 0)
         )
+        .onAppear {
+            processService.setHighFrequencyConsumer(.menuBar, visible: true)
+        }
+        .onDisappear {
+            processService.setHighFrequencyConsumer(.menuBar, visible: false)
+        }
     }
 
     private var glassTintColors: [Color] {
@@ -633,7 +639,7 @@ struct MenuBarDashboardView: View {
     private var processSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text(dashboardText("shell.top_processes", fallback: "活跃耗电应用 Top 3"))
+                Text(dashboardText("shell.top_processes", fallback: "CPU 活跃应用 Top 3"))
                     .font(.system(size: 11.5, weight: .semibold))
                     .foregroundStyle(AppTheme.textPrimary)
                 Spacer()

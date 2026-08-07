@@ -1,0 +1,108 @@
+{
+  "_meta": {
+    "scope": "trends/charging-history",
+    "title": "趋势 / 充放电历史",
+    "description": "充放电会话、速率、时长和空状态。",
+    "consumers": [
+      "HistoryChartView"
+    ]
+  },
+  "strings": {
+    "hist.title": {
+      "en": "Charge History",
+      "zh-Hans": "充电历史",
+      "zh-Hant": "充電歷史",
+      "ja": "充電履歴",
+      "ko": "충전 기록",
+      "de": "Ladeverlauf",
+      "es": "Historial de carga",
+      "fr": "Historique charge",
+      "it": "Cronologia carica",
+      "pt": "Histórico de carga"
+    },
+    "hist.refresh": {
+      "en": "Refresh",
+      "zh-Hans": "刷新",
+      "zh-Hant": "重新整理",
+      "ja": "更新",
+      "ko": "새로고침",
+      "de": "Aktualisieren",
+      "es": "Actualizar",
+      "fr": "Actualiser",
+      "it": "Aggiorna",
+      "pt": "Atualizar"
+    },
+    "hist.analyzing": {
+      "en": "Analyzing charge log...",
+      "zh-Hans": "正在分析充电日志...",
+      "zh-Hant": "正在分析充電日誌...",
+      "ja": "充電ログを分析中...",
+      "ko": "충전 로그 분석 중...",
+      "de": "Ladeprotokoll wird analysiert...",
+      "es": "Analizando registro...",
+      "fr": "Analyse du journal...",
+      "it": "Analisi registro...",
+      "pt": "Analisando registro..."
+    },
+    "hist.empty": {
+      "en": "No charge history yet",
+      "zh-Hans": "暂无充电历史记录",
+      "zh-Hant": "暫無充電歷史記錄",
+      "ja": "充電履歴なし",
+      "ko": "충전 기록 없음",
+      "de": "Kein Ladeverlauf",
+      "es": "Sin historial",
+      "fr": "Aucun historique",
+      "it": "Nessuna cronologia",
+      "pt": "Sem histórico"
+    },
+    "hist.empty_hint": {
+      "en": "Charge your Mac then tap Refresh",
+      "zh-Hans": "充电后点击「刷新」按钮即可查看",
+      "zh-Hant": "充電後點擊「重新整理」按鈕即可查看",
+      "ja": "充電後に「更新」をタップしてください",
+      "ko": "충전 후 새로고침을 탭하세요",
+      "de": "Laden und dann aktualisieren",
+      "es": "Cargue y luego actualice",
+      "fr": "Chargez puis actualisez",
+      "it": "Carica e poi aggiorna",
+      "pt": "Carregue e atualize"
+    },
+    "hist.rate_chart": {
+      "en": "Charge Rate Comparison (%%/hr)",
+      "zh-Hans": "充电速率对比 (%%/小时)",
+      "zh-Hant": "充電速率對比 (%%/小時)",
+      "ja": "充電速度比較 (%%/時)",
+      "ko": "충전 속도 비교 (%%/시간)",
+      "de": "Ladegeschwindigkeit (%%/h)",
+      "es": "Comparación velocidad (%%/h)",
+      "fr": "Comparaison vitesse (%%/h)",
+      "it": "Confronto velocità (%%/h)",
+      "pt": "Comparação velocidade (%%/h)"
+    },
+    "hist.rate_unit": {
+      "en": "%%/hr",
+      "zh-Hans": "%%/时",
+      "zh-Hant": "%%/時",
+      "ja": "%%/時",
+      "ko": "%%/시",
+      "de": "%%/h",
+      "es": "%%/h",
+      "fr": "%%/h",
+      "it": "%%/h",
+      "pt": "%%/h"
+    },
+    "hist.duration": {
+      "en": "%d min · %@",
+      "zh-Hans": "%d分钟 · %@",
+      "zh-Hant": "%d分鐘 · %@",
+      "ja": "%d分 · %@",
+      "ko": "%d분 · %@",
+      "de": "%d Min · %@",
+      "es": "%d min · %@",
+      "fr": "%d min · %@",
+      "it": "%d min · %@",
+      "pt": "%d min · %@"
+    }
+  }
+}

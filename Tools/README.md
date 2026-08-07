@@ -19,6 +19,27 @@ Rescued from the pre-Xcode-project version of this app (`build.sh` + `swiftc`
 era), which is otherwise superseded. It was the only file there not represented
 in this repository.
 
+## analyze-session-tokens.py
+
+Reports how many tokens a Claude Code session burned, per user turn, and writes a
+chart. Nothing to do with the app — it's here because the answer is easy to get
+wrong: the naive sum double-counts, since one API response is split across several
+`.jsonl` lines that each carry the *same* `usage` object.
+
+```bash
+python3 Tools/analyze-session-tokens.py --list            # sessions for this project
+python3 Tools/analyze-session-tokens.py 4b5260c3          # → QATests/token-usage-<id>.html
+python3 Tools/analyze-session-tokens.py 0f75c6eb -p /Users/stephen   # another cwd's sessions
+```
+
+Deduplicates by `message.id`, and attributes each subagent's cost to the turn that
+spawned it via `toolUseId`. The three numbers are not interchangeable: `total` sums
+every call's whole context (so it counts re-reads), `ctx` is the peak single-call
+context, `out` is output only. Typically ~85% of `total` is `cache_read` — the same
+history read again, billed at a tenth.
+
+HTML output lands in `QATests/` (gitignored — it's a generated artifact).
+
 ## AppIcon.icns
 
 Prebuilt `.icns` from the same era. The Xcode build takes its icon from

@@ -40,7 +40,7 @@ extension DashboardHelp {
                 latestText: LNum("%.2f W", s.currentPowerWatts),
                 note: dashboardText(
                     "p.trend_note_power",
-                    fallback: "整机功率每 10 秒采样一次。把鼠标移到线上可以看到该分钟的读数。"
+                    fallback: "整机功率按上方显示的时间间隔分桶汇总。把鼠标移到线上可以查看该桶的读数。"
                 ),
                 unit: "W",
                 tint: AppTheme.chargingCyan,

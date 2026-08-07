@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "description": "页面/区块源文件是唯一编辑权威；Languages 是生成产物。",
+  "languages": [
+    {
+      "code": "en",
+      "name": "English",
+      "order": 10
+    },
+    {
+      "code": "zh-Hans",
+      "name": "简体中文",
+      "order": 20
+    },
+    {
+      "code": "zh-Hant",
+      "name": "繁體中文",
+      "order": 30
+    },
+    {
+      "code": "ja",
+      "name": "日本語",
+      "order": 40
+    },
+    {
+      "code": "ko",
+      "name": "한국어",
+      "order": 50
+    },
+    {
+      "code": "de",
+      "name": "Deutsch",
+      "order": 60
+    },
+    {
+      "code": "es",
+      "name": "Español",
+      "order": 70
+    },
+    {
+      "code": "fr",
+      "name": "Français",
+      "order": 80
+    },
+    {
+      "code": "it",
+      "name": "Italiano",
+      "order": 90
+    },
+    {
+      "code": "pt",
+      "name": "Português",
+      "order": 100
+    }
+  ],
+  "scopeOrder": [
+    "app-shell/navigation",
+    "overview/battery-status",
+    "overview/power-flow",
+    "overview/runtime-comparison",
+    "technical/remaining-time",
+    "technical/runtime-benchmark",
+    "technical/runtime-history",
+    "technical/power-center",
+    "technical/capacity-breakdown",
+    "technical/metric-reference",
+    "technical/consumer-explanation",
+    "technical/hardware-details",
+    "technical/system-workbench",
+    "trends/realtime-monitor",
+    "trends/process-list",
+    "trends/charging-history",
+    "diagnostics/insights",
+    "diagnostics/system-anomalies",
+    "settings/preferences",
+    "menubar/dashboard",
+    "shared/core",
+    "shared/help",
+    "catalogs/system-fields"
+  ]
+}
