@@ -2,7 +2,7 @@
   "_comment": [
     "中文原值 → 语言包 key。Scripts/generate-system-field-catalog.py 用它把 workbook 里的",
     "中文文案换成 *Key，未命中即 exit 非零，防止换 workbook 重跑时静默丢掉全部本地化。",
-    "新增 key 后必须同步 10 个 Localization/Languages/*.json，否则 Scripts/verify-release.sh",
+    "新增 key 后必须同步 10 个 Localization/Languages/*.json，否则 Scripts/verify-release-app.sh",
     "的 catalog 段会失败（那里断言每个 key 在 10 包里都解析出非空译文，且 distinct 计数固定）。",
     "147 = 142 个 system.catalog.* 新 key + 5 个复用的既有 key。"
   ],

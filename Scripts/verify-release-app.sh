@@ -4,12 +4,13 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 ROOT=$(pwd)
-DERIVED_DATA="$ROOT/QATests/BuildValidation/ReleaseCheck/DerivedData"
+TEST_SCRIPTS="$ROOT/QATests/TestKit/Scripts"
+DERIVED_DATA="$ROOT/QATests/Run/ReleaseCheck/DerivedData"
 
 # 用 grep -E 而不是 rg：ripgrep 不是这台机器上装着的东西，而以前预检要求它，导致整个
 # 脚本从第一行就退出。交互 shell 里 `command -v rg` 看着有，那是 Claude Code 注入的
 # shell 函数，bash 里并不存在。下面所有模式都是 POSIX ERE，grep 是系统自带的。
-for tool in xcodebuild swiftc python3 plutil grep lipo sips; do
+for tool in xcodebuild swiftc python3 plutil grep git lipo sips; do
     if ! command -v "$tool" >/dev/null 2>&1; then
         echo "缺少工具：$tool" >&2
         exit 1
@@ -17,14 +18,34 @@ for tool in xcodebuild swiftc python3 plutil grep lipo sips; do
 done
 
 echo "▸ 检查测试脚本安全边界"
-if grep -nE -- 'rm[[:space:]]+-[^[:space:]]*r|rm[[:space:]]+--recursive' QATests/run-fixed-qa.sh; then
-    echo "测试脚本仍含递归删除命令" >&2
+if grep -nE -- '(^|[;&|[:space:]])rm[[:space:]]' "$TEST_SCRIPTS/run-test-app.sh"; then
+    echo "测试脚本仍含 rm；固定测试入口只允许带存在性检查的单目标 unlink" >&2
     exit 1
 fi
-if grep -nE -- '\$HOME/Library/Application Support/BatteryMonitor' QATests/run-fixed-qa.sh; then
+if grep -nE -- '\$HOME/Library/Application Support/BatteryMonitor' "$TEST_SCRIPTS/run-test-app.sh"; then
     echo "测试脚本仍指向真实用户数据目录" >&2
     exit 1
 fi
+if [ -n "$(git ls-files QATests/Run QATests/Personal)" ]; then
+    echo "Run 或 Personal 中存在 Git 跟踪文件；运行产物与本机私有材料不得提交。" >&2
+    git ls-files QATests/Run QATests/Personal >&2
+    exit 1
+fi
+if ! git check-ignore -q QATests/Personal/Config/QAConfig.local.plist; then
+    echo "本机 QA 配置未被 Git 忽略：QATests/Personal/Config/QAConfig.local.plist" >&2
+    exit 1
+fi
+if git check-ignore -q QATests/TestKit/Config/QAConfig.example.plist; then
+    echo "TestKit 被 Git 忽略；权威测试定义必须可提交。" >&2
+    exit 1
+fi
+if [ -d QATests/Run ] && find QATests/Run \
+    \( -name DerivedData -o -name DerivedDataUI \) -prune -o \
+    -type f -name main.swift -print | grep -q .; then
+    echo "Run 中残留手写 main.swift；测试入口必须只存在于 TestKit。" >&2
+    exit 1
+fi
+python3 Scripts/check-doc-maps.py
 
 echo "▸ 检查发布配置"
 grep -qE 'PRODUCT_BUNDLE_IDENTIFIER: com\.stephen\.BatteryMonitor' project.yml
@@ -60,7 +81,7 @@ for size in 16 32 64 128 256 512 1024; do
     test "$height" = "$size"
     test "$alpha" = "yes"
 done
-./QATests/run-fixed-qa.sh icon
+"$TEST_SCRIPTS/run-test-app.sh" icon
 
 echo "▸ 检查 plist 与语言包"
 plutil -lint ExportOptions.plist BatteryMonitor/BatteryMonitor.entitlements \
@@ -247,7 +268,7 @@ fi
 echo "▸ 编译 Release 应用（不签名、不归档、不上传）"
 # 主 App 一旦成功编译，就必须能原位更新固定 UserTest App。先做只读预检，
 # 避免 App 正在运行或签名身份缺失时先完成一份无法交付的 Release build。
-./Scripts/build-user-test.sh --preflight
+"$TEST_SCRIPTS/build-user-test.sh" --preflight
 xcodebuild -quiet -project BatteryMonitor.xcodeproj -scheme BatteryMonitor \
     -configuration Release -destination 'generic/platform=macOS' \
     -derivedDataPath "$DERIVED_DATA" \
@@ -274,11 +295,11 @@ assert catalog.is_file(), "built app missing SystemFieldCatalog.json"
 PY
 
 echo "▸ 更新固定 UserTest App（开发签名，不启动）"
-./Scripts/build-user-test.sh --source-app "$app" --configuration Release --no-launch
+"$TEST_SCRIPTS/build-user-test.sh" --source-app "$app" --configuration Release --no-launch
 
 echo "▸ 运行逻辑与本地化测试"
-./QATests/run-fixed-qa.sh insight
-./QATests/run-fixed-qa.sh l10n
+"$TEST_SCRIPTS/run-test-app.sh" insight
+"$TEST_SCRIPTS/run-test-app.sh" l10n
 
 echo
 echo "✅ 发布前本地验证通过"

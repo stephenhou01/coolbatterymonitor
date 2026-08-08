@@ -265,7 +265,7 @@ if let catalogURL = Bundle.main.url(forResource: "SystemFieldCatalog", withExten
     expect(l.string("system.catalog.unit.percent") == "%",
            "百分号单位还原成单个 %: [\(l.string("system.catalog.unit.percent"))]")
 } else {
-    expect(false, "读不到 bundle 内的 SystemFieldCatalog.json —— run-fixed-qa.sh 是否漏拷？")
+    expect(false, "读不到 bundle 内的 SystemFieldCatalog.json —— TestKit/Scripts/run-test-app.sh 是否漏拷？")
 }
 
 print("── 2d) 术语抽样（防回归）")

@@ -52,7 +52,7 @@ extension BatteryService {
 
     /// 什么样的间隔算「节拍」。
     ///
-    /// 0.5 秒粒度实测（`QATests/BuildValidation/gauge-beat-*.log`）：连续三次发布的间隔
+    /// 0.5 秒粒度实测（`QATests/Personal/Evidence/Telemetry/gauge-beat-*.log`）：连续三次发布的间隔
     /// 是 59、60、**4** 秒，第三次那一拍 `CurrentCapacity` 跳了 1%。也就是说电量计除了
     /// 定时发布，还会被电量变化这类事件额外触发一次提前发布。
     ///

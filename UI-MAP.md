@@ -1,24 +1,51 @@
 # BatteryMonitor 界面地图
 
-**用途**：从「界面上看到的东西」反查代码。改 UI 前先 grep 这里，不要派 agent 满项目找。
+**用途**：从「界面上看到的东西」反查代码。改 UI 前先查这里，不要派 agent 满项目找。
 
-本文件不定义项目协作规则，只管一件事：**页面 → 区域 → 文案 key + 动态变量 → 文件:行号**。
+本文件不定义项目协作规则，只管一件事：**页面 → 区域 → 文案 key + 动态变量 → 渲染文件 + 数据来源**。跨层算法、状态、复用消费者和测试链路由 `FEATURE-MAP.md` 负责。
 
-## 三种查法（每种一次 grep 就够）
+## 五种查法
 
 | 你手上有什么 | 怎么查 |
 |---|---|
+| 任意语言的一句界面文案 | `python3 Localization/build-language-packs.py lookup-text "Stable estimate"` → 拿到 key、源文件和使用处 |
 | 界面上的一块东西（"续航时间对照"） | `grep "续航时间对照" UI-MAP.md` → 拿到该区域全部 key、变量、渲染位置、数据来源 |
-| 一句文案 / 一个 key | `grep "p.runtime_stable_label" UI-MAP.md` → 拿到它在哪个页面哪个区域被渲染 |
+| 一个 key | `python3 Localization/build-language-packs.py find p.runtime_stable_label` → 拿到归属、译文和使用处；再 grep 本文件看区域 |
 | 一个变量名 | `grep "stableRuntimeMinutes" UI-MAP.md` → 拿到它被哪些界面显示（改算法前先看会影响谁） |
+| 一个跨层功能 | `grep "feature:runtime.comparison" FEATURE-MAP.md` → 拿到 UI、canonical owner、上游状态、复用、本地化和测试 |
 
-**路径省略前缀** `BatteryMonitor/`（例：`Views/DashboardOverviewPage.swift`）。表内行号对应当前工作区状态，**界面结构变动后必须回来更新**。
+**路径省略前缀** `BatteryMonitor/`（例：`Views/DashboardOverviewPage.swift`）。表内行号只作近似导航，稳定锚点是区域名、key、变量、文件和符号；定位后用 `rg -n` 确认。界面结构变动后必须回来更新。
 
 查询 key 的页面归属、权威源文件和字面引用：
 
 ```bash
 python3 Localization/build-language-packs.py find KEY
 ```
+
+## 跨层功能入口
+
+只在任务命中时打开 `FEATURE-MAP.md` 对应 ID：
+
+| 界面概念 | Feature ID |
+|---|---|
+| 三套续航对照 | `feature:runtime.comparison` |
+| 系统续航 / 拔电预测历史 | `feature:runtime.history` |
+| 公开续航基准 | `feature:runtime.benchmark` |
+| 当前整机功率 | `feature:power.current` |
+| 适配器输出功率 | `feature:power.adapter-output` |
+| 电池充电功率 | `feature:power.battery-charging` |
+| 充电速度 | `feature:charging.speed` |
+| 能量流向 | `feature:power.flow` |
+| 健康度口径 | `feature:capacity.health` |
+| 容量拆解 | `feature:capacity.breakdown` |
+| 完整硬件字段 | `feature:hardware.catalog` |
+| 进程负载上下文 | `feature:process.load-context` |
+| 四类洞察 | `feature:diagnostics.insights` |
+| 四层系统核验台 | `feature:system.workbench` |
+| 24 小时遥测历史 | `feature:telemetry.history` |
+| 菜单栏指标 | `feature:menu.metrics` |
+| 指标问号面板 | `feature:help.metric` |
+| 运行时本地化 | `feature:localization.runtime` |
 
 ---
 
@@ -246,7 +273,7 @@ python3 Localization/build-language-packs.py find KEY
 | 界面可见标题 ≠ 项目内部说法 | 技术参数页九个 section | 文件地图记的是"顶部剩余时间主卡""容量拆解"，界面上写的是"还能用多久""你买的容量去哪了"。**按界面文字搜项目内部说法可能搜不到**，用本文件 |
 | `runtime` 有两个同名成员 | `Views/DashboardHelp.swift:169` vs `Views/DashboardHelp+Runtime.swift:5` | 一个是面板 `runtime(_ s:)`，一个是格式化工具 `runtime(minutes:)` |
 | 四层核验台的搜索**按当前界面语言匹配**，不再搜中文原值 | `Views/SystemDataWorkbenchView.swift:55-69` | 搜索域 = `path`/`value`/`source`（英文标识符，任何语言下都能搜）+ 当前语言的 `localizedGroup`/`localizedMeaning`/`localizedNote`/`localizedUnit`/`localizedReliability`。**界面切到 `ko` 后用中文词搜不到任何东西**（本地化前搜的是 catalog 的中文原值）。原值仍留在 JSON 里，但只供 `isMeaningfulByDefault` 与 `SystemFieldValueConversion` 做令牌比对，不参与搜索 |
-| catalog 的中文原值**不是死数据，不许删** | `BatteryMonitor/Resources/SystemFieldCatalog.json` | `group`/`unit`/`meaning` 等中文原值同时是 zh-Hans 文案与上述两处令牌比对的输入。删掉原值只留 `*Key`，界面照常显示，但「默认有用」筛选和单位换算会静默失效。`Scripts/verify-release.sh` 有两条耦合守卫专防这件事 |
+| catalog 的中文原值**不是死数据，不许删** | `BatteryMonitor/Resources/SystemFieldCatalog.json` | `group`/`unit`/`meaning` 等中文原值同时是 zh-Hans 文案与上述两处令牌比对的输入。删掉原值只留 `*Key`，界面照常显示，但「默认有用」筛选和单位换算会静默失效。`Scripts/verify-release-app.sh` 有两条耦合守卫专防这件事 |
 
 准确表述：**`MenuBarPresentation` 是菜单栏电池标量取值与格式化的唯一出口**（`percentText` `runtimeText` `healthText` `powerText` `temperatureText` `chargingPowerText` `chargeSpeedText` + `value(for:)` / `statusValue(for:)`）。总览页仅复用 `percentText` 和共享的充电功率格式器；趋势序列、进程数据和总览其余指标不经过它。
 
@@ -258,3 +285,4 @@ python3 Localization/build-language-packs.py find KEY
 - 新增区域时按现有列顺序补一行：区域 / 文案 key / 动态变量 / 渲染位置 / 数据来源。**区域名用界面上的可见文字**，不用内部说法——这张表的用途就是从看到的东西反查代码。
 - 补完 key 之后跑一次存在性校验（见顶部命令），不要把不存在的 key 写进来。
 - 行号会随改动漂移。**只有区域名、key 名、变量名是稳定的锚点**；行号当近似值用，定位后靠 grep 符号确认。
+- 新增或改名跨层 Feature ID 时同步更新 `FEATURE-MAP.md`，并运行 `python3 Scripts/check-doc-maps.py`。

@@ -11,6 +11,7 @@ Commands:
   write      Regenerate all runtime packs without changing key names.
   list       Show page/section counts.
   find       Locate keys by key substring and report source ownership/usages.
+  lookup-text Locate a visible translation in any built-in language.
 """
 
 from __future__ import annotations
@@ -23,6 +24,7 @@ from pathlib import Path
 import re
 import sys
 from typing import Any
+import unicodedata
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -614,7 +616,7 @@ def list_scopes() -> None:
 def source_usages(key: str) -> list[str]:
     candidates = [
         *sorted((ROOT / "BatteryMonitor").rglob("*.swift")),
-        *sorted((ROOT / "Tests").rglob("*.swift")),
+        *sorted((ROOT / "QATests" / "TestKit" / "Sources").rglob("*.swift")),
         ROOT / "Prototype" / "build-prototype.py",
         ROOT / "Prototype" / "battery-final-template.html",
         ROOT / "UI-MAP.md",
@@ -651,6 +653,65 @@ def find(query: str) -> None:
             print("  warning: 语言数量异常")
 
 
+def normalized_search_text(value: str) -> str:
+    """Normalize what a user sees without changing source translations."""
+    normalized = unicodedata.normalize("NFKC", value).replace("%%", "%")
+    return " ".join(normalized.casefold().split())
+
+
+def lookup_text(query: str, language: str | None, limit: int) -> None:
+    """Locate a rendered phrase across all languages, then expose its code path."""
+    _, codes, translations, ownership = load_sources()
+    normalized_query = normalized_search_text(query)
+    if not normalized_query:
+        raise ValueError("查询文案不能为空")
+    if language is not None and language not in codes:
+        raise ValueError(f"未知语言代码：{language}；可选：{', '.join(codes)}")
+    if limit < 1:
+        raise ValueError("--limit 必须大于 0")
+
+    searched_codes = [language] if language else codes
+    matches: list[tuple[int, str, list[str]]] = []
+    for key, localized in translations.items():
+        matched_codes: list[str] = []
+        best_rank = 3
+        for code in searched_codes:
+            candidate = normalized_search_text(localized[code])
+            if normalized_query not in candidate:
+                continue
+            matched_codes.append(code)
+            if candidate == normalized_query:
+                best_rank = min(best_rank, 0)
+            elif candidate.startswith(normalized_query):
+                best_rank = min(best_rank, 1)
+            else:
+                best_rank = min(best_rank, 2)
+        if matched_codes:
+            matches.append((best_rank, key, matched_codes))
+
+    if not matches:
+        suffix = f" [{language}]" if language else ""
+        raise ValueError(f"没有匹配的界面文案{suffix}：{query}")
+
+    matches.sort(key=lambda item: (item[0], item[1]))
+    visible_matches = matches[:limit]
+    for _, key, matched_codes in visible_matches:
+        print(key)
+        print(f"  scope: {ownership[key]}")
+        print(f"  source: Localization/Sources/{ownership[key]}.json")
+        rendered_matches = [f'{code}={translations[key][code]!r}' for code in matched_codes[:3]]
+        if len(matched_codes) > 3:
+            rendered_matches.append(f"+{len(matched_codes) - 3} languages")
+        print(f"  matched: {'; '.join(rendered_matches)}")
+        print(f"  zh-Hans: {translations[key].get('zh-Hans', '')}")
+        print(f"  en: {translations[key].get('en', '')}")
+        usages = source_usages(key)
+        print(f"  usages: {', '.join(usages) if usages else '未发现字面引用（可能由数据驱动）'}")
+
+    if len(matches) > limit:
+        print(f"... 另有 {len(matches) - limit} 个结果；请增加文案长度或使用 --language/--limit 缩小范围")
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command")
@@ -660,6 +721,13 @@ def parse_args() -> argparse.Namespace:
     subparsers.add_parser("list", help="列出页面/区块及 key 数量")
     find_parser = subparsers.add_parser("find", help="按 key 子串查询归属和引用")
     find_parser.add_argument("query")
+    lookup_parser = subparsers.add_parser(
+        "lookup-text",
+        help="按任意内置语言的可见文案查询 key、归属和引用",
+    )
+    lookup_parser.add_argument("query")
+    lookup_parser.add_argument("--language", choices=None, help="可选语言代码，如 en、zh-Hans")
+    lookup_parser.add_argument("--limit", type=int, default=30, help="最多输出多少个 key（默认 30）")
     return parser.parse_args()
 
 
@@ -677,6 +745,8 @@ def main() -> int:
             list_scopes()
         elif command == "find":
             find(args.query)
+        elif command == "lookup-text":
+            lookup_text(args.query, args.language, args.limit)
         else:
             raise ValueError(f"未知命令：{command}")
     except ValueError as error:

@@ -9,16 +9,18 @@
 # Readiness check (gracefully stops the fixed UserTest App if needed): --preflight
 set -euo pipefail
 
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/../../.."
 ROOT=$(pwd)
 QATEST_ROOT="$ROOT/QATests"
-DERIVED_DATA="$QATEST_ROOT/BuildValidation/UserTestBuild/DerivedData"
-TARGET_APP="$QATEST_ROOT/BatteryMonitor-UserTest.app"
+TESTKIT="$QATEST_ROOT/TestKit"
+RUN_ROOT="$QATEST_ROOT/Run"
+DERIVED_DATA="$RUN_ROOT/UserTestBuild/DerivedData"
+TARGET_APP="$RUN_ROOT/UserTest/BatteryMonitor-UserTest.app"
 TARGET_EXECUTABLE="$TARGET_APP/Contents/MacOS/BatteryMonitor"
 ENTITLEMENTS="$ROOT/BatteryMonitor/BatteryMonitor.entitlements"
 BUNDLE_ID="com.stephen.BatteryMonitor"
-TEAM_ID="6WLUSLD79F"
-SIGN_IDENTITY="Apple Development: ningjun hou (3FAB9WC88G)"
+TEAM_ID=""
+SIGN_IDENTITY=""
 
 configuration="Debug"
 source_app=""
@@ -28,9 +30,9 @@ preflight_only=false
 usage() {
     cat <<'USAGE'
 Usage:
-  ./Scripts/build-user-test.sh [--configuration Debug|Release] [--launch]
-  ./Scripts/build-user-test.sh --source-app /absolute/path/BatteryMonitor.app [--launch]
-  ./Scripts/build-user-test.sh --preflight
+  ./QATests/TestKit/Scripts/build-user-test.sh [--configuration Debug|Release] [--launch]
+  ./QATests/TestKit/Scripts/build-user-test.sh --source-app /absolute/path/BatteryMonitor.app [--launch]
+  ./QATests/TestKit/Scripts/build-user-test.sh --preflight
 
 Options:
   --configuration NAME  Build configuration when no --source-app is supplied.
@@ -76,6 +78,11 @@ while [ "$#" -gt 0 ]; do
             ;;
     esac
 done
+
+source "$TESTKIT/Scripts/load-qa-config.sh"
+load_battery_monitor_qa_config
+TEAM_ID="$QA_TEAM_ID"
+SIGN_IDENTITY="$QA_SIGN_IDENTITY"
 
 case "$configuration" in
     Debug|Release) ;;
@@ -133,12 +140,12 @@ stop_running_usertest() {
 preflight() {
     local pids
 
-    test "$ROOT" = "/Users/stephen/Desktop/BatteryMonitor" || {
-        echo "项目路径不匹配：$ROOT" >&2
-        exit 1
-    }
     test -d "$QATEST_ROOT" || {
         echo "固定 QATests 目录不存在：$QATEST_ROOT" >&2
+        exit 1
+    }
+    test -d "$TESTKIT" || {
+        echo "TestKit 目录不存在：$TESTKIT" >&2
         exit 1
     }
     test -f "$ENTITLEMENTS" || {
@@ -151,6 +158,7 @@ preflight() {
     fi
 
     stop_running_usertest
+    mkdir -p "$RUN_ROOT/UserTest"
 
     echo "  固定 UserTest 路径空闲，签名身份可用"
 }

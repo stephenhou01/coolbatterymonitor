@@ -16,6 +16,9 @@
 # 查询 key 的归属、中文/英文和代码引用
 python3 Localization/build-language-packs.py find p.trend_fitted
 
+# 从任意内置语言的界面文案反查 key、源文件和代码引用
+python3 Localization/build-language-packs.py lookup-text "Stable estimate"
+
 # 查看全部页面/区块及 key 数量
 python3 Localization/build-language-packs.py list
 

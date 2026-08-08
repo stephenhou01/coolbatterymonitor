@@ -9,7 +9,7 @@ import Foundation
 /// `systemPowerIn − batteryPower = systemLoad` exactly and so the arrows were
 /// guaranteed to add up. That guarantee turned out to be worthless: the relation
 /// is an identity Apple computes, so it holds just as exactly when the numbers
-/// are wrong. A 40-sample run on AC (`QATests/BuildValidation/telemetry-plugged-*.log`)
+/// are wrong. A 40-sample run on AC (`QATests/Personal/Evidence/Telemetry/telemetry-plugged-*.log`)
 /// caught all three fields misreporting:
 ///
 ///     t=81  SystemLoad = 1499 mW          BatteryData.SystemPower = 9.20 W

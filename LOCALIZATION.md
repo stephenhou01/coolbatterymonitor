@@ -53,7 +53,7 @@ Sources/
 
 ## 查询 key
 
-不要满项目猜测归属，使用统一查询：
+手上已有 key 时，不要满项目猜测归属，使用：
 
 ```bash
 python3 Localization/build-language-packs.py find p.trend_fitted
@@ -71,6 +71,29 @@ python3 Localization/build-language-packs.py find p.trend_fitted
 ```bash
 python3 Localization/build-language-packs.py list
 ```
+
+## 从界面文案反查代码
+
+手上只有界面里看到的中文、英文或其他内置语言文案时，先运行：
+
+```bash
+python3 Localization/build-language-packs.py lookup-text "Stable estimate"
+```
+
+它会对十种语言做 Unicode、大小写、空白和字面百分号归一化查询，并按“完全匹配 → 前缀匹配 → 子串匹配”返回：
+
+- 稳定 key；
+- 命中的语言与译文；
+- 权威页面源文件；
+- Swift、TestKit、HTML 和 `UI-MAP.md` 中发现的字面引用。
+
+结果太多时限定语言或数量：
+
+```bash
+python3 Localization/build-language-packs.py lookup-text "power" --language en --limit 10
+```
+
+拿到 key 和使用处后，只打开命中的 `UI-MAP.md` 区域、`FEATURE-MAP.md` 功能链与具体代码文件；不要为找一句话通读十个生成语言包。
 
 ## 修改已有 key
 
@@ -132,7 +155,15 @@ Localization/Sources/catalogs/system-fields.json
 `BatteryMonitor/Resources/SystemFieldCatalog.json` 的 `group` / `unit` / `meaning` / `reliability` / `recommendation` / `note` 通过对应 `*Key` 从语言包取译文。
 
 - `system.catalog.*` 的十种译文统一维护在 `Localization/Sources/catalogs/system-fields.json`。
-- 新增字段、修改 catalog 中文原值或新增映射时，同时更新 `Scripts/system-field-catalog-keys.json`，再运行 `Scripts/generate-system-field-catalog.py`。
+- 新增字段、修改 catalog 中文原值或新增映射时，同时更新 `Scripts/system-field-catalog-keys.json`，再运行：
+
+  ```bash
+  python3 Scripts/generate-system-field-catalog.py \
+    /absolute/path/to/workbook-data.json \
+    BatteryMonitor/Resources/SystemFieldCatalog.json
+  ```
+
+  `workbook-data.json` 是外部 artifact-tool 导出，不在公开仓库中。没有获得该明确输入时，不得猜测来源、不得直接改生成后的 catalog 来伪装成可重建流程；应停止 catalog 结构修改并向用户索取导出文件。普通文案修改不需要这个外部输入。
 - 生成器遇到未映射的中文原值必须拒绝写文件并非零退出。
 - catalog 的中文原值必须保留；它们同时是 zh-Hans 文案，也是 `isMeaningfulByDefault` 和 `SystemFieldValueConversion` 的令牌比对输入。
 
@@ -147,13 +178,17 @@ Localization/Sources/catalogs/system-fields.json
 
 ```bash
 python3 Localization/build-language-packs.py check
-./QATests/run-fixed-qa.sh l10n
+./QATests/TestKit/Scripts/run-test-app.sh l10n
 ```
+
+第二条命令属于维护者本机运行型测试，需要被 Git 忽略的
+`QATests/Personal/Config/QAConfig.local.plist`；没有本机 QA 配置的公开仓库检出只运行第一条静态检查。
+固定路径、签名和运行边界以 `QA-RUNBOOK.md` 为准。
 
 发布前完整验证：
 
 ```bash
-./Scripts/verify-release.sh
+./Scripts/verify-release-app.sh
 ```
 
 必须根据命令实际退出码报告结果；单独抽取某个检查段通过，不等于整个脚本通过。

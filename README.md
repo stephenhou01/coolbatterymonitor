@@ -138,23 +138,14 @@ The Xcode project is generated from `project.yml` — edit that rather than the
 brew install xcodegen
 xcodegen generate
 xcodebuild -project BatteryMonitor.xcodeproj -scheme BatteryMonitor \
-           -configuration Debug build
+           -configuration Debug -destination 'generic/platform=macOS' \
+           CODE_SIGNING_ALLOWED=NO build
 ```
 
-Tests:
-
-```bash
-./QATests/run-fixed-qa.sh all  # fixed signed QA Host: icon + logic + localization
-./Scripts/verify-release.sh    # full local pre-release check, uploads nothing
-```
-
-The runtime suite always overwrites the same signed app at
-`QATests/BuildValidation/AutomationHost/BatteryMonitor-QAHost.app`, runs it, and
-closes it before returning. Pass `icon`, `insight`, or `l10n` instead of `all`
-to run one phase. The host uses a fixed Apple Development identity. Gatekeeper
-may therefore report `spctl rejected` because the development build isn't
-notarized; the test runner records that result but continues only when the fixed
-path, bundle ID, team ID, signing identity, and code signature all match.
+That command is the portable, unsigned compile check for public checkouts.
+Maintainer setup, tests, fixed paths, signing rules, UserTest handling and local
+release verification are defined only in [`QA-RUNBOOK.md`](QA-RUNBOOK.md); read
+it in full before running any signed build or test.
 
 Built-in copy is maintained by page and section under `Localization/Sources/`.
 Run `python3 Localization/build-language-packs.py write` to generate the ten

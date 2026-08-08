@@ -121,22 +121,13 @@ Xcode 工程由 `project.yml` 生成，请改这个文件而不是 `.xcodeproj`�
 brew install xcodegen
 xcodegen generate
 xcodebuild -project BatteryMonitor.xcodeproj -scheme BatteryMonitor \
-           -configuration Debug build
+           -configuration Debug -destination 'generic/platform=macOS' \
+           CODE_SIGNING_ALLOWED=NO build
 ```
 
-测试：
-
-```bash
-./QATests/run-fixed-qa.sh all  # 固定签名 QA Host：图标 + 逻辑 + 本地化
-./Scripts/verify-release.sh    # 本地完整发布前检查，不上传任何东西
-```
-
-运行型测试始终覆盖同一个
-`QATests/BuildValidation/AutomationHost/BatteryMonitor-QAHost.app`，执行结束后自动关闭。
-只跑一组时，把 `all` 换成 `icon`、`insight` 或 `l10n`。
-QA Host 固定使用 Apple Development 开发签名，未公证时 Gatekeeper 可能返回
-`spctl rejected`。脚本会记录该结果；只有固定路径、Bundle ID、Team ID、签名身份和
-代码签名全部匹配时才继续调试，`spctl rejected` 本身不作为阻断条件。
+这是面向公开仓库检出的可移植无签名编译检查。维护者配置、测试、固定路径、签名、
+UserTest 处理和本地发布验证只以 [`QA-RUNBOOK.md`](QA-RUNBOOK.md) 为准；运行任何
+签名构建或测试前必须完整阅读该手册。
 
 内置文案按页面/区块维护在 `Localization/Sources/`，运行
 `python3 Localization/build-language-packs.py write` 生成十个运行时语言包。新增语言时，

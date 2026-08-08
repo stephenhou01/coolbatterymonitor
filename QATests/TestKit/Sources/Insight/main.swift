@@ -2,7 +2,7 @@ import Foundation
 import AppKit
 
 // InsightEngine / BatteryAgeEstimator / 硬件解析的边界测试。
-// 由 QATests/run-fixed-qa.sh insight 编译运行，不依赖 Xcode 也不依赖界面截图。
+// 由 QATests/TestKit/Scripts/run-test-app.sh insight 编译运行，不依赖 Xcode 也不依赖界面截图。
 
 var failures = 0
 func expect(_ cond: Bool, _ msg: String) {
@@ -11,12 +11,12 @@ func expect(_ cond: Bool, _ msg: String) {
 }
 
 // 断言里出现的中文字面量必须来自真实语言包。
-// 这个进程里 Bundle.main 是固定 BatteryMonitor-QAHost.app，run-fixed-qa.sh 会把
+// 这个进程里 Bundle.main 是固定 BatteryMonitor-QAHost.app，TestKit/Scripts/run-test-app.sh 会把
 // Localization/Languages/*.json 拷进去；不拷的话 L() 只返回 key，而
 // dashboardText 只读取语言包；显式选简体中文，避免结果随开发机系统语言漂移。
 L10n.shared.select("zh-Hans")
 precondition(L10n.shared.languages.count == 10,
-             "语言包没进 BatteryMonitor-QAHost.app —— run-fixed-qa.sh 是否漏拷 Resources/Languages？")
+             "语言包没进 BatteryMonitor-QAHost.app —— TestKit/Scripts/run-test-app.sh 是否漏拷 Resources/Languages？")
 precondition(L10n.shared.effectiveCode == "zh-Hans",
              "未能选中 zh-Hans，实际 \(L10n.shared.effectiveCode)")
 
@@ -1337,7 +1337,7 @@ expect(unknownSnapshot.designEnergyWh == nil
        "机型缺额定电量时两个派生口径同时为空")
 
 print("── 14b) 能量流向：三条边的判定与守恒")
-// 数字取自 QATests/BuildValidation/telemetry-plugged-*.log 的真实采样。
+// 数字取自 QATests/Personal/Evidence/Telemetry/telemetry-plugged-*.log 的真实采样。
 // 方向一律由 Amperage×Voltage 决定，不用 PowerTelemetryData —— 同一拍里那组字段
 // 报过 1.5 W 的整机负载、插着电的 0 W 适配器输入，和库仑计差 3 倍的电池功率。
 func flowSnapshot(milliamps: Int?, millivolts: Int, loadWatts: Double,
@@ -1452,7 +1452,7 @@ expect(BatteryPowerState.resolve(contradictionCheck) == .charging
        "判为充电中时，图上必然是充电器→电池亮、电池→电脑灭")
 
 print("── 14d) 刷新倒计时：锚在数据更新时刻，落在我们的轮询格上")
-// 0.5 秒粒度实测（QATests/BuildValidation/gauge-beat-*.log）：连续五次发布的间隔是
+// 0.5 秒粒度实测（QATests/Personal/Evidence/Telemetry/gauge-beat-*.log）：连续五次发布的间隔是
 // 59、60、4、60、10 秒，两次短的都伴随 CurrentCapacity 跳变。节拍是 60，事件只让它提前。
 let beatBase = Date(timeIntervalSince1970: 1_785_776_703)
 // 电量计在 base+60 发布，我们在 base+4 轮询过，所以下一次能看到是 base+64

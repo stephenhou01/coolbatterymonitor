@@ -2,8 +2,8 @@
 """统计单个 Claude Code 会话的 token 消耗，并生成可视化 HTML。
 
 用法:
-    python3 QATests/analyze-session-tokens.py <session-id-prefix> [-o out.html]
-    python3 QATests/analyze-session-tokens.py --list
+    python3 Tools/analyze-session-tokens.py <session-id-prefix> [-o out.html]
+    python3 Tools/analyze-session-tokens.py --list
 
 口径说明（三个数不是一回事，别混）:
     total  = 该轮所有 API 调用的 (input + cache_creation + cache_read + output) 之和。
@@ -388,7 +388,10 @@ def main():
         )
         + TEMPLATE_TAIL
     )
-    out = a.out or os.path.join("QATests", f"token-usage-{sid[:8]}.html")
+    default_dir = os.path.join("QATests", "Run", "Reports")
+    if a.out is None:
+        os.makedirs(default_dir, exist_ok=True)
+    out = a.out or os.path.join(default_dir, f"token-usage-{sid[:8]}.html")
     with open(out, "w", encoding="utf-8") as fh:
         fh.write(html)
     print(f"\n已写入 {os.path.abspath(out)}")

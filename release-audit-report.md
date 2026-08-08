@@ -1,5 +1,7 @@
 # BatteryMonitor 发布前优化审查报告
 
+> **历史快照，不是现行发布或 QA 操作手册。** 本文保留 2026-08-02 当次证据、旧路径和旧命令名，仅用于追溯；当前构建、测试、签名和运行规则只见 [`QA-RUNBOOK.md`](QA-RUNBOOK.md)，不得照本文的历史产物路径执行。
+
 审查日期：2026-08-02
 
 审查范围：语言完整性、macOS/CPU 架构兼容性、后台功耗、持久化与异常输入鲁棒性
@@ -41,7 +43,7 @@
 - Release App 使用现有 `Apple Development` 证书签名并通过严格签名校验。
 - Apple Silicon 原生启动通过。
 - Rosetta 环境返回 `x86_64` 且 `sysctl.proc_translated = 1`，Intel slice 实际启动通过。
-- Xcode Analyze 无诊断退出，完整 `verify-release.sh` 通过。
+- Xcode Analyze 无诊断退出；当时名为 `verify-release.sh` 的完整验证通过（现行入口已重命名为 `verify-release-app.sh`）。
 
 ## 后台功耗实测与解释
 
@@ -69,7 +71,9 @@
 - arm64 空闲采样：`.build/qa/release-arm64-idle.tsv`
 - arm64 运行日志：`.build/qa/release-arm64-run.log`
 - x86_64 运行日志：`.build/qa/release-x86_64-run.log`
-- 完整验证：`./Scripts/verify-release.sh`
+- 历史完整验证：`./Scripts/verify-release.sh`（现为 `./Scripts/verify-release-app.sh`）
 - 静态分析：使用 `.build/qa/StaticAnalysisDerivedData` 执行 Release `xcodebuild analyze`
 
-所有测试产物均位于项目固定 `.build` 目录。没有从系统随机临时目录执行，也没有生成或上传 App Store Connect 归档。
+> 上述 `.build/qa/` 是本报告生成时的历史路径，不是现行测试入口。当前所有测试 App、二进制、日志和 DerivedData 必须位于固定可见的 `QATests/`，不得照此历史路径新建或执行测试产物。
+
+在本报告对应的历史运行中，测试产物位于当时约定的项目 `.build` 目录，没有从系统随机临时目录执行，也没有生成或上传 App Store Connect 归档。该 `.build` 约定现已废止，不能用于新的测试。

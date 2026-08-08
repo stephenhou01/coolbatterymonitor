@@ -1,6 +1,7 @@
 # 内部协作文档：含本机路径、公司安全软件名等，不进公开仓库。
 # 文件仍然保留在本地工作区，Claude Code / Codex 照常读取。
 AGENTS.md
+AGENTS.legacy.md
 CLAUDE.md
 design-qa.md
 
@@ -19,7 +20,11 @@ xcuserdata/
 # Build products / artifacts
 build/
 .build/
-QATests/
+# QATests/TestKit is the tracked, reproducible test definition.
+# Run contains disposable build products; Personal contains local policy and
+# retained private evidence. Neither may enter Git.
+QATests/Run/
+QATests/Personal/
 DerivedData/
 *.xcarchive
 *.ipa
