@@ -153,7 +153,10 @@ python3 Scripts/check-doc-maps.py
 - `Release/Screenshots/`；
 - `Evidence/TranslationAudit/` 的审计工具、keep registry、catalog 映射和旧源证据。
 
-同版本号可能存在不同二进制。判断真正送审的 archive，要检查是否包含 `Submissions/<UUID>`。
+同版本号可能存在不同二进制。判断 archive 是否真正上传，优先核对其中的
+`Submissions/<UUID>`；Xcode 命令行上传可能不写该目录，此时必须保留对应的
+`.xcdistributionlogs`，并同时确认 build upload ID、服务端无错误状态、
+`Upload State: PROCESSING`（或后续完成状态）以及 Xcode 的 `Upload succeeded` 回执。
 
 ## 维护规则
 
