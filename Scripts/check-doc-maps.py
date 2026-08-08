@@ -2,6 +2,7 @@
 """Validate progressive-disclosure docs, feature anchors, and current QA paths."""
 
 from collections import Counter
+import json
 from pathlib import Path
 import re
 
@@ -67,6 +68,14 @@ STALE_REFERENCES = (
 
 ENTRY_MAX_LINES = 100
 ENTRY_MAX_BYTES = 12_000
+ROUTER_REFERENCES = (
+    "UI-MAP.md",
+    "FEATURE-MAP.md",
+    "CODE-MAP.md",
+    "LOCALIZATION.md",
+    "QA-RUNBOOK.md",
+    "lookup-text",
+)
 FEATURE_TOKEN = re.compile(r"feature:[a-z0-9]+(?:[.-][a-z0-9]+)*")
 FEATURE_ROW = re.compile(r"^\|\s*`(feature:[a-z0-9]+(?:[.-][a-z0-9]+)*)`\s*\|", re.MULTILINE)
 FEATURE_ANCHOR = re.compile(r"([A-Za-z0-9_./+-]+\.swift)#([A-Za-z_][A-Za-z0-9_]*)")
@@ -74,6 +83,22 @@ INLINE_CODE = re.compile(r"`([^`\n]+)`")
 DOC_CODE_PATH = re.compile(
     r"`((?:BatteryMonitor/)?(?:Models|Services|Views|Theme|Resources)/"
     r"[^`:#\s]+\.(?:swift|json))(?::[^`]*)?`"
+)
+LOCALIZATION_KEY = re.compile(
+    r"(?:p|hw|shell|menu|system|appearance|insight|stat|rt|hist|proc|condition|"
+    r"app|lang|tip|gauge|status)\.[A-Za-z0-9_.-]+"
+)
+UI_NON_LOCALIZATION_TOKENS = {"appearance.mode"}
+LOCALIZATION_SCOPE_PREFIXES = (
+    "app-shell/",
+    "overview/",
+    "technical/",
+    "trends/",
+    "diagnostics/",
+    "settings/",
+    "menubar/",
+    "shared/",
+    "catalogs/",
 )
 
 
@@ -107,6 +132,9 @@ def check_entry_size(failures: list[str]) -> None:
         failures.append(f"AGENTS.md is no longer thin: {line_count} lines > {ENTRY_MAX_LINES}")
     if byte_count > ENTRY_MAX_BYTES:
         failures.append(f"AGENTS.md is no longer thin: {byte_count} bytes > {ENTRY_MAX_BYTES}")
+    for required in ROUTER_REFERENCES:
+        if required not in agents:
+            failures.append(f"AGENTS.md router is missing required entry: {required}")
 
 
 def check_active_references(failures: list[str]) -> None:
@@ -149,7 +177,7 @@ def check_code_map(failures: list[str]) -> int:
     return len(production_files)
 
 
-def check_feature_map(failures: list[str]) -> tuple[int, int]:
+def check_feature_map(failures: list[str]) -> tuple[int, int, int]:
     feature_map = read("FEATURE-MAP.md")
     ui_map = read("UI-MAP.md")
     definitions = FEATURE_ROW.findall(feature_map)
@@ -191,7 +219,43 @@ def check_feature_map(failures: list[str]) -> tuple[int, int]:
             continue
         if symbol not in path.read_text(encoding="utf-8"):
             failures.append(f"feature anchor symbol does not exist: {raw_path}#{symbol}")
-    return len(definitions), len(sorted_anchors)
+
+    file_references: set[str] = set()
+    for token in INLINE_CODE.findall(feature_map):
+        if "#" in token or "*" in token or " " in token:
+            continue
+        if token.startswith(LOCALIZATION_SCOPE_PREFIXES) and token.endswith(".json"):
+            file_references.add(f"Localization/Sources/{token}")
+        elif token.startswith(("Localization/", "QATests/", "Scripts/")) and token.endswith(
+            (".json", ".swift", ".py", ".sh")
+        ):
+            file_references.add(token)
+    for relative in sorted(file_references):
+        if not (ROOT / relative).is_file():
+            failures.append(f"FEATURE-MAP.md references missing support file: {relative}")
+    return len(definitions), len(sorted_anchors), len(file_references)
+
+
+def check_ui_localization_keys(failures: list[str]) -> int:
+    authority_keys: set[str] = set()
+    for path in sorted((ROOT / "Localization" / "Sources").rglob("*.json")):
+        if path.name == "manifest.json":
+            continue
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        strings = payload.get("strings")
+        if not isinstance(strings, dict):
+            failures.append(f"localization source has no strings object: {path.relative_to(ROOT)}")
+            continue
+        authority_keys.update(strings)
+
+    ui_tokens = {
+        token
+        for token in INLINE_CODE.findall(read("UI-MAP.md"))
+        if LOCALIZATION_KEY.fullmatch(token)
+    } - UI_NON_LOCALIZATION_TOKENS
+    for key in sorted(ui_tokens - authority_keys):
+        failures.append(f"UI-MAP.md references missing localization key: {key}")
+    return len(ui_tokens)
 
 
 def main() -> None:
@@ -205,7 +269,8 @@ def main() -> None:
     check_entry_size(failures)
     check_active_references(failures)
     swift_count = check_code_map(failures)
-    feature_count, anchor_count = check_feature_map(failures)
+    feature_count, anchor_count, feature_file_count = check_feature_map(failures)
+    ui_key_count = check_ui_localization_keys(failures)
 
     if failures:
         for failure in failures:
@@ -216,7 +281,9 @@ def main() -> None:
         "渐进式文档检查通过："
         f"{swift_count} 个生产 Swift 文件已入图，"
         f"{feature_count} 个 Feature ID 可从 UI 到达，"
-        f"{anchor_count} 个代码符号锚点可解析；QA 路径无漂移"
+        f"{anchor_count} 个代码符号锚点可解析，"
+        f"{feature_file_count} 个功能链支持文件存在，"
+        f"{ui_key_count} 个 UI key 存在；QA 路径无漂移"
     )
 
 
