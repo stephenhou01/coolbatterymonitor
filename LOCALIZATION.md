@@ -94,7 +94,7 @@ python3 Localization/build-language-packs.py check
 
 - 新 key 使用点分命名，放进对应页面/区块源文件。
 - 十种语言必须全部提供非空值，英文定义格式符和命名占位符契约。
-- Swift 中通过 `L()` / `LNum()` 读取，不把翻译正文写入 Swift。
+- Swift 中通过 `L()` / `LNum()` 读取，不把翻译正文写入 Swift。不得给 `dashboardText`、`hardwareText` 或其他包装器增加 `fallback:` 参数或位置式正文；缺 key 时补 `Localization/Sources/`，不能在 Swift 调用点兜底。
 - HTML 原型需要新 key 时也加入对应产品页面源文件，不新建“HTML 专属字典”。
 - key 改归属时，从旧源文件完整移动到新源文件；生成器会拒绝重复 key 和语言缺失。
 

@@ -30,7 +30,8 @@ an *unplug forecast* rather than presented as time remaining.
 ### Dashboard — five pages
 
 ```
-Overview      Charge ring + 8 headline metrics + charge/discharge timeline
+Overview      Charge + three runtime estimates · energy flow · battery state
+              7 live metric cards with field cadence and sparklines
 Technical     Power center (10-second curve + process activity)
               Capacity breakdown (design / full / current / loss)
               Official comparison against Apple's published figures
@@ -100,8 +101,9 @@ Ten languages with runtime switching — no relaunch:
 English · 简体中文 · 繁體中文 · 日本語 · 한국어 · Deutsch · Español · Français ·
 Italiano · Português
 
-Each language is a self-describing JSON pack, so translations live outside the
-Swift source and a new language is one file.
+Translations live outside Swift in page-based sources. Adding a language means
+registering it in `Localization/Sources/manifest.json`, translating every source
+entry, and generating its self-describing JSON pack.
 
 ---
 
@@ -149,7 +151,10 @@ Tests:
 The runtime suite always overwrites the same signed app at
 `QATests/BuildValidation/AutomationHost/BatteryMonitor-QAHost.app`, runs it, and
 closes it before returning. Pass `icon`, `insight`, or `l10n` instead of `all`
-to run one phase.
+to run one phase. The host uses a fixed Apple Development identity. Gatekeeper
+may therefore report `spctl rejected` because the development build isn't
+notarized; the test runner records that result but continues only when the fixed
+path, bundle ID, team ID, signing identity, and code signature all match.
 
 Built-in copy is maintained by page and section under `Localization/Sources/`.
 Run `python3 Localization/build-language-packs.py write` to generate the ten

@@ -21,7 +21,7 @@ struct RuntimeBenchmarkSection: View {
         VStack(alignment: .leading, spacing: 16) {
             DashboardSectionHeader(
                 icon: "scale.3d",
-                title: dashboardText("p.runtime_audit_tag", fallback: "公开基准 × 这台电脑"),
+                title: dashboardText("p.runtime_audit_tag"),
                 color: AppTheme.accentPurple,
                 help: { DashboardHelp.officialBenchmark(snapshot, specification: specification) },
                 selection: $selectedHelp,
@@ -34,7 +34,7 @@ struct RuntimeBenchmarkSection: View {
                 )
             )
 
-            Text(dashboardText("p.runtime_audit_title", fallback: "为什么官方 15 小时，到现在可能只剩几小时？"))
+            Text(dashboardText("p.runtime_audit_title"))
                 .font(.system(size: 19, weight: .bold, design: .rounded))
                 .foregroundStyle(AppTheme.textPrimary)
 
@@ -63,7 +63,7 @@ struct RuntimeBenchmarkSection: View {
         VStack(spacing: 12) {
             VStack(spacing: 10) {
                 RuntimeAuditRow(
-                    title: dashboardText("p.audit_official", fallback: "Apple 新机无线网页测试"),
+                    title: dashboardText("p.audit_official"),
                     note: LNum("%.1fWh · %.2fW · VIDEO %.0fh", specification.designEnergyWh, officialPower,
                                specification.officialVideoHours),
                     hours: specification.officialWebHours,
@@ -71,22 +71,22 @@ struct RuntimeBenchmarkSection: View {
                     color: AppTheme.accentPurple
                 )
                 RuntimeAuditRow(
-                    title: dashboardText("p.audit_same_load", fallback: "这块电池在同样轻负载下"),
+                    title: dashboardText("p.audit_same_load"),
                     note: LNum("%.1fWh", snapshot.currentFullEnergyWh ?? 0),
                     hours: sameLoadHours,
                     maximum: specification.officialWebHours,
                     color: AppTheme.chargingCyan
                 )
                 deltaText(
-                    dashboardText("p.audit_capacity_note", fallback: "容量影响：相比新机约少 %.1f 小时"),
+                    dashboardText("p.audit_capacity_note"),
                     value: max(0, specification.officialWebHours - sameLoadHours),
                     color: AppTheme.chargingCyan
                 )
                 RuntimeAuditRow(
-                    title: dashboardText("p.audit_actual", fallback: snapshot.data.isOnAC ? "当前状态的拔电预计" : "现在的系统剩余时间"),
+                    title: dashboardText("p.audit_actual"),
                     note: snapshot.data.isOnAC
                         ? LNum("%.1fWh ÷ %.1fW", snapshot.remainingEnergyWh ?? 0, snapshot.currentPowerWatts)
-                        : dashboardText("p.direct_source", fallback: "macOS 系统直读"),
+                        : dashboardText("p.direct_source"),
                     hours: actualHours,
                     maximum: specification.officialWebHours,
                     color: AppTheme.batteryYellow
@@ -109,13 +109,12 @@ struct RuntimeBenchmarkSection: View {
             Text(LNum("%.1f×", powerRatio))
                 .font(.system(size: 40, weight: .light, design: .monospaced))
                 .foregroundStyle(AppTheme.batteryYellow)
-            Text(dashboardText("p.audit_cause", fallback: "主要原因：当前负载"))
+            Text(dashboardText("p.audit_cause"))
                 .font(.system(size: 13, weight: .bold))
                 .foregroundStyle(AppTheme.textPrimary)
             Text(
                 dashboardText(
                     "p.audit_cause_body",
-                    fallback: "当前功率约为 Apple 无线网页测试隐含平均功率的 {ratio} 倍。满电只代表电池装满，不代表电脑正在运行官方轻负载。",
                     replacements: ["ratio": LNum("%.1f", powerRatio)]
                 )
             )
@@ -136,7 +135,7 @@ struct RuntimeBenchmarkSection: View {
 
     private var officialConfiguration: some View {
         configurationTile(
-            label: dashboardText("p.audit_test_config", fallback: "Apple 测试机"),
+            label: dashboardText("p.audit_test_config"),
             value: "M4 · \(specification.testCPUCoreCount)C CPU / \(specification.testGPUCoreCount)C GPU · \(specification.testMemoryGB)GB / \(specification.testStorageGB)GB"
         )
     }
@@ -144,7 +143,7 @@ struct RuntimeBenchmarkSection: View {
     private var currentConfiguration: some View {
         let memoryGB = Int(ProcessInfo.processInfo.physicalMemory / 1_073_741_824)
         return configurationTile(
-            label: dashboardText("p.audit_your_config", fallback: "你的电脑"),
+            label: dashboardText("p.audit_your_config"),
             value: "\(snapshot.detail.chipModel.isEmpty ? snapshot.modelIdentifier : snapshot.detail.chipModel) · \(ProcessInfo.processInfo.processorCount)C CPU · \(memoryGB)GB"
         )
     }
@@ -178,13 +177,13 @@ struct RuntimeBenchmarkSection: View {
     }
 
     private var methodNote: some View {
-        Text(dashboardText("p.audit_method", fallback: "方法：53.8Wh ÷ 15h ≈ 3.59W，先分离容量影响，再与当前系统功耗比较。"))
+        Text(dashboardText("p.audit_method"))
             .font(.system(size: 9))
             .foregroundStyle(AppTheme.textTertiary)
             .frame(maxWidth: .infinity, alignment: .leading)
     }
     private var conditionNote: some View {
-        Text(dashboardText("p.audit_conditions", fallback: "官方无线网页测试使用 25 个网站、Wi‑Fi、固定亮度与关闭键盘背光；它不是满负载测试。"))
+        Text(dashboardText("p.audit_conditions"))
             .font(.system(size: 9))
             .foregroundStyle(AppTheme.textTertiary)
             .frame(maxWidth: .infinity, alignment: .leading)

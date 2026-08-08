@@ -36,8 +36,8 @@ struct MetricHelpButton: View {
         }
         .buttonStyle(.plain)
         .pointerOnHover()
-        .accessibilityLabel(dashboardText("p.help_open", fallback: "查看定义和计算方法"))
-        .help(dashboardText("p.help_open", fallback: "查看定义和计算方法"))
+        .accessibilityLabel(dashboardText("p.help_open"))
+        .help(dashboardText("p.help_open"))
         // The drawer holds a value copy, so it would otherwise freeze at the
         // moment of the tap. Rebuild on each poll, but only for the panel that is
         // actually open — `content()` here is the closure from the current body
@@ -226,13 +226,13 @@ struct MetricHelpDrawer: View {
 
     private var drawerHeader: some View {
         HStack {
-            Text(dashboardText("p.help_title", fallback: "这个指标从哪里来？"))
+            Text(dashboardText("p.help_title"))
                 .font(.system(size: 10, weight: .semibold, design: .monospaced))
                 .tracking(1.1)
                 .foregroundStyle(AppTheme.chargingCyan)
             Spacer()
             Button(action: onClose) {
-                Label(dashboardText("p.help_close", fallback: "关闭"), systemImage: "xmark")
+                Label(dashboardText("p.help_close"), systemImage: "xmark")
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(AppTheme.textSecondary)
                     .padding(.horizontal, 9)
@@ -252,7 +252,7 @@ struct MetricHelpDrawer: View {
 
     private var resultBlock: some View {
         return VStack(alignment: .leading, spacing: 9) {
-            drawerEyebrow(dashboardText("p.help_current", fallback: "当前结果"))
+            drawerEyebrow(dashboardText("p.help_current"))
 
             if let contract = content.powerContract {
                 adapterContractBlock(contract)
@@ -297,8 +297,8 @@ struct MetricHelpDrawer: View {
                 }
                 Spacer(minLength: 8)
                 Text(contract.isNegotiated
-                     ? dashboardText("p.adapter_status_ready_badge", fallback: "PD READY")
-                     : dashboardText("p.adapter_status_waiting_badge", fallback: "WAITING"))
+                     ? dashboardText("p.adapter_status_ready_badge")
+                     : dashboardText("p.adapter_status_waiting_badge"))
                     .font(.system(size: 8, weight: .bold, design: .monospaced))
                     .tracking(0.8)
                     .foregroundStyle(contract.isNegotiated ? AppTheme.batteryGreen : AppTheme.textTertiary)
@@ -381,7 +381,7 @@ struct MetricHelpDrawer: View {
                 tint: AppTheme.chargingCyan,
                 points: contract.trendPoints,
                 ceiling: contract.ceilingWatts,
-                waitingText: dashboardText("p.adapter_trend_waiting", fallback: "正在积累输入功率历史")
+                waitingText: dashboardText("p.adapter_trend_waiting")
             ))
         }
     }
@@ -421,7 +421,7 @@ struct MetricHelpDrawer: View {
             }
             .pickerStyle(.segmented)
             .labelsHidden()
-            .accessibilityLabel(dashboardText("p.trend_range", fallback: "趋势时间范围"))
+            .accessibilityLabel(dashboardText("p.trend_range"))
 
             Text(selectedTrendRange.samplingSummary)
                 .font(.system(size: 9, weight: .medium, design: .monospaced))
@@ -469,7 +469,7 @@ struct MetricHelpDrawer: View {
     /// series does not have.
     static func trendHoverText(_ point: MetricHelpTrendPoint, unit: String = "W") -> String {
         let fitted = point.quality == .fitted
-            ? " · \(dashboardText("p.trend_fitted", fallback: "拟合"))"
+            ? " · \(dashboardText("p.trend_fitted"))"
             : ""
         return "\(MetricFieldFreshness.minuteText(point.timestamp)) · \(LNum("%.1f", point.value)) \(unit)\(fitted)"
     }
@@ -502,7 +502,7 @@ struct MetricHelpDrawer: View {
     private var rawFieldsBlock: some View {
         if !content.rawFields.isEmpty {
             VStack(alignment: .leading, spacing: 9) {
-                drawerEyebrow(dashboardText("p.help_raw", fallback: "字段说明与原始值"))
+                drawerEyebrow(dashboardText("p.help_raw"))
                 // One ticking clock for the whole list so the "N s ago" part
                 // keeps counting between the ten-second polls. It only drives
                 // the freshness lines, and stops when the drawer closes.
@@ -557,9 +557,9 @@ struct MetricHelpDrawer: View {
 
     private var formulaBlock: some View {
         VStack(alignment: .leading, spacing: 9) {
-            drawerEyebrow(dashboardText("p.help_formula", fallback: "公式"))
+            drawerEyebrow(dashboardText("p.help_formula"))
             formulaText(content.formula, tint: AppTheme.accentPurple)
-            drawerEyebrow(dashboardText("p.help_substitution", fallback: "代入这台电脑的数值"))
+            drawerEyebrow(dashboardText("p.help_substitution"))
                 .padding(.top, 3)
             formulaText(content.substitution, tint: AppTheme.chargingCyan)
         }
@@ -567,7 +567,7 @@ struct MetricHelpDrawer: View {
 
     private var sourceBlock: some View {
         VStack(alignment: .leading, spacing: 9) {
-            drawerEyebrow(dashboardText("p.help_source", fallback: "来源与可靠性"))
+            drawerEyebrow(dashboardText("p.help_source"))
             Text(content.source)
                 .font(.system(size: 11.5))
                 .foregroundStyle(AppTheme.textSecondary)
@@ -601,17 +601,13 @@ struct MetricHelpDrawer: View {
     }
 }
 
-/// The prototype adds many new keys while the native language packs are being
-/// migrated in parallel. Falling back here keeps the UI readable during that
-/// migration and automatically yields to the selected language once a key lands.
+/// Resolve dashboard copy exclusively from generated language packs. The built-in
+/// English pack is the runtime fallback when the selected language lacks a key.
 func dashboardText(
     _ key: String,
-    fallback: String,
     replacements: [String: String] = [:]
 ) -> String {
-    let localized = L(key)
-    let source = localized == key ? fallback : localized
-    return dashboardNativeText(source, replacements: replacements)
+    dashboardNativeText(L(key), replacements: replacements)
 }
 
 /// Prototype copy occasionally contains small HTML fragments and named

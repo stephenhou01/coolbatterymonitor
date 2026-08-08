@@ -245,6 +245,9 @@ if ! grep -q 'INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO' <<<"$settings"; 
 fi
 
 echo "▸ 编译 Release 应用（不签名、不归档、不上传）"
+# 主 App 一旦成功编译，就必须能原位更新固定 UserTest App。先做只读预检，
+# 避免 App 正在运行或签名身份缺失时先完成一份无法交付的 Release build。
+./Scripts/build-user-test.sh --preflight
 xcodebuild -quiet -project BatteryMonitor.xcodeproj -scheme BatteryMonitor \
     -configuration Release -destination 'generic/platform=macOS' \
     -derivedDataPath "$DERIVED_DATA" \
@@ -269,6 +272,9 @@ assert len(packs) == 10, f"built app expected 10 language packs, got {len(packs)
 catalog = Path(os.environ["APP_PATH"]) / "Contents/Resources/SystemFieldCatalog.json"
 assert catalog.is_file(), "built app missing SystemFieldCatalog.json"
 PY
+
+echo "▸ 更新固定 UserTest App（开发签名，不启动）"
+./Scripts/build-user-test.sh --source-app "$app" --configuration Release --no-launch
 
 echo "▸ 运行逻辑与本地化测试"
 ./QATests/run-fixed-qa.sh insight

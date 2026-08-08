@@ -149,12 +149,12 @@ struct MenuBarDashboardView: View {
                 LanguageSelectionMenu(iconOnly: true)
                 headerIconButton(
                     symbol: "minus",
-                    help: dashboardText("p.menu_close", fallback: "收起菜单栏面板"),
+                    help: dashboardText("p.menu_close"),
                     action: dismiss.callAsFunction
                 )
                 headerIconButton(
                     symbol: "power",
-                    help: dashboardText("p.menu_quit", fallback: "完全退出 BatteryMonitor"),
+                    help: dashboardText("p.menu_quit"),
                     tint: AppTheme.batteryRed
                 ) {
                     NSApplication.shared.terminate(nil)
@@ -226,7 +226,7 @@ struct MenuBarDashboardView: View {
 
     private var meters: some View {
         meter(
-            title: dashboardText("p.system_charge", fallback: "macOS 电量"),
+            title: dashboardText("p.system_charge"),
             value: presentation.percentText,
             fraction: presentation.chargeFraction,
             colors: [AppTheme.batteryGreen, AppTheme.chargingCyan]
@@ -265,7 +265,7 @@ struct MenuBarDashboardView: View {
                 .padding(.vertical, 10)
 
             HStack {
-                Text(dashboardText("menu.config.title", fallback: "已显示指标"))
+                Text(dashboardText("menu.config.title"))
                     .font(.system(size: 10.5, weight: .semibold))
                     .foregroundStyle(AppTheme.textPrimary)
                 Spacer()
@@ -278,7 +278,7 @@ struct MenuBarDashboardView: View {
                     }
                 } label: {
                     Label(
-                        dashboardText("menu.config.customize", fallback: "自定义"),
+                        dashboardText("menu.config.customize"),
                         systemImage: isCustomizing ? "checkmark" : "slider.horizontal.3"
                     )
                     .font(.system(size: 9.5, weight: .medium))
@@ -290,7 +290,7 @@ struct MenuBarDashboardView: View {
             .frame(height: 34)
 
             if menuSettings.visibleMetrics.isEmpty {
-                Text(dashboardText("menu.config.empty", fallback: "没有显示指标，可点“自定义”添加"))
+                Text(dashboardText("menu.config.empty"))
                     .font(.system(size: 10))
                     .foregroundStyle(AppTheme.textTertiary)
                     .frame(maxWidth: .infinity, minHeight: 42)
@@ -334,8 +334,8 @@ struct MenuBarDashboardView: View {
                         .background(Circle().fill(AppTheme.batteryRed.opacity(0.08)))
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("\(dashboardText("menu.config.hide", fallback: "隐藏")) \(metric.title)")
-                .help(dashboardText("menu.config.hide", fallback: "隐藏"))
+                .accessibilityLabel("\(dashboardText("menu.config.hide")) \(metric.title)")
+                .help(dashboardText("menu.config.hide"))
                 .pointerOnHover()
 
                 Image(systemName: "line.3.horizontal")
@@ -351,8 +351,8 @@ struct MenuBarDashboardView: View {
                     )
                     .contentShape(Circle())
                     .highPriorityGesture(metricReorderGesture(for: metric))
-                    .accessibilityLabel("\(dashboardText("menu.config.drag_to_reorder", fallback: "拖动调整顺序")) \(metric.title)")
-                    .help(dashboardText("menu.config.drag_to_reorder", fallback: "拖动调整顺序"))
+                    .accessibilityLabel("\(dashboardText("menu.config.drag_to_reorder")) \(metric.title)")
+                    .help(dashboardText("menu.config.drag_to_reorder"))
                     .pointerOnHover()
             }
         }
@@ -424,10 +424,10 @@ struct MenuBarDashboardView: View {
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(AppTheme.batteryGreen)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(dashboardText("menu.config.add_more", fallback: "添加更多指标"))
+                    Text(dashboardText("menu.config.add_more"))
                         .font(.system(size: 10.5, weight: .semibold))
                         .foregroundStyle(AppTheme.textPrimary)
-                    Text(dashboardText("menu.config.manage_in_dashboard", fallback: "前往完整看板选择其他指标"))
+                    Text(dashboardText("menu.config.manage_in_dashboard"))
                         .font(.system(size: 8.5))
                         .foregroundStyle(AppTheme.textTertiary)
                 }
@@ -462,13 +462,12 @@ struct MenuBarDashboardView: View {
     private var trendSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text(dashboardText("shell.dynamic_trends", fallback: "动态趋势"))
+                Text(dashboardText("shell.dynamic_trends"))
                     .font(.system(size: 11.5, weight: .semibold))
                     .foregroundStyle(AppTheme.textPrimary)
                 Spacer()
                 Text(dashboardText(
-                    isCustomizing ? "menu.config.drag_to_reorder" : "shell.last_minutes",
-                    fallback: isCustomizing ? "拖动调整顺序" : "最近采样"
+                    isCustomizing ? "menu.config.drag_to_reorder" : "shell.last_minutes"
                 ))
                     .font(.system(size: 9))
                     .foregroundStyle(AppTheme.textTertiary)
@@ -481,7 +480,7 @@ struct MenuBarDashboardView: View {
                     }
                 } label: {
                     Label(
-                        dashboardText("menu.config.restore_defaults", fallback: "恢复默认"),
+                        dashboardText("menu.config.restore_defaults"),
                         systemImage: "arrow.counterclockwise"
                     )
                     .font(.system(size: 10, weight: .medium))
@@ -531,8 +530,8 @@ struct MenuBarDashboardView: View {
                         .background(Circle().fill(AppTheme.batteryRed.opacity(0.08)))
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("\(dashboardText("menu.config.hide", fallback: "隐藏")) \(metric.title)")
-                .help(dashboardText("menu.config.hide", fallback: "隐藏"))
+                .accessibilityLabel("\(dashboardText("menu.config.hide")) \(metric.title)")
+                .help(dashboardText("menu.config.hide"))
                 .pointerOnHover()
 
                 Image(systemName: "line.3.horizontal")
@@ -548,8 +547,8 @@ struct MenuBarDashboardView: View {
                     )
                     .contentShape(Circle())
                     .highPriorityGesture(trendMetricReorderGesture(for: metric))
-                    .accessibilityLabel("\(dashboardText("menu.config.drag_to_reorder", fallback: "拖动调整顺序")) \(metric.title)")
-                    .help(dashboardText("menu.config.drag_to_reorder", fallback: "拖动调整顺序"))
+                    .accessibilityLabel("\(dashboardText("menu.config.drag_to_reorder")) \(metric.title)")
+                    .help(dashboardText("menu.config.drag_to_reorder"))
                     .pointerOnHover()
             }
         }
@@ -639,11 +638,11 @@ struct MenuBarDashboardView: View {
     private var processSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text(dashboardText("shell.top_processes", fallback: "CPU 活跃应用 Top 3"))
+                Text(dashboardText("shell.top_processes"))
                     .font(.system(size: 11.5, weight: .semibold))
                     .foregroundStyle(AppTheme.textPrimary)
                 Spacer()
-                Text(dashboardText("shell.cpu_context", fallback: "CPU 活动参考"))
+                Text(dashboardText("shell.cpu_context"))
                     .font(.system(size: 8.5))
                     .foregroundStyle(AppTheme.textTertiary)
             }
@@ -651,8 +650,8 @@ struct MenuBarDashboardView: View {
             if processService.topProcesses.isEmpty {
                 HStack {
                     Text(processService.hasSampled
-                         ? dashboardText("menu.process.none", fallback: "暂未读到活跃应用，点此重新采样")
-                         : dashboardText("p.process_collecting", fallback: "正在读取进程活动…"))
+                         ? dashboardText("menu.process.none")
+                         : dashboardText("p.process_collecting"))
                         .font(.system(size: 10))
                         .foregroundStyle(AppTheme.textTertiary)
                     Spacer()
@@ -690,7 +689,7 @@ struct MenuBarDashboardView: View {
         Button(action: showDashboard) {
             HStack(spacing: 7) {
                 Image(systemName: BatteryMetricIcon.power.symbol)
-                Text(dashboardText("p.menu_open", fallback: "打开完整看板"))
+                Text(dashboardText("p.menu_open"))
             }
             .font(.system(size: 11, weight: .semibold))
             .foregroundStyle(AppTheme.textPrimary)
@@ -712,13 +711,13 @@ struct MenuBarDashboardView: View {
     private var settingsMenu: some View {
         Menu {
             Button(action: refreshNow) {
-                Label(dashboardText("p.refresh_now", fallback: "立即刷新"), systemImage: "arrow.clockwise")
+                Label(dashboardText("p.refresh_now"), systemImage: "arrow.clockwise")
             }
             Button(action: toggleLiveRefresh) {
                 Label(
                     batteryService.isLiveRefreshEnabled
-                        ? dashboardText("p.pause_refresh", fallback: "暂停")
-                        : dashboardText("p.resume_refresh", fallback: "继续"),
+                        ? dashboardText("p.pause_refresh")
+                        : dashboardText("p.resume_refresh"),
                     systemImage: batteryService.isLiveRefreshEnabled ? "pause.fill" : "play.fill"
                 )
             }
@@ -741,8 +740,8 @@ struct MenuBarDashboardView: View {
         .menuIndicator(.hidden)
         .tint(AppTheme.textSecondary)
         .fixedSize()
-        .accessibilityLabel(dashboardText("p.menu_settings", fallback: "设置"))
-        .help(dashboardText("p.menu_settings", fallback: "设置"))
+        .accessibilityLabel(dashboardText("p.menu_settings"))
+        .help(dashboardText("p.menu_settings"))
         .pointerOnHover()
     }
 

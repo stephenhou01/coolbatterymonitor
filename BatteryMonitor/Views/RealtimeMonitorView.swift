@@ -299,7 +299,7 @@ struct RealtimeMonitorView: View {
         let time = point.timestamp.formatted(selectedRange == .tenMinutes
             ? .dateTime.hour().minute().second()
             : .dateTime.hour().minute())
-        let fitted = point.quality == .fitted ? " · \(dashboardText("p.trend_fitted", fallback: "拟合"))" : ""
+        let fitted = point.quality == .fitted ? " · \(dashboardText("p.trend_fitted"))" : ""
         return "\(time) · \(formatted(point.value))\(fitted)"
     }
 

@@ -99,7 +99,7 @@ struct SystemDataWorkbenchView: View {
 
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 7) {
-                    Text(dashboardText("p.system_data_title", fallback: "所有系统数据 · 四层核验台"))
+                    Text(dashboardText("p.system_data_title"))
                         .font(.system(size: 15.5, weight: .bold))
                         .foregroundStyle(AppTheme.textPrimary)
                     Text("\(snapshot.fields.count)")
@@ -108,13 +108,13 @@ struct SystemDataWorkbenchView: View {
                         .padding(.horizontal, 7).padding(.vertical, 3)
                         .background(Capsule().fill(AppTheme.accentPurple.opacity(0.10)))
                 }
-                Text(dashboardText("p.system_data_source", fallback: "实时读取 macOS；Excel 仅提供字段含义，不提供页面数值"))
+                Text(dashboardText("p.system_data_source"))
                     .font(.system(size: 10))
                     .foregroundStyle(AppTheme.textTertiary)
             }
             Spacer()
-            snapshotBadge("\(snapshot.availableCount)", dashboardText("p.system_data_available", fallback: "本次有值"), AppTheme.chargingCyan)
-            snapshotBadge("\(snapshot.anomalyCount)", dashboardText("p.system_data_anomaly", fallback: "需关注"), anomalyColor)
+            snapshotBadge("\(snapshot.availableCount)", dashboardText("p.system_data_available"), AppTheme.chargingCyan)
+            snapshotBadge("\(snapshot.anomalyCount)", dashboardText("p.system_data_anomaly"), anomalyColor)
             liveControls
         }
     }
@@ -124,8 +124,7 @@ struct SystemDataWorkbenchView: View {
             Image(systemName: "checkmark.shield")
                 .foregroundStyle(AppTheme.batteryGreen)
             Text(dashboardText(
-                "p.system_data_description",
-                fallback: "默认只显示能帮助判断续航、健康、功耗和温度的字段。切到异常可一键筛查；切到任一数据源或全部，可逐项对照上面的结论。Apple 未公开的内部字段会明确标为诊断项，不给它编造标准答案。"
+                "p.system_data_description"
             ))
             .font(.system(size: 10.5))
             .foregroundStyle(AppTheme.textSecondary)
@@ -169,7 +168,7 @@ struct SystemDataWorkbenchView: View {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 10.5))
                 .foregroundStyle(AppTheme.textTertiary)
-            TextField(dashboardText("p.system_data_search", fallback: "搜索字段、当前值、含义或说明"), text: $searchText)
+            TextField(dashboardText("p.system_data_search"), text: $searchText)
                 .textFieldStyle(.plain)
                 .font(.system(size: 10.5))
             if !searchText.isEmpty {
@@ -212,13 +211,13 @@ struct SystemDataWorkbenchView: View {
     private var tableHeader: some View {
         HStack(spacing: 8) {
             headerCell("", width: 26)
-            headerCell(dashboardText("p.system_data_field", fallback: "字段路径"), width: 285)
-            headerCell(dashboardText("p.system_data_value", fallback: "系统实测值"), width: 210)
-            headerCell(dashboardText("p.system_data_unit", fallback: "单位"), width: 86)
-            headerCell(dashboardText("p.system_data_meaning", fallback: "这个数字说明什么"), width: 355)
-            headerCell(dashboardText("p.system_data_group", fallback: "分组"), width: 105)
-            headerCell(dashboardText("p.system_data_reliability", fallback: "来源可靠性"), width: 210)
-            headerCell(dashboardText("p.system_data_value_level", fallback: "价值"), width: 54)
+            headerCell(dashboardText("p.system_data_field"), width: 285)
+            headerCell(dashboardText("p.system_data_value"), width: 210)
+            headerCell(dashboardText("p.system_data_unit"), width: 86)
+            headerCell(dashboardText("p.system_data_meaning"), width: 355)
+            headerCell(dashboardText("p.system_data_group"), width: 105)
+            headerCell(dashboardText("p.system_data_reliability"), width: 210)
+            headerCell(dashboardText("p.system_data_value_level"), width: 54)
             Color.clear.frame(width: 22)
         }
         .padding(.horizontal, 10).padding(.vertical, 9)
@@ -284,33 +283,33 @@ struct SystemDataWorkbenchView: View {
             TimelineView(.periodic(from: Date(), by: 1)) { timeline in
                 VStack(alignment: .trailing, spacing: 2) {
                     sourceCadenceLine(
-                        label: dashboardText("p.system_source_gauge", fallback: "电量计"),
+                        label: dashboardText("p.system_source_gauge"),
                         text: gaugeCadenceText(now: timeline.date)
                     )
                     sourceCadenceLine(
-                        label: dashboardText("p.system_source_others", fallback: "其他数据源"),
+                        label: dashboardText("p.system_source_others"),
                         text: otherSourcesCadenceText
                     )
                 }
             }
             Button(action: onToggleLive) {
                 Label(isLive
-                      ? dashboardText("p.pause_refresh", fallback: "暂停 10 秒更新")
-                      : dashboardText("p.resume_refresh", fallback: "继续 10 秒更新"),
+                      ? dashboardText("p.pause_refresh")
+                      : dashboardText("p.resume_refresh"),
                       systemImage: isLive ? "pause.fill" : "play.fill")
                     .font(.system(size: 9.5, weight: .semibold))
             }
             .buttonStyle(.plain).foregroundStyle(AppTheme.chargingCyan).pointerOnHover()
             .accessibilityLabel(isLive
-                ? dashboardText("p.pause_refresh", fallback: "暂停 10 秒更新")
-                : dashboardText("p.resume_refresh", fallback: "继续 10 秒更新"))
+                ? dashboardText("p.pause_refresh")
+                : dashboardText("p.resume_refresh"))
             Button(action: onRefresh) {
                 Image(systemName: "arrow.clockwise")
                     .font(.system(size: 10, weight: .semibold))
                     .foregroundStyle(AppTheme.chargingCyan)
             }
             .buttonStyle(.plain).pointerOnHover()
-            .help(dashboardText("p.refresh_now", fallback: "立即刷新"))
+            .help(dashboardText("p.refresh_now"))
         }
     }
 
@@ -329,18 +328,16 @@ struct SystemDataWorkbenchView: View {
     /// screens cannot disagree about the beat.
     private func gaugeCadenceText(now: Date) -> String {
         guard let gaugeReadAt else {
-            return dashboardText("p.runtime_raw_unavailable", fallback: "不可用")
+            return dashboardText("p.runtime_raw_unavailable")
         }
         let remaining = MetricFieldFreshness.gaugeRefreshSeconds
             - MetricFieldFreshness.seconds(from: gaugeReadAt, to: now)
         let stamp = ["time": MetricFieldFreshness.clockText(gaugeReadAt)]
         guard remaining > 0 else {
             return dashboardText("p.field_read_at_gauge_due",
-                                 fallback: "预计随时刷新 · 上次 {time}",
                                  replacements: stamp)
         }
         return dashboardText("p.field_read_at_gauge",
-                             fallback: "还有约 {countdown} 秒刷新 · 上次 {time}",
                              replacements: stamp.merging(["countdown": "\(remaining)"]) { a, _ in a })
     }
 
@@ -348,11 +345,10 @@ struct SystemDataWorkbenchView: View {
     /// their freshness is our interval, not the gauge's.
     private var otherSourcesCadenceText: String {
         guard snapshot.timestamp != .distantPast else {
-            return dashboardText("p.runtime_raw_unavailable", fallback: "不可用")
+            return dashboardText("p.runtime_raw_unavailable")
         }
         return dashboardText(
             "p.system_others_cadence",
-            fallback: "每 {interval} 秒重读 · 上次 {time}",
             replacements: [
                 "interval": "\(Int(BatteryService.liveRefreshInterval.rounded()))",
                 "time": MetricFieldFreshness.clockText(snapshot.timestamp),
@@ -380,13 +376,13 @@ struct SystemDataWorkbenchView: View {
 
     private func tabTitle(_ tab: SystemWorkbenchTab) -> String {
         switch tab {
-        case .meaningful: return dashboardText("p.system_tab_meaningful", fallback: "有意义")
-        case .anomalies: return dashboardText("p.system_tab_anomaly", fallback: "异常")
+        case .meaningful: return dashboardText("p.system_tab_meaningful")
+        case .anomalies: return dashboardText("p.system_tab_anomaly")
         case .source(.powerSources): return "IOPowerSources"
         case .source(.smartBattery): return "AppleSmartBattery"
         case .source(.legacyIOPM): return "Legacy IOPM"
         case .source(.processInfo): return "ProcessInfo"
-        case .all: return dashboardText("p.system_tab_all", fallback: "全部展开")
+        case .all: return dashboardText("p.system_tab_all")
         }
     }
 
@@ -477,8 +473,8 @@ struct SystemDataWorkbenchView: View {
                 .font(.system(size: 24))
                 .foregroundStyle(selection == .anomalies ? AppTheme.batteryGreen : AppTheme.textTertiary)
             Text(selection == .anomalies
-                 ? dashboardText("p.system_no_anomaly", fallback: "本次快照没有命中已定义的异常规则")
-                 : dashboardText("p.system_no_results", fallback: "没有匹配的系统字段"))
+                 ? dashboardText("p.system_no_anomaly")
+                 : dashboardText("p.system_no_results"))
                 .font(.system(size: 11))
                 .foregroundStyle(AppTheme.textSecondary)
         }

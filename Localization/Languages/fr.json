@@ -1077,6 +1077,14 @@
     "shell.apple_runtime_waiting": "macOS n'a pas encore fourni de temps restant valide · continuez sur batterie puis vérifiez à nouveau",
     "proc.cpu_scale_note": "En haut : machine entière = 100%% · Lignes : un cœur logique = 100%%",
     "proc.cpu_per_core_note": "CPU par ligne : 100%% correspond à un cœur logique entièrement occupé ; une app multithread peut dépasser 100%%.",
-    "proc.memory_rss_note": "Total de mémoire résidente (RSS). Les pages partagées peuvent être comptées plusieurs fois entre les processus groupés."
+    "proc.memory_rss_note": "Total de mémoire résidente (RSS). Les pages partagées peuvent être comptées plusieurs fois entre les processus groupés.",
+    "hw.n.cell_disconnect": "0 est une valeur normale et valide ; toute valeur non nulle doit être examinée comme un possible problème matériel.",
+    "hw.n.pf_status": "0 signifie qu'aucune panne permanente n'est signalée ; une valeur non nulle est un indicateur critique de maintenance.",
+    "hw.n.smoothed_amperage": "Une valeur négative indique la décharge et une valeur positive la charge ; cette valeur lissée convient mieux à l'affichage que la mesure instantanée.",
+    "hw.n.instant_amperage": "Cette mesure fluctue fortement ; utilisez-la pour la courbe en temps réel, pas seule pour tirer une conclusion.",
+    "hw.n.system_load": "Mesure de remplacement lorsque BatteryData.SystemPower n'est pas disponible.",
+    "hw.n.battery_power": "Une valeur négative signifie que la batterie alimente le système.",
+    "hw.n.serial": "Cette valeur change lors du remplacement de la batterie et peut aider à identifier un échange.",
+    "hw.n.gauge_chip": "Le modèle de la jauge aide à comprendre le système de calcul derrière TimeRemaining."
   }
 }

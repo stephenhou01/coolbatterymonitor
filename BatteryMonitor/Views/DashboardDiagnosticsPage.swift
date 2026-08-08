@@ -9,7 +9,7 @@ struct DashboardDiagnosticsPage: View {
             VStack(spacing: 20) {
                 DashboardPageHeader(
                     title: DashboardDestination.diagnostics.title,
-                    subtitle: dashboardText("shell.diagnostics_subtitle", fallback: "先给结论，再展开证据")
+                    subtitle: dashboardText("shell.diagnostics_subtitle")
                 )
                 if let insight = batteryService.insight {
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
@@ -23,7 +23,7 @@ struct DashboardDiagnosticsPage: View {
                 } else {
                     VStack(spacing: 12) {
                         ProgressView().controlSize(.small)
-                        Text(dashboardText("shell.diagnosing", fallback: "正在读取电池并生成诊断…"))
+                        Text(dashboardText("shell.diagnosing"))
                             .font(.system(size: 12))
                             .foregroundStyle(AppTheme.textSecondary)
                     }
@@ -56,7 +56,7 @@ private struct SystemAnomalySummaryCard: View {
             HStack {
                 Image(systemName: anomalies.isEmpty ? "checkmark.shield.fill" : "exclamationmark.triangle.fill")
                     .foregroundStyle(anomalies.isEmpty ? AppTheme.batteryGreen : AppTheme.batteryYellow)
-                Text(dashboardText("shell.system_anomalies", fallback: "系统字段异常筛查"))
+                Text(dashboardText("shell.system_anomalies"))
                     .font(AppTheme.Typography.sectionTitle)
                     .foregroundStyle(AppTheme.textPrimary)
                 Spacer()
@@ -65,7 +65,7 @@ private struct SystemAnomalySummaryCard: View {
                     .foregroundStyle(anomalies.isEmpty ? AppTheme.batteryGreen : AppTheme.batteryYellow)
             }
             if anomalies.isEmpty {
-                Text(dashboardText("p.system_no_anomaly", fallback: "本次快照没有命中已定义的异常规则"))
+                Text(dashboardText("p.system_no_anomaly"))
                     .font(.system(size: 11.5))
                     .foregroundStyle(AppTheme.textSecondary)
                     .padding(.vertical, 12)

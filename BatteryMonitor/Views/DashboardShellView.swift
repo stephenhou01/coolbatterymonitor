@@ -11,11 +11,11 @@ enum DashboardDestination: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .overview: return dashboardText("shell.overview", fallback: "总览")
-        case .technical: return dashboardText("shell.technical", fallback: "技术参数")
-        case .trends: return dashboardText("shell.trends", fallback: "趋势")
-        case .diagnostics: return dashboardText("shell.diagnostics", fallback: "诊断")
-        case .settings: return dashboardText("shell.settings", fallback: "设置")
+        case .overview: return dashboardText("shell.overview")
+        case .technical: return dashboardText("shell.technical")
+        case .trends: return dashboardText("shell.trends")
+        case .diagnostics: return dashboardText("shell.diagnostics")
+        case .settings: return dashboardText("shell.settings")
         }
     }
 
@@ -46,7 +46,7 @@ struct DashboardSidebar: View {
                         .lineLimit(1)
                         .minimumScaleFactor(0.88)
                 }
-                Text(dashboardText("shell.sidebar_subtitle", fallback: "你的 Mac 电池仪表盘"))
+                Text(dashboardText("shell.sidebar_subtitle"))
                     .font(.system(size: 10.5))
                     .foregroundStyle(AppTheme.textTertiary)
                     .lineLimit(1)
@@ -105,7 +105,7 @@ struct DashboardSidebar: View {
 
             HStack(spacing: 7) {
                 Circle().fill(AppTheme.batteryGreen).frame(width: 7, height: 7)
-                Text(dashboardText("shell.local_only", fallback: "数据仅保存在这台 Mac"))
+                Text(dashboardText("shell.local_only"))
                     .font(.system(size: 9.5))
                     .foregroundStyle(AppTheme.textTertiary)
                     .lineLimit(1)
@@ -229,7 +229,7 @@ struct LanguageSelectionMenu: View {
         .menuStyle(.borderlessButton)
         .menuIndicator(.hidden)
         .fixedSize(horizontal: !fullWidth, vertical: true)
-        .accessibilityLabel(dashboardText("p.menu_language", fallback: "语言"))
+        .accessibilityLabel(dashboardText("p.menu_language"))
         .accessibilityValue(localization.currentName)
         .help(localization.currentName)
         .pointerOnHover()
@@ -266,10 +266,9 @@ enum MetricCardCadence {
             // line with the other six.
             return dashboardText(
                 "p.field_cadence_on_plug",
-                fallback: "插拔时变化 · 上次 {time}",
                 replacements: ["time": MetricFieldFreshness.clockText(stamp.at)])
         case .constant:
-            return dashboardText("p.field_constant", fallback: "出厂固定值，不随使用变化")
+            return dashboardText("p.field_constant")
         }
     }
 }

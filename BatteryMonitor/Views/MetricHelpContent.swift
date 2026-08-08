@@ -55,11 +55,11 @@ enum MetricHelpTrendRange: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .tenMinutes:
-            return dashboardText("p.trend_last_10min", fallback: "最近 10 分钟")
+            return dashboardText("p.trend_last_10min")
         case .oneHour:
-            return dashboardText("p.trend_last_1h", fallback: "最近 1 小时")
+            return dashboardText("p.trend_last_1h")
         case .twentyFourHours:
-            return dashboardText("p.trend_last_24h", fallback: "最近 24 小时")
+            return dashboardText("p.trend_last_24h")
         }
     }
 
@@ -174,7 +174,7 @@ struct MetricHelpTrend: Equatable {
     /// swing a battery actually makes.
     var baselineAtZero: Bool = true
     /// Shown instead of the chart when there are not yet two samples.
-    var waitingText: String = dashboardText("p.adapter_trend_waiting", fallback: "正在积累历史数据")
+    var waitingText: String = dashboardText("p.adapter_trend_waiting")
 
     var isPlottable: Bool { points.count >= 2 }
 }

@@ -11,7 +11,7 @@ struct DashboardTrendsPage: View {
             VStack(spacing: 20) {
                 DashboardPageHeader(
                     title: DashboardDestination.trends.title,
-                    subtitle: dashboardText("shell.trends_subtitle", fallback: "把实时波动与长期记录分开看")
+                    subtitle: dashboardText("shell.trends_subtitle")
                 )
                 RealtimeMonitorView(dataPoints: batteryService.realtimeData,
                                     archivedDataPoints: batteryService.archivedRealtimeData,
@@ -60,7 +60,7 @@ private struct RuntimeHistorySummaryCard: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
                 Image(systemName: "clock.arrow.2.circlepath").foregroundStyle(AppTheme.chargingBlue)
-                Text(dashboardText("p.remaining_trend", fallback: "系统剩余时间记录"))
+                Text(dashboardText("p.remaining_trend"))
                     .font(AppTheme.Typography.sectionTitle)
                     .foregroundStyle(AppTheme.textPrimary)
                 Spacer()
@@ -110,7 +110,7 @@ private struct RuntimeHistorySummaryCard: View {
                 .chartYAxis { AxisMarks(position: .leading) }
                 .frame(height: 210)
             } else {
-                Text(dashboardText("p.no_history", fallback: "继续使用后，这里会记录 macOS 给出的剩余时间变化"))
+                Text(dashboardText("p.no_history"))
                     .font(.system(size: 12))
                     .foregroundStyle(AppTheme.textTertiary)
                     .frame(maxWidth: .infinity, minHeight: 130)

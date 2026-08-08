@@ -19,24 +19,24 @@ enum MenuBarMetric: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .runtime:
-            return dashboardText("menu.metric.runtime", fallback: "剩余时间")
+            return dashboardText("menu.metric.runtime")
         case .power:
-            return dashboardText("menu.metric.power", fallback: "当前功率")
+            return dashboardText("menu.metric.power")
         case .temperature:
-            return dashboardText("menu.metric.temperature", fallback: "电池温度")
+            return dashboardText("menu.metric.temperature")
         case .cycles:
-            return dashboardText("menu.metric.cycles", fallback: "循环次数")
+            return dashboardText("menu.metric.cycles")
         case .health:
-            return dashboardText("menu.metric.health", fallback: "健康度")
+            return dashboardText("menu.metric.health")
         case .current:
-            return dashboardText("menu.metric.current", fallback: "当前电流")
+            return dashboardText("menu.metric.current")
         case .chargingPower:
             // Deliberately not "充电功率" like the overview card: this list also
             // contains "当前功率", which is whole-Mac load. The two would be one
             // word apart in a picker whose whole job is telling them apart.
-            return dashboardText("menu.metric.charge_power", fallback: "电池充电功率")
+            return dashboardText("menu.metric.charge_power")
         case .chargeSpeed:
-            return dashboardText("menu.metric.charge_speed", fallback: "电池充电速度")
+            return dashboardText("menu.metric.charge_speed")
         }
     }
 
@@ -69,11 +69,11 @@ enum MenuBarTrendMetric: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .power:
-            return dashboardText("shell.instant_power", fallback: "瞬时功率")
+            return dashboardText("shell.instant_power")
         case .runtime:
-            return dashboardText("p.menu_time", fallback: "预计续航")
+            return dashboardText("p.menu_time")
         case .current:
-            return dashboardText("shell.current", fallback: "电流")
+            return dashboardText("shell.current")
         }
     }
 

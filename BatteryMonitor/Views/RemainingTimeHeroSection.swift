@@ -10,7 +10,7 @@ struct RemainingTimeHeroSection: View {
         VStack(alignment: .leading, spacing: 17) {
             DashboardSectionHeader(
                 icon: BatteryMetricIcon.runtime.symbol,
-                title: dashboardText("p.remaining", fallback: "还能用多久"),
+                title: dashboardText("p.remaining"),
                 color: AppTheme.chargingCyan,
                 help: { DashboardHelp.runtime(snapshot) },
                 selection: $selectedHelp
@@ -37,12 +37,12 @@ struct RemainingTimeHeroSection: View {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 5) {
                     Text(snapshot.data.isOnAC
-                         ? dashboardText("p.unplug_kicker", fallback: "按当前电脑状态，拔掉电源后大约还能用")
-                         : dashboardText("p.src_note", fallback: "macOS 直接给出的系统估算"))
+                         ? dashboardText("p.unplug_kicker")
+                         : dashboardText("p.src_note"))
                         .font(.system(size: 12.5, weight: .medium))
                         .foregroundStyle(AppTheme.textSecondary)
                     if snapshot.data.isOnAC {
-                        Text(dashboardText("p.unplug_badge", fallback: "拔电预计"))
+                        Text(dashboardText("p.unplug_badge"))
                             .font(.system(size: 9, weight: .bold, design: .monospaced))
                             .foregroundStyle(AppTheme.batteryYellow)
                             .padding(.horizontal, 8)
@@ -58,8 +58,8 @@ struct RemainingTimeHeroSection: View {
             runtimeNumber
 
             Text(snapshot.data.isOnAC
-                 ? dashboardText("p.unplug_note", fallback: "预计值 · 按当前功耗估算拔电后的可用时间")
-                 : dashboardText("p.usage_basis", fallback: "由 macOS 报告，不按功率重新计算"))
+                 ? dashboardText("p.unplug_note")
+                 : dashboardText("p.usage_basis"))
                 .font(.system(size: 10.5))
                 .foregroundStyle(AppTheme.textTertiary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -71,7 +71,7 @@ struct RemainingTimeHeroSection: View {
                     Text("\(snapshot.data.percent)%")
                         .font(.system(size: 24, weight: .semibold, design: .monospaced))
                         .foregroundStyle(AppTheme.textPrimary)
-                    Text(dashboardText("p.system_charge", fallback: "macOS 电量"))
+                    Text(dashboardText("p.system_charge"))
                         .font(.system(size: 10.5))
                         .foregroundStyle(AppTheme.textTertiary)
                     MetricHelpButton(content: DashboardHelp.stateOfCharge(snapshot), selection: $selectedHelp)
@@ -125,7 +125,6 @@ struct RemainingTimeHeroSection: View {
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(dashboardText(
                 "p.duration_accessibility",
-                fallback: "{hours} 小时 {minutes} 分钟",
                 replacements: ["hours": "\(minutes / 60)", "minutes": "\(minutes % 60)"]
             ))
         } else {
@@ -145,40 +144,40 @@ struct RemainingTimeHeroSection: View {
         return LazyVGrid(columns: gridItems, alignment: .leading, spacing: 10) {
             PriorityMetricCard(
                 icon: .health,
-                title: dashboardText("p.priority_health", fallback: "整块电池的健康状况"),
+                title: dashboardText("p.priority_health"),
                 value: LNum("%.0f", snapshot.healthPercent), unit: "%",
                 status: snapshot.healthPercent >= 90 ? L("stat.health_excellent") : L("stat.health_good"),
                 range: "80–100%",
-                history: dashboardText("p.history_learning", fallback: "历史范围正在积累"),
-                lowImpact: dashboardText("p.health_low_short", fallback: "低于 80% 可能提示检修，续航缩短"),
-                highImpact: dashboardText("p.health_high_short", fallback: "续航更接近新机"),
+                history: dashboardText("p.history_learning"),
+                lowImpact: dashboardText("p.health_low_short"),
+                highImpact: dashboardText("p.health_high_short"),
                 color: AppTheme.batteryYellow,
                 help: { DashboardHelp.health(snapshot) },
                 selection: $selectedHelp
             )
             PriorityMetricCard(
                 icon: .power,
-                title: dashboardText("p.priority_power", fallback: "当前电脑的使用功率"),
+                title: dashboardText("p.priority_power"),
                 value: LNum("%.1f", snapshot.currentPowerWatts), unit: "W",
                 status: LNum("%.0f%% %@", snapshot.currentPowerWatts / max(snapshot.usualPowerWatts, 0.1) * 100,
-                             dashboardText("p.p_ratio", fallback: "相对平时")),
+                             dashboardText("p.p_ratio")),
                 range: LNum("%.1f–%.1fW", snapshot.usualPowerWatts * 0.85, snapshot.usualPowerWatts * 1.3),
-                history: LNum("%@ %.1fW", dashboardText("p.history_peak", fallback: "本次监控峰值"), snapshot.peakPowerWatts),
-                lowImpact: dashboardText("p.power_low_short", fallback: "续航更长，发热更少"),
-                highImpact: dashboardText("p.power_high_short", fallback: "续航更短，发热增加"),
+                history: LNum("%@ %.1fW", dashboardText("p.history_peak"), snapshot.peakPowerWatts),
+                lowImpact: dashboardText("p.power_low_short"),
+                highImpact: dashboardText("p.power_high_short"),
                 color: AppTheme.chargingBlue,
                 help: { DashboardHelp.power(snapshot) },
                 selection: $selectedHelp
             )
             PriorityMetricCard(
                 icon: .temperature,
-                title: dashboardText("p.priority_temp", fallback: "当前电池温度"),
+                title: dashboardText("p.priority_temp"),
                 value: LNum("%.1f", snapshot.data.temperatureCelsius), unit: "°C",
                 status: snapshot.data.temperatureCelsius < 35 ? L("stat.temp_normal") : L("stat.temp_high"),
                 range: "15–35°C",
                 history: snapshot.temperatureHistoryText,
-                lowImpact: dashboardText("p.temp_low_short", fallback: "续航和功率会暂时下降"),
-                highImpact: dashboardText("p.temp_high_short", fallback: "发热增加并加速老化"),
+                lowImpact: dashboardText("p.temp_low_short"),
+                highImpact: dashboardText("p.temp_high_short"),
                 color: snapshot.data.temperatureCelsius < 35 ? AppTheme.chargingCyan : AppTheme.batteryYellow,
                 help: { DashboardHelp.temperature(snapshot) },
                 selection: $selectedHelp
@@ -233,7 +232,7 @@ private struct PriorityMetricCard: View {
             Divider().overlay(AppTheme.contrastOverlay(0.055))
 
             HStack(alignment: .firstTextBaseline) {
-                Text(dashboardText("p.good_range", fallback: "合理范围"))
+                Text(dashboardText("p.good_range"))
                     .font(.system(size: 8.5))
                     .foregroundStyle(AppTheme.textTertiary)
                 Spacer()

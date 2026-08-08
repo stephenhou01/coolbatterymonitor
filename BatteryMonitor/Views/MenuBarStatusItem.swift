@@ -33,10 +33,10 @@ struct MenuBarTopStatusConfigurationView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(dashboardText("menu.config.second_metric", fallback: "顶部状态栏"))
+                    Text(dashboardText("menu.config.second_metric"))
                         .font(.system(size: compact ? 10.5 : 13, weight: .semibold))
                         .foregroundStyle(AppTheme.textPrimary)
-                    Text(dashboardText("menu.config.status_hint", fallback: "固定显示电量，再选择一个实时指标"))
+                    Text(dashboardText("menu.config.status_hint"))
                         .font(.system(size: compact ? 8.5 : 9.5))
                         .foregroundStyle(AppTheme.textSecondary)
                         .lineLimit(1)
@@ -48,7 +48,7 @@ struct MenuBarTopStatusConfigurationView: View {
             menuBarPreview
 
             HStack(spacing: 8) {
-                Text(dashboardText("menu.config.metric_choice", fallback: "第二项显示"))
+                Text(dashboardText("menu.config.metric_choice"))
                     .font(.system(size: 9.5, weight: .medium))
                     .foregroundStyle(AppTheme.textSecondary)
                 Spacer()

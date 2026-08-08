@@ -54,7 +54,7 @@ struct SystemFieldMetadata: Codable, Equatable, Identifiable {
     /// value is the answer". One rule covers both kinds of field.
     private static func display(_ key: String?, _ raw: String) -> String {
         guard let key, !key.isEmpty else { return raw }
-        return hardwareText(key, raw)
+        return hardwareText(key)
     }
 
     var localizedGroup: String { Self.display(groupKey, group) }
@@ -113,7 +113,7 @@ struct SystemFieldReading: Identifiable, Equatable {
     var helpID: String { "system-field|\(id)" }
 
     var help: MetricHelpContent {
-        let unavailable = dashboardText("p.system_data_unavailable", fallback: "本次快照系统没有返回这个字段。")
+        let unavailable = dashboardText("p.system_data_unavailable")
         let summary = isAvailable ? metadata.localizedMeaning : unavailable
         let localizedNote = metadata.localizedNote
         let note = localizedNote.isEmpty ? summary : "\(summary)\n\n\(localizedNote)"

@@ -120,107 +120,98 @@ private enum MetricRawFieldExplanation {
         // heuristics further down only cover diagnostic fields that have no
         // dedicated copy yet, so they must never win over these.
         if name == "timeremaining" {
-            return localized("p.raw_explain_time_remaining",
-                             "电量计直接给出的剩余可用分钟数；插电或尚未学习完成时为不可用")
+            return localized("p.raw_explain_time_remaining")
         }
         if name.contains("avgtimetoempty") {
-            return localized("p.raw_explain_avg_time_to_empty",
-                             "按平均电流推算的放空分钟数，是 TimeRemaining 无效时的备用来源")
+            return localized("p.raw_explain_avg_time_to_empty")
         }
         if name.contains("modeldesignenergy") {
-            return localized("p.raw_explain_model_design_energy",
-                             "Apple 公布的本机型出厂设计电量，用于把 mAh 换算成 Wh")
+            return localized("p.raw_explain_model_design_energy")
         }
         // Deliberately not "recent 10 minutes": the window caps at ten minutes
         // but only needs five samples, so it can legitimately cover far less.
         if name.contains("stablewindowmedianpower") {
-            return localized("p.raw_explain_median_power",
-                             "窗口内功耗样本的中位数，不是此刻的功率；窗口最长 10 分钟，实际覆盖时长见卡片副标题")
+            return localized("p.raw_explain_median_power")
         }
         if name.contains("stablewindowsamples") {
-            return localized("p.raw_explain_valid_samples",
-                             "窗口内参与中位数计算的有效样本数，满 5 个就能出结果")
+            return localized("p.raw_explain_valid_samples")
         }
         if name.contains("currentpowersampleage") {
-            return localized("p.raw_explain_sample_age",
-                             "最新一次功率读数距现在的秒数，超过 120 秒就不再用于估算")
+            return localized("p.raw_explain_sample_age")
         }
         if name.contains("applerawcurrentcapacity") {
-            return localized("p.raw_explain_current_capacity_raw",
-                             "电池此刻剩余电量的原始 mAh 读数，不是百分比")
+            return localized("p.raw_explain_current_capacity_raw")
         }
         if name.contains("applerawmaxcapacity") {
-            return localized("p.raw_explain_max_capacity",
-                             "电池现在实际能充到的满充容量")
+            return localized("p.raw_explain_max_capacity")
         }
         if name == "designcapacity" {
-            return localized("p.raw_explain_design_capacity",
-                             "电池出厂时的设计容量，是容量与健康度对比的基准")
+            return localized("p.raw_explain_design_capacity")
         }
 
         if name.contains("systemloadaccumulatorcount") || name.contains("recentsamples") {
-            return localized("p.raw_explain_sample_count", "累计总量中包含的采样次数")
+            return localized("p.raw_explain_sample_count")
         }
         if name.contains("accumulatedsystemload") {
-            return localized("p.raw_explain_accumulated_load", "用于计算长期平均功耗的累计用电总量")
+            return localized("p.raw_explain_accumulated_load")
         }
         if name.contains("adapter") || name.contains("charger") || name.contains("portcontroller")
             || name.contains("carriermode") || name.contains("voltagein") || name.contains("currentin")
             || name.contains("systempowerin") || name.contains("powerout") {
-            return localized("p.raw_explain_adapter", "充电器输入、额定能力或协商状态读数")
+            return localized("p.raw_explain_adapter")
         }
         if name.contains("systempower") || name == "systempower" {
-            return localized("p.raw_explain_system_power", "系统报告的整台 Mac 当前使用功率")
+            return localized("p.raw_explain_system_power")
         }
         if name.contains("systemload") || name.contains("power sample") || name.contains("medianpower") {
-            return localized("p.raw_explain_system_load", "Mac 当前运行负载实际使用的功率")
+            return localized("p.raw_explain_system_load")
         }
         if name.contains("derived") || name.hasPrefix("→") || name.contains("remainingenergy")
             || name.contains("truepermanentloss") || name.contains("min(qmax)") {
-            return localized("p.raw_explain_derived", "由电池教练根据原始读数算出的中间值")
+            return localized("p.raw_explain_derived")
         }
         if name.contains("capacity") || name.contains("packreserve") || name.contains("fcc")
             || name.contains("qmax") || name.contains("soc") || name.contains("dod") {
-            return localized("p.raw_explain_capacity", "这个指标使用的电量或容量读数")
+            return localized("p.raw_explain_capacity")
         }
         if name.contains("voltage") {
-            return localized("p.raw_explain_battery_voltage", "电池组当前的实时电压")
+            return localized("p.raw_explain_battery_voltage")
         }
         if name.contains("amperage") || name.contains("batterycurrent") {
-            return localized("p.raw_explain_battery_current", "电池实时电流；正数充电，负数放电")
+            return localized("p.raw_explain_battery_current")
         }
         if name.contains("timeremaining") || name.contains("timetofull") || name.contains("timetoempty")
             || name.contains("time to") || name.contains("avgtime") {
-            return localized("p.raw_explain_time", "macOS 为这个指标提供的时间估算")
+            return localized("p.raw_explain_time")
         }
         if name.contains("temperature") {
-            return localized("p.raw_explain_temperature", "电池或电量计报告的温度读数")
+            return localized("p.raw_explain_temperature")
         }
         if name.contains("weightedra") || name.contains("resistance") {
-            return localized("p.raw_explain_resistance", "用于判断供电阻力的电池内阻读数")
+            return localized("p.raw_explain_resistance")
         }
         if name.contains("cell") || name.contains("chem") {
-            return localized("p.raw_explain_cell", "用于比较各节电芯状态的底层读数")
+            return localized("p.raw_explain_cell")
         }
         if name.contains("cycle") {
-            return localized("p.raw_explain_cycle", "记录电池累计使用程度或寿命的计数")
+            return localized("p.raw_explain_cycle")
         }
         if name.contains("model") || name.contains("apple published") || name.contains("apple design")
             || name.contains("apple streaming") || name.contains("apple wireless")
             || name.contains("reference") {
-            return localized("p.raw_explain_reference", "这台 Mac 对应的机型规格或参考值")
+            return localized("p.raw_explain_reference")
         }
         if name.contains("status") || name.contains("state") || name.contains("charging")
             || name.contains("installed") || name.contains("built-in") || name.contains("fault")
             || name.contains("failure") || name.contains("invalid") {
-            return localized("p.raw_explain_state", "macOS 返回的状态或诊断标记")
+            return localized("p.raw_explain_state")
         }
 
-        return localized("p.raw_explain_generic", "用于解释上方指标的 macOS 底层读数")
+        return localized("p.raw_explain_generic")
     }
 
-    private static func localized(_ key: String, _ fallback: String) -> String {
-        dashboardText(key, fallback: fallback)
+    private static func localized(_ key: String) -> String {
+        dashboardText(key)
     }
 }
 
@@ -241,7 +232,6 @@ enum MetricFieldFreshness {
         let time = clockText(read.at)
         guard read.isGaugePublished else {
             return dashboardText("p.field_read_at",
-                                 fallback: "{time} 读取（{age}前）· 电量计约 {interval} 秒刷新一次",
                                  replacements: ["time": time,
                                                 "age": ageText(seconds: seconds(from: read.at, to: now)),
                                                 "interval": "\(gaugeRefreshSeconds)"])
@@ -249,11 +239,9 @@ enum MetricFieldFreshness {
         let remaining = secondsUntilVisibleRefresh(read, now: now)
         guard remaining > 0 else {
             return dashboardText("p.field_read_at_gauge_due",
-                                 fallback: "预计随时刷新 · 上次 {time}",
                                  replacements: ["time": time])
         }
         return dashboardText("p.field_read_at_gauge",
-                             fallback: "还有约 {countdown} 秒刷新 · 上次 {time}",
                              replacements: ["time": time, "countdown": "\(remaining)"])
     }
 
@@ -264,9 +252,9 @@ enum MetricFieldFreshness {
         case .untimed:
             return nil
         case .modelSpec:
-            return dashboardText("p.field_spec_static", fallback: "内置机型规格，不随时间变化")
+            return dashboardText("p.field_spec_static")
         case .constant:
-            return dashboardText("p.field_constant", fallback: "出厂固定值，不随使用变化")
+            return dashboardText("p.field_constant")
         case .eventDriven, .live:
             guard let read = field.readAt ?? cardReadAt else { return nil }
             let stamp = [
@@ -278,12 +266,10 @@ enum MetricFieldFreshness {
                 // reason beats letting "不可用" look like a stale or failed read,
                 // and the gauge cadence is irrelevant when there is no value.
                 return dashboardText("p.field_read_at_unavailable",
-                                     fallback: "{time} 读取（{age}前）· 插电时系统不提供此值",
                                      replacements: stamp)
             }
             if field.effectiveUpdateClass == .eventDriven {
                 return dashboardText("p.field_read_at_event",
-                                     fallback: "{time} 读取（{age}前）· 插拔时立即变化",
                                      replacements: stamp)
             }
             let cadence = stamp.merging(["interval": "\(gaugeRefreshSeconds)"]) { a, _ in a }
@@ -297,17 +283,14 @@ enum MetricFieldFreshness {
                     // Past due: after a sleep or a beat reset the next publish can
                     // be any moment, so do not keep counting down into negatives.
                     return dashboardText("p.field_read_at_gauge_due",
-                                         fallback: "预计随时刷新 · 上次 {time}",
                                          replacements: stamp)
                 }
                 return dashboardText("p.field_read_at_gauge",
-                                     fallback: "还有约 {countdown} 秒刷新 · 上次 {time}",
                                      replacements: stamp.merging(["countdown": "\(remaining)"]) { a, _ in a })
             }
             // No UpdateTime from this Mac: all we can honestly stamp is our own
             // read, and the age then understates the number's true age.
             return dashboardText("p.field_read_at",
-                                 fallback: "{time} 读取（{age}前）· 电量计约 {interval} 秒刷新一次",
                                  replacements: cadence)
         }
     }
@@ -352,14 +335,14 @@ enum MetricFieldFreshness {
     /// second count becomes unreadable.
     static func ageText(seconds: Int) -> String {
         if seconds < 60 {
-            return dashboardText("p.field_age_seconds", fallback: "{n} 秒",
+            return dashboardText("p.field_age_seconds",
                                  replacements: ["n": "\(seconds)"])
         }
         if seconds < 3600 {
-            return dashboardText("p.field_age_minutes", fallback: "{n} 分钟",
+            return dashboardText("p.field_age_minutes",
                                  replacements: ["n": "\(seconds / 60)"])
         }
-        return dashboardText("p.field_age_hours", fallback: "{n} 小时",
+        return dashboardText("p.field_age_hours",
                              replacements: ["n": "\(seconds / 3600)"])
     }
 

@@ -10,7 +10,7 @@ enum DashboardHelp {
         content(
             id: id, title: title, summary: summary, result: "\(value.formatted()) mAh",
             fields: [field(fieldName, value, "mAh")],
-            formula: dashboardText("p.help_direct", fallback: "无公式：直接读取系统字段。"),
+            formula: dashboardText("p.help_direct"),
             substitution: "\(fieldName) → \(value) mAh",
             source: "AppleSmartBattery IOKit field.",
             readAt: readAt,
@@ -58,11 +58,11 @@ enum DashboardHelp {
     }
 
     static func trendTitle() -> String {
-        dashboardText("p.trend_history", fallback: "历史趋势")
+        dashboardText("p.trend_history")
     }
 
     static func trendWaiting() -> String {
-        dashboardText("p.trend_waiting", fallback: "正在积累历史数据")
+        dashboardText("p.trend_waiting")
     }
 
     static func content(
@@ -144,7 +144,7 @@ enum DashboardHelp {
     static func runtimeRawValue(_ value: Int?) -> String {
         guard let value else { return "—" }
         guard RuntimeSample.isValid(minutes: value) else {
-            return dashboardText("p.runtime_raw_unavailable", fallback: "不可用")
+            return dashboardText("p.runtime_raw_unavailable")
         }
         return "\(value) min"
     }

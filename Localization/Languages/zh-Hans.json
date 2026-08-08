@@ -1077,6 +1077,14 @@
     "shell.apple_runtime_waiting": "macOS 暂未提供有效剩余时间 · 继续使用电池后再查看",
     "proc.cpu_scale_note": "上方：整机 = 100%% · 每行：一个逻辑核 = 100%%",
     "proc.cpu_per_core_note": "每行 CPU：100%% 表示占满一个逻辑核；多线程应用可以超过 100%%。",
-    "proc.memory_rss_note": "常驻内存合计（RSS）；组内进程的共享内存页可能被重复计算。"
+    "proc.memory_rss_note": "常驻内存合计（RSS）；组内进程的共享内存页可能被重复计算。",
+    "hw.n.cell_disconnect": "0 是正常且有效的读数；非 0 需要重点排查硬件。",
+    "hw.n.pf_status": "0 表示未报告永久故障；非 0 是需要维修的一票否决项。",
+    "hw.n.smoothed_amperage": "负值代表放电、正值代表充电；比瞬时值更适合展示。",
+    "hw.n.instant_amperage": "波动大，适合实时曲线，不单独用来下结论。",
+    "hw.n.system_load": "BatteryData.SystemPower 缺失时的备选读数。",
+    "hw.n.battery_power": "负值代表电池正在向系统供电。",
+    "hw.n.serial": "更换电池后会改变，可用来识别电池是否被换过。",
+    "hw.n.gauge_chip": "芯片型号帮助理解 TimeRemaining 背后的电量计算模型。"
   }
 }

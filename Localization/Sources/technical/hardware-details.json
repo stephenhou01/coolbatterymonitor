@@ -2396,6 +2396,102 @@
       "fr": "0 = aucun échec enregistré · toute valeur non nulle est à examiner",
       "it": "0 = nessun errore registrato · valori diversi da 0 da verificare",
       "pt": "0 = nenhuma falha registrada · investigar se for diferente de zero"
+    },
+    "hw.n.cell_disconnect": {
+      "en": "Zero is a normal, valid reading; investigate any nonzero value as a possible hardware issue.",
+      "zh-Hans": "0 是正常且有效的读数；非 0 需要重点排查硬件。",
+      "zh-Hant": "0 是正常且有效的讀數；非 0 需要重點排查硬體。",
+      "ja": "0 は正常で有効な値です。0 以外の場合はハードウェアを重点的に確認してください。",
+      "ko": "0은 정상적이고 유효한 값입니다. 0이 아니면 하드웨어 문제를 중점적으로 확인하세요.",
+      "de": "0 ist ein normaler, gültiger Wert; Werte ungleich 0 sollten als mögliches Hardwareproblem geprüft werden.",
+      "es": "0 es una lectura normal y válida; investiga cualquier valor distinto de cero como posible problema de hardware.",
+      "fr": "0 est une valeur normale et valide ; toute valeur non nulle doit être examinée comme un possible problème matériel.",
+      "it": "0 è un valore normale e valido; verifica qualsiasi valore diverso da zero come possibile problema hardware.",
+      "pt": "0 é uma leitura normal e válida; investigue qualquer valor diferente de zero como possível problema de hardware."
+    },
+    "hw.n.pf_status": {
+      "en": "Zero means no permanent failure is reported; a nonzero value is a critical service indicator.",
+      "zh-Hans": "0 表示未报告永久故障；非 0 是需要维修的一票否决项。",
+      "zh-Hant": "0 表示未回報永久故障；非 0 是需要維修的一票否決項。",
+      "ja": "0 は恒久的な故障が報告されていないことを示します。0 以外は修理が必要な重大指標です。",
+      "ko": "0은 영구 고장이 보고되지 않았음을 뜻합니다. 0이 아니면 수리가 필요한 중대한 지표입니다.",
+      "de": "0 bedeutet, dass kein dauerhafter Fehler gemeldet wurde; ein Wert ungleich 0 ist ein kritischer Servicehinweis.",
+      "es": "0 significa que no se ha informado de un fallo permanente; un valor distinto de cero es un indicador crítico de reparación.",
+      "fr": "0 signifie qu'aucune panne permanente n'est signalée ; une valeur non nulle est un indicateur critique de maintenance.",
+      "it": "0 indica che non è segnalato alcun guasto permanente; un valore diverso da zero è un indicatore critico di assistenza.",
+      "pt": "0 significa que nenhuma falha permanente foi relatada; um valor diferente de zero é um indicador crítico de manutenção."
+    },
+    "hw.n.smoothed_amperage": {
+      "en": "Negative means discharging and positive means charging; this smoothed value is better suited to display than the instantaneous reading.",
+      "zh-Hans": "负值代表放电、正值代表充电；比瞬时值更适合展示。",
+      "zh-Hant": "負值代表放電、正值代表充電；比瞬時值更適合顯示。",
+      "ja": "負の値は放電、正の値は充電を示します。瞬時値より表示に適した平滑値です。",
+      "ko": "음수는 방전, 양수는 충전을 뜻합니다. 순간값보다 표시에 적합한 평활값입니다.",
+      "de": "Negative Werte bedeuten Entladen, positive Laden; der geglättete Wert eignet sich besser zur Anzeige als der Momentanwert.",
+      "es": "Los valores negativos indican descarga y los positivos carga; este valor suavizado es más adecuado para mostrar que la lectura instantánea.",
+      "fr": "Une valeur négative indique la décharge et une valeur positive la charge ; cette valeur lissée convient mieux à l'affichage que la mesure instantanée.",
+      "it": "I valori negativi indicano scarica e quelli positivi carica; questo valore smussato è più adatto alla visualizzazione rispetto alla lettura istantanea.",
+      "pt": "Valores negativos indicam descarga e positivos indicam carga; este valor suavizado é mais adequado para exibição do que a leitura instantânea."
+    },
+    "hw.n.instant_amperage": {
+      "en": "This reading fluctuates heavily; use it for the live chart, not as a conclusion by itself.",
+      "zh-Hans": "波动大，适合实时曲线，不单独用来下结论。",
+      "zh-Hant": "波動大，適合即時曲線，不單獨用來下結論。",
+      "ja": "変動が大きいためリアルタイムグラフ向けで、単独では結論に使用しません。",
+      "ko": "변동이 커서 실시간 그래프에 적합하며, 이 값만으로 결론을 내리지 않습니다.",
+      "de": "Dieser Wert schwankt stark; er eignet sich für die Live-Kurve, aber nicht allein für Schlussfolgerungen.",
+      "es": "Esta lectura fluctúa mucho; úsala para la gráfica en tiempo real, no para sacar conclusiones por sí sola.",
+      "fr": "Cette mesure fluctue fortement ; utilisez-la pour la courbe en temps réel, pas seule pour tirer une conclusion.",
+      "it": "Questa lettura varia molto; usala per il grafico in tempo reale, non da sola per trarre conclusioni.",
+      "pt": "Esta leitura varia muito; use-a no gráfico em tempo real, não isoladamente para tirar conclusões."
+    },
+    "hw.n.system_load": {
+      "en": "Fallback reading used when BatteryData.SystemPower is unavailable.",
+      "zh-Hans": "BatteryData.SystemPower 缺失时的备选读数。",
+      "zh-Hant": "BatteryData.SystemPower 缺失時的備選讀數。",
+      "ja": "BatteryData.SystemPower が利用できない場合に使う代替値です。",
+      "ko": "BatteryData.SystemPower를 사용할 수 없을 때 쓰는 대체 값입니다.",
+      "de": "Ersatzwert, wenn BatteryData.SystemPower nicht verfügbar ist.",
+      "es": "Lectura alternativa cuando BatteryData.SystemPower no está disponible.",
+      "fr": "Mesure de remplacement lorsque BatteryData.SystemPower n'est pas disponible.",
+      "it": "Lettura alternativa usata quando BatteryData.SystemPower non è disponibile.",
+      "pt": "Leitura alternativa usada quando BatteryData.SystemPower não está disponível."
+    },
+    "hw.n.battery_power": {
+      "en": "A negative value means the battery is supplying power to the system.",
+      "zh-Hans": "负值代表电池正在向系统供电。",
+      "zh-Hant": "負值代表電池正在向系統供電。",
+      "ja": "負の値は、バッテリーがシステムへ給電していることを示します。",
+      "ko": "음수는 배터리가 시스템에 전력을 공급하고 있음을 뜻합니다.",
+      "de": "Ein negativer Wert bedeutet, dass die Batterie das System mit Strom versorgt.",
+      "es": "Un valor negativo significa que la batería está suministrando energía al sistema.",
+      "fr": "Une valeur négative signifie que la batterie alimente le système.",
+      "it": "Un valore negativo indica che la batteria sta alimentando il sistema.",
+      "pt": "Um valor negativo significa que a bateria está fornecendo energia ao sistema."
+    },
+    "hw.n.serial": {
+      "en": "This value changes when the battery is replaced and can help identify a replacement.",
+      "zh-Hans": "更换电池后会改变，可用来识别电池是否被换过。",
+      "zh-Hant": "更換電池後會改變，可用來識別電池是否曾被更換。",
+      "ja": "バッテリー交換時に変わるため、交換履歴の識別に役立ちます。",
+      "ko": "배터리를 교체하면 값이 바뀌므로 교체 여부를 식별하는 데 도움이 됩니다.",
+      "de": "Dieser Wert ändert sich beim Batteriewechsel und kann helfen, einen Austausch zu erkennen.",
+      "es": "Este valor cambia al sustituir la batería y puede ayudar a identificar un reemplazo.",
+      "fr": "Cette valeur change lors du remplacement de la batterie et peut aider à identifier un échange.",
+      "it": "Questo valore cambia quando la batteria viene sostituita e può aiutare a identificare la sostituzione.",
+      "pt": "Este valor muda quando a bateria é substituída e pode ajudar a identificar a troca."
+    },
+    "hw.n.gauge_chip": {
+      "en": "The gauge model helps explain the measurement system behind TimeRemaining.",
+      "zh-Hans": "芯片型号帮助理解 TimeRemaining 背后的电量计算模型。",
+      "zh-Hant": "晶片型號有助於理解 TimeRemaining 背後的電量計算模型。",
+      "ja": "ゲージの型番は TimeRemaining の背後にある電量計算モデルの理解に役立ちます。",
+      "ko": "게이지 모델은 TimeRemaining 뒤의 전력량 계산 방식을 이해하는 데 도움이 됩니다.",
+      "de": "Das Modell des Ladezustandsmessers hilft, das Berechnungsmodell hinter TimeRemaining zu verstehen.",
+      "es": "El modelo del medidor ayuda a entender el sistema de cálculo que hay detrás de TimeRemaining.",
+      "fr": "Le modèle de la jauge aide à comprendre le système de calcul derrière TimeRemaining.",
+      "it": "Il modello del misuratore aiuta a comprendere il sistema di calcolo dietro TimeRemaining.",
+      "pt": "O modelo do medidor ajuda a entender o sistema de cálculo por trás de TimeRemaining."
     }
   }
 }

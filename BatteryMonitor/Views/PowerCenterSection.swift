@@ -39,7 +39,7 @@ struct PowerCenterSection: View {
         VStack(alignment: .leading, spacing: 16) {
             DashboardSectionHeader(
                 icon: BatteryMetricIcon.power.symbol,
-                title: dashboardText("p.power_center_title", fallback: "当前功耗与程序活动"),
+                title: dashboardText("p.power_center_title"),
                 color: AppTheme.chargingBlue,
                 help: { DashboardHelp.power(snapshot) },
                 selection: $selectedHelp,
@@ -47,8 +47,7 @@ struct PowerCenterSection: View {
             )
 
             Text(dashboardText(
-                "p.power_center_subtitle",
-                fallback: "蓝线是整台电脑的实时功率；右侧进程只解释当时谁更活跃，不把 CPU 占用伪装成精确瓦数。"
+                "p.power_center_subtitle"
             ))
             .font(.system(size: 11.5))
             .foregroundStyle(AppTheme.textSecondary)
@@ -78,18 +77,18 @@ struct PowerCenterSection: View {
                     .fill(isLive ? AppTheme.batteryGreen : AppTheme.textTertiary)
                     .frame(width: 6, height: 6)
                 Text(isLive
-                     ? dashboardText("p.live_10s", fallback: "每 10 秒")
-                     : dashboardText("p.live_paused", fallback: "已暂停"))
+                     ? dashboardText("p.live_10s")
+                     : dashboardText("p.live_paused"))
                     .font(.system(size: 9.5, weight: .semibold, design: .monospaced))
                     .foregroundStyle(isLive ? AppTheme.batteryGreen : AppTheme.textTertiary)
             }
             controlButton(icon: isLive ? "pause.fill" : "play.fill",
                           text: isLive
-                            ? dashboardText("p.pause_refresh", fallback: "暂停")
-                            : dashboardText("p.resume_refresh", fallback: "继续"),
+                            ? dashboardText("p.pause_refresh")
+                            : dashboardText("p.resume_refresh"),
                           action: onToggleLive)
             controlButton(icon: "arrow.clockwise",
-                          text: dashboardText("p.refresh_now", fallback: "立即刷新"),
+                          text: dashboardText("p.refresh_now"),
                           action: onRefresh)
         }
     }
@@ -111,13 +110,13 @@ struct PowerCenterSection: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .firstTextBaseline, spacing: 14) {
                 metric(LNum("%.1f W", snapshot.currentPowerWatts),
-                       dashboardText("p.current_power_short", fallback: "当前"),
+                       dashboardText("p.current_power_short"),
                        AppTheme.chargingBlue)
                 metric(LNum("%.1f W", average),
-                       dashboardText("p.window_average", fallback: "窗口均值"),
+                       dashboardText("p.window_average"),
                        AppTheme.chargingCyan)
                 metric(LNum("%.1f W", peak),
-                       dashboardText("p.window_peak", fallback: "窗口峰值"),
+                       dashboardText("p.window_peak"),
                        AppTheme.batteryYellow)
                 Spacer()
                 Text(powerSourceLabel)
@@ -189,7 +188,7 @@ struct PowerCenterSection: View {
             } else {
                 VStack(spacing: 8) {
                     ProgressView().scaleEffect(0.8)
-                    Text(dashboardText("p.power_collecting", fallback: "正在收集实时功率；20 秒后会出现折线"))
+                    Text(dashboardText("p.power_collecting"))
                         .font(.system(size: 10.5))
                         .foregroundStyle(AppTheme.textTertiary)
                 }
@@ -197,10 +196,10 @@ struct PowerCenterSection: View {
             }
 
             HStack {
-                Label(dashboardText("p.power_axis_time", fallback: "横轴：时间"), systemImage: "clock")
-                Label(dashboardText("p.power_axis_watts", fallback: "纵轴：整机功率（W）"), systemImage: "bolt")
+                Label(dashboardText("p.power_axis_time"), systemImage: "clock")
+                Label(dashboardText("p.power_axis_watts"), systemImage: "bolt")
                 Spacer()
-                Text(dashboardText("p.power_hover_hint", fallback: "悬停查看每个时刻"))
+                Text(dashboardText("p.power_hover_hint"))
             }
             .font(.system(size: 9.5))
             .foregroundStyle(AppTheme.textTertiary)
@@ -263,7 +262,7 @@ struct PowerCenterSection: View {
     private var processPanel: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Label(dashboardText("p.active_processes", fallback: "此刻活跃的程序与进程"), systemImage: "square.stack.3d.up.fill")
+                Label(dashboardText("p.active_processes"), systemImage: "square.stack.3d.up.fill")
                     .font(.system(size: 11.5, weight: .bold))
                     .foregroundStyle(AppTheme.textPrimary)
                 Spacer()
@@ -281,8 +280,8 @@ struct PowerCenterSection: View {
 
             if processes.isEmpty {
                 Text(hasProcessSample
-                     ? dashboardText("p.no_active_processes", fallback: "当前没有可读取的进程数据")
-                     : dashboardText("p.process_collecting", fallback: "正在读取进程活动…"))
+                     ? dashboardText("p.no_active_processes")
+                     : dashboardText("p.process_collecting"))
                     .font(.system(size: 10.5))
                     .foregroundStyle(AppTheme.textTertiary)
                     .frame(maxWidth: .infinity, minHeight: 190)
@@ -293,8 +292,7 @@ struct PowerCenterSection: View {
             }
 
             Text(dashboardText(
-                "p.process_context_note",
-                fallback: "为什么不显示每个程序多少瓦？macOS 这里没有给出可靠的进程级瓦数；CPU% 只能帮助解释负载组合，不能直接分摊整机功耗。"
+                "p.process_context_note"
             ))
             .font(.system(size: 9.5))
             .foregroundStyle(AppTheme.textTertiary)

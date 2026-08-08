@@ -1077,6 +1077,14 @@
     "shell.apple_runtime_waiting": "macOS가 아직 유효한 남은 시간을 제공하지 않았습니다 · 배터리를 계속 사용한 뒤 다시 확인하세요",
     "proc.cpu_scale_note": "위: 전체 시스템 = 100%% · 각 행: 논리 코어 1개 = 100%%",
     "proc.cpu_per_core_note": "행별 CPU: 100%%는 논리 코어 1개를 모두 사용한다는 뜻이며, 다중 스레드 앱은 100%%를 넘을 수 있습니다.",
-    "proc.memory_rss_note": "상주 메모리 합계(RSS)입니다. 그룹화된 프로세스의 공유 페이지가 중복 계산될 수 있습니다."
+    "proc.memory_rss_note": "상주 메모리 합계(RSS)입니다. 그룹화된 프로세스의 공유 페이지가 중복 계산될 수 있습니다.",
+    "hw.n.cell_disconnect": "0은 정상적이고 유효한 값입니다. 0이 아니면 하드웨어 문제를 중점적으로 확인하세요.",
+    "hw.n.pf_status": "0은 영구 고장이 보고되지 않았음을 뜻합니다. 0이 아니면 수리가 필요한 중대한 지표입니다.",
+    "hw.n.smoothed_amperage": "음수는 방전, 양수는 충전을 뜻합니다. 순간값보다 표시에 적합한 평활값입니다.",
+    "hw.n.instant_amperage": "변동이 커서 실시간 그래프에 적합하며, 이 값만으로 결론을 내리지 않습니다.",
+    "hw.n.system_load": "BatteryData.SystemPower를 사용할 수 없을 때 쓰는 대체 값입니다.",
+    "hw.n.battery_power": "음수는 배터리가 시스템에 전력을 공급하고 있음을 뜻합니다.",
+    "hw.n.serial": "배터리를 교체하면 값이 바뀌므로 교체 여부를 식별하는 데 도움이 됩니다.",
+    "hw.n.gauge_chip": "게이지 모델은 TimeRemaining 뒤의 전력량 계산 방식을 이해하는 데 도움이 됩니다."
   }
 }

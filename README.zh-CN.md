@@ -27,7 +27,8 @@
 ### 仪表盘 —— 五个页面
 
 ```
-总览        电量环 + 8 项核心指标 + 充放电时间线
+总览        电量 + 三种续航估算 · 能量流向 · 电池状态
+            7 张实时指标卡（字段节拍 + 迷你趋势）
 技术参数    功耗中心（10 秒功耗曲线 + 进程活动）
             容量解释（设计 / 充满 / 当前 / 耗损）
             官方对比（与 Apple 公布数据比较）
@@ -87,7 +88,8 @@
 English · 简体中文 · 繁體中文 · 日本語 · 한국어 · Deutsch · Español · Français ·
 Italiano · Português
 
-每种语言是一个自描述的 JSON 包，译文不写在 Swift 源码里，新增一种语言只需一个文件。
+译文按页面维护在 Swift 之外。新增一种语言时，要先在
+`Localization/Sources/manifest.json` 注册，再为全部源条目补齐译文并生成对应的自描述 JSON 包。
 
 ---
 
@@ -132,6 +134,9 @@ xcodebuild -project BatteryMonitor.xcodeproj -scheme BatteryMonitor \
 运行型测试始终覆盖同一个
 `QATests/BuildValidation/AutomationHost/BatteryMonitor-QAHost.app`，执行结束后自动关闭。
 只跑一组时，把 `all` 换成 `icon`、`insight` 或 `l10n`。
+QA Host 固定使用 Apple Development 开发签名，未公证时 Gatekeeper 可能返回
+`spctl rejected`。脚本会记录该结果；只有固定路径、Bundle ID、Team ID、签名身份和
+代码签名全部匹配时才继续调试，`spctl rejected` 本身不作为阻断条件。
 
 内置文案按页面/区块维护在 `Localization/Sources/`，运行
 `python3 Localization/build-language-packs.py write` 生成十个运行时语言包。新增语言时，

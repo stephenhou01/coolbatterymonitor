@@ -43,7 +43,7 @@ final class L10n {
     @ObservationIgnored private let systemCode: String
 
     private static let prefKey = "app.language.override"
-    private static let fallback = "en"
+    private static let defaultCode = "en"
     private static let maxPackBytes = 2 * 1_024 * 1_024
     private static let maxStringCount = 5_000
     private static let maxKeyLength = 200
@@ -71,7 +71,7 @@ final class L10n {
     private func raw(_ key: String) -> String {
         let code = effectiveCode    // ← 依赖就在这一行建立
         return packs[code]?.strings[key]
-            ?? packs[Self.fallback]?.strings[key]
+            ?? packs[Self.defaultCode]?.strings[key]
             ?? key
     }
 
@@ -135,14 +135,14 @@ final class L10n {
             }
         }
 
-        guard let trustedEnglish = bundled[fallback] else {
+        guard let trustedEnglish = bundled[defaultCode] else {
             // 没有可信英文基准时仍允许 app 启动，但不装载外部语言包。
             return bundled
         }
 
         var result: [String: LanguagePack] = [:]
         for (code, pack) in bundled {
-            if code == fallback {
+            if code == defaultCode {
                 result[code] = pack
             } else {
                 result[code] = LanguagePack(
@@ -258,9 +258,9 @@ final class L10n {
     /// 已被 app 自身的 .lproj 集合过滤过，将来丢进一个没有对应 .lproj 的语言包
     /// 会选不中。
     private static func negotiate(available: [String]) -> String {
-        guard !available.isEmpty else { return fallback }
+        guard !available.isEmpty else { return defaultCode }
         if let match = Bundle.preferredLocalizations(from: available).first { return match }
-        return available.contains(fallback) ? fallback : available.sorted()[0]
+        return available.contains(defaultCode) ? defaultCode : available.sorted()[0]
     }
 }
 

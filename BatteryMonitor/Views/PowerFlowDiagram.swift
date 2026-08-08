@@ -50,7 +50,7 @@ struct PowerFlowDiagram: View {
                 node(
                     symbol: batterySymbol,
                     tint: batteryTint,
-                    title: dashboardText("shell.flow_battery", fallback: "电池"),
+                    title: dashboardText("shell.flow_battery"),
                     detail: "\(batteryPercent)%",
                     dimmed: flow.batteryToMac == nil && flow.adapterToBattery == nil
                 )
@@ -60,9 +60,9 @@ struct PowerFlowDiagram: View {
                 node(
                     symbol: "powerplug.fill",
                     tint: hasAdapter ? AppTheme.chargingBlue : AppTheme.textTertiary,
-                    title: dashboardText("shell.flow_adapter", fallback: "充电器"),
+                    title: dashboardText("shell.flow_adapter"),
                     detail: flow.adapterRatedWatts.map { "\($0) W" }
-                        ?? dashboardText("shell.not_connected", fallback: "未连接"),
+                        ?? dashboardText("shell.not_connected"),
                     dimmed: !hasAdapter
                 )
                 .frame(width: 104)
@@ -71,7 +71,7 @@ struct PowerFlowDiagram: View {
                 node(
                     symbol: "laptopcomputer",
                     tint: AppTheme.textSecondary,
-                    title: dashboardText("shell.flow_mac", fallback: "这台 Mac"),
+                    title: dashboardText("shell.flow_mac"),
                     detail: flow.macConsumption.map { LNum("%.1f W", $0) } ?? "—",
                     dimmed: false
                 )
@@ -81,19 +81,16 @@ struct PowerFlowDiagram: View {
             .frame(width: Self.canvas.width, height: Self.canvas.height)
 
             if flow.origin == .partial {
-                caption(dashboardText("shell.flow_derived",
-                                      fallback: "本机没有返回电池电流，只能显示整机功率"))
+                caption(dashboardText("shell.flow_derived"))
             } else if flow.isIdle {
-                caption(dashboardText("shell.flow_idle", fallback: "此刻没有可测到的功率流动"))
+                caption(dashboardText("shell.flow_idle"))
             } else if let source = chargeSpeed?.source, flow.adapterToBattery != nil {
                 // The ≈ figure is the only predicted number in this drawing. Say so
                 // right under it, and say which of the two bases produced it —
                 // "not modelled" is the caveat a user needs before trusting it.
                 caption(source == .measured
-                        ? dashboardText("shell.flow_forecast_measured",
-                                        fallback: "≈ 按最近两分钟实测速度预测，未计入接近满电时的降速")
-                        : dashboardText("shell.flow_forecast_derived",
-                                        fallback: "≈ 按当前电流推算，刚插电时会偏高，约两分钟后转为实测"))
+                        ? dashboardText("shell.flow_forecast_measured")
+                        : dashboardText("shell.flow_forecast_derived"))
             }
         }
         .frame(maxWidth: .infinity)
@@ -229,12 +226,10 @@ struct PowerFlowDiagram: View {
         var parts: [String] = []
         if let watts = flow.batteryToMac {
             parts.append(dashboardText("shell.flow_a11y_battery_to_mac",
-                                       fallback: "电池向这台 Mac 供电 {watts} W",
                                        replacements: ["watts": LNum("%.1f", watts)]))
         }
         if let watts = flow.adapterToBattery {
             var line = dashboardText("shell.flow_a11y_adapter_to_battery",
-                                     fallback: "充电器向电池充电 {watts} W",
                                      replacements: ["watts": LNum("%.1f", watts)])
             if let chargeGainText {
                 line += "，\(chargeGainText)"
@@ -243,11 +238,10 @@ struct PowerFlowDiagram: View {
         }
         if let watts = flow.adapterToMac {
             parts.append(dashboardText("shell.flow_a11y_adapter_to_mac",
-                                       fallback: "充电器向这台 Mac 供电 {watts} W",
                                        replacements: ["watts": LNum("%.1f", watts)]))
         }
         if parts.isEmpty {
-            parts.append(dashboardText("shell.flow_idle", fallback: "此刻没有可测到的功率流动"))
+            parts.append(dashboardText("shell.flow_idle"))
         }
         return parts.joined(separator: "；")
     }

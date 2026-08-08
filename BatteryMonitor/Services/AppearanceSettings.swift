@@ -32,9 +32,9 @@ enum AppearanceMode: String, Identifiable {
 
     var title: String {
         switch self {
-        case .system: return dashboardText("appearance.system", fallback: "跟随系统")
-        case .light: return dashboardText("appearance.light", fallback: "浅色")
-        case .dark: return dashboardText("appearance.dark", fallback: "深色")
+        case .system: return dashboardText("appearance.system")
+        case .light: return dashboardText("appearance.light")
+        case .dark: return dashboardText("appearance.dark")
         }
     }
 

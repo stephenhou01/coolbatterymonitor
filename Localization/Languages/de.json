@@ -1077,6 +1077,14 @@
     "shell.apple_runtime_waiting": "macOS hat noch keine gültige Restzeit geliefert · Akku weiter verwenden und erneut prüfen",
     "proc.cpu_scale_note": "Oben: Gesamtsystem = 100%% · Zeilen: ein logischer Kern = 100%%",
     "proc.cpu_per_core_note": "CPU pro Zeile: 100%% entspricht einem voll ausgelasteten logischen Kern; Multithread-Apps können 100%% überschreiten.",
-    "proc.memory_rss_note": "Summe des residenten Speichers (RSS). Gemeinsam genutzte Seiten gruppierter Prozesse können mehrfach gezählt werden."
+    "proc.memory_rss_note": "Summe des residenten Speichers (RSS). Gemeinsam genutzte Seiten gruppierter Prozesse können mehrfach gezählt werden.",
+    "hw.n.cell_disconnect": "0 ist ein normaler, gültiger Wert; Werte ungleich 0 sollten als mögliches Hardwareproblem geprüft werden.",
+    "hw.n.pf_status": "0 bedeutet, dass kein dauerhafter Fehler gemeldet wurde; ein Wert ungleich 0 ist ein kritischer Servicehinweis.",
+    "hw.n.smoothed_amperage": "Negative Werte bedeuten Entladen, positive Laden; der geglättete Wert eignet sich besser zur Anzeige als der Momentanwert.",
+    "hw.n.instant_amperage": "Dieser Wert schwankt stark; er eignet sich für die Live-Kurve, aber nicht allein für Schlussfolgerungen.",
+    "hw.n.system_load": "Ersatzwert, wenn BatteryData.SystemPower nicht verfügbar ist.",
+    "hw.n.battery_power": "Ein negativer Wert bedeutet, dass die Batterie das System mit Strom versorgt.",
+    "hw.n.serial": "Dieser Wert ändert sich beim Batteriewechsel und kann helfen, einen Austausch zu erkennen.",
+    "hw.n.gauge_chip": "Das Modell des Ladezustandsmessers hilft, das Berechnungsmodell hinter TimeRemaining zu verstehen."
   }
 }

@@ -10,11 +10,10 @@ func expect(_ cond: Bool, _ msg: String) {
     if !cond { failures += 1 }
 }
 
-// 断言里出现的中文字面量必须来自真实语言包，不能来自 dashboardText 的兜底参数。
+// 断言里出现的中文字面量必须来自真实语言包。
 // 这个进程里 Bundle.main 是固定 BatteryMonitor-QAHost.app，run-fixed-qa.sh 会把
 // Localization/Languages/*.json 拷进去；不拷的话 L() 只返回 key，而
-// dashboardText(_:fallback:) 仍返回中文兜底 —— 两条路径在同一个断言里对不上，
-// 表现成「6 项莫名失败」。显式选简体中文，避免结果随开发机系统语言漂移。
+// dashboardText 只读取语言包；显式选简体中文，避免结果随开发机系统语言漂移。
 L10n.shared.select("zh-Hans")
 precondition(L10n.shared.languages.count == 10,
              "语言包没进 BatteryMonitor-QAHost.app —— run-fixed-qa.sh 是否漏拷 Resources/Languages？")

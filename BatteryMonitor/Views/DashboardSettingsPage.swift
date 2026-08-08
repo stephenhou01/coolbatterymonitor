@@ -10,31 +10,31 @@ struct DashboardSettingsPage: View {
             VStack(spacing: 20) {
                 DashboardPageHeader(
                     title: DashboardDestination.settings.title,
-                    subtitle: dashboardText("shell.settings_subtitle", fallback: "语言、外观和实时采样")
+                    subtitle: dashboardText("shell.settings_subtitle")
                 )
-                settingsCard(icon: "circle.lefthalf.filled", title: dashboardText("shell.appearance", fallback: "外观")) {
+                settingsCard(icon: "circle.lefthalf.filled", title: dashboardText("shell.appearance")) {
                     AppearanceModePicker(showLabels: true)
                 }
-                settingsCard(icon: "globe", title: dashboardText("p.menu_language", fallback: "语言")) {
+                settingsCard(icon: "globe", title: dashboardText("p.menu_language")) {
                     LanguageSelectionMenu(fullWidth: true)
                         .frame(width: 230)
                 }
                 menuBarMetricSettingsCard
-                settingsCard(icon: "arrow.triangle.2.circlepath", title: dashboardText("shell.live_refresh", fallback: "实时更新")) {
+                settingsCard(icon: "arrow.triangle.2.circlepath", title: dashboardText("shell.live_refresh")) {
                     Toggle(isOn: Binding(
                         get: { batteryService.isLiveRefreshEnabled },
                         set: { setLiveRefresh($0) }
                     )) {
                         Text(batteryService.isLiveRefreshEnabled
-                             ? dashboardText("p.live_10s", fallback: "每 10 秒更新")
-                             : dashboardText("p.live_paused", fallback: "已暂停"))
+                             ? dashboardText("p.live_10s")
+                             : dashboardText("p.live_paused"))
                     }
                     .toggleStyle(.switch)
                     .font(.system(size: 11))
                 }
                 HStack(spacing: 8) {
                     Image(systemName: "lock.shield")
-                    Text(dashboardText("shell.privacy_note", fallback: "所有采样和历史数据都只保存在这台 Mac，不上传服务器。"))
+                    Text(dashboardText("shell.privacy_note"))
                 }
                 .font(.system(size: 10.5))
                 .foregroundStyle(AppTheme.textTertiary)
@@ -63,10 +63,10 @@ struct DashboardSettingsPage: View {
                 }
                 .frame(width: 42, height: 42)
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(dashboardText("menu.config.title", fallback: "弹出面板指标"))
+                    Text(dashboardText("menu.config.title"))
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(AppTheme.textPrimary)
-                    Text(dashboardText("menu.config.manage_in_dashboard", fallback: "选择菜单栏面板要显示的指标；顺序和删除可在面板编辑状态调整。"))
+                    Text(dashboardText("menu.config.manage_in_dashboard"))
                         .font(.system(size: 9.5))
                         .foregroundStyle(AppTheme.textTertiary)
                 }
@@ -103,7 +103,7 @@ struct DashboardSettingsPage: View {
             HStack(spacing: 8) {
                 Image(systemName: "chart.xyaxis.line")
                     .foregroundStyle(AppTheme.chargingCyan)
-                Text(dashboardText("shell.dynamic_trends", fallback: "动态趋势"))
+                Text(dashboardText("shell.dynamic_trends"))
                     .font(.system(size: 11.5, weight: .semibold))
                     .foregroundStyle(AppTheme.textPrimary)
                 Spacer()

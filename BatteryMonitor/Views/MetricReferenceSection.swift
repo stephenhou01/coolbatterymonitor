@@ -16,54 +16,54 @@ struct MetricReferenceSection: View {
         return [
             ReferenceMetric(
                 icon: .balance,
-                title: dashboardText("insight.factor.balance", fallback: "各单元均衡度"),
+                title: dashboardText("insight.factor.balance"),
                 current: "\(delta) mV",
                 range: "0–20 mV",
                 history: detail.cellVoltages.isEmpty
-                    ? dashboardText("p.history_learning", fallback: "历史范围正在积累")
+                    ? dashboardText("p.history_learning")
                     : detail.cellVoltages.map(String.init).joined(separator: " / ") + " mV",
-                low: dashboardText("p.cb_ok", fallback: "压差小，电芯步调一致，可用容量不容易被最弱的一节拖累"),
-                high: dashboardText("p.cb_bad", fallback: "压差明显时，最弱的一节会先到截止电压，整包可用容量随之变少"),
-                source: dashboardText("p.src_lit", fallback: "锂电通用文献"),
+                low: dashboardText("p.cb_ok"),
+                high: dashboardText("p.cb_bad"),
+                source: dashboardText("p.src_lit"),
                 color: delta <= 20 ? AppTheme.chargingCyan : AppTheme.batteryYellow,
                 help: { DashboardHelp.cellBalance(snapshot) }
             ),
             ReferenceMetric(
                 icon: .resistance,
-                title: dashboardText("insight.factor.resistance", fallback: "电池内部阻力"),
+                title: dashboardText("insight.factor.resistance"),
                 current: "\(maxResistance) mΩ",
                 range: "0–130 mΩ",
                 history: detail.weightedRa.isEmpty
-                    ? dashboardText("p.history_learning", fallback: "历史范围正在积累")
+                    ? dashboardText("p.history_learning")
                     : detail.weightedRa.map(String.init).joined(separator: " / ") + " mΩ",
-                low: dashboardText("p.ra_ok", fallback: "阻力低，重负载时电压更稳、发热更少"),
-                high: dashboardText("p.ra_bad", fallback: "阻力高时更容易压降和发热，也可能更早触发低电关机"),
-                source: dashboardText("p.src_none_short", fallback: "只看趋势"),
+                low: dashboardText("p.ra_ok"),
+                high: dashboardText("p.ra_bad"),
+                source: dashboardText("p.src_none_short"),
                 color: maxResistance <= 130 ? AppTheme.chargingCyan : AppTheme.batteryYellow,
                 help: { DashboardHelp.resistance(snapshot) }
             ),
             ReferenceMetric(
                 icon: .cycles,
-                title: dashboardText("insight.factor.cycles", fallback: "循环使用率"),
+                title: dashboardText("insight.factor.cycles"),
                 current: LNum("%.1f%%", cycleUsage),
                 range: "0–50%",
                 history: "\(detail.cycleCount) / \(max(detail.designCycleCount, 0))",
-                low: dashboardText("p.cycle_low_short", fallback: "累计使用更少；但仍需结合容量与内阻判断状态"),
-                high: dashboardText("p.cycle_high_short", fallback: "越接近额定循环寿命，越应该结合容量、内阻与温度看趋势"),
-                source: dashboardText("p.src_apple", fallback: "Apple 官方额定值"),
+                low: dashboardText("p.cycle_low_short"),
+                high: dashboardText("p.cycle_high_short"),
+                source: dashboardText("p.src_apple"),
                 color: cycleUsage <= 50 ? AppTheme.chargingCyan : AppTheme.batteryYellow,
                 help: { DashboardHelp.cycles(snapshot) }
             ),
             ReferenceMetric(
                 icon: .voltage,
-                title: dashboardText("hw.m.pack_voltage", fallback: "电池组电压"),
+                title: dashboardText("hw.m.pack_voltage"),
                 current: LNum("%.2f V", packVoltage),
                 range: detail.minimumPackVoltage > 0 && detail.maximumPackVoltage > 0
                     ? snapshot.voltageHistoryText : "—",
                 history: snapshot.voltageHistoryText,
-                low: dashboardText("p.pv_low", fallback: "接近历史最低值时，系统可能为了保护电芯而关机"),
-                high: dashboardText("p.pv_high", fallback: "接近历史最高值通常只会在刚充满时出现"),
-                source: dashboardText("p.src_personal", fallback: "你自己的历史数据"),
+                low: dashboardText("p.pv_low"),
+                high: dashboardText("p.pv_high"),
+                source: dashboardText("p.src_personal"),
                 color: AppTheme.accentPurple,
                 help: { DashboardHelp.packVoltage(snapshot) }
             ),
@@ -74,13 +74,13 @@ struct MetricReferenceSection: View {
         VStack(alignment: .leading, spacing: 16) {
             DashboardSectionHeader(
                 icon: "scale.3d",
-                title: dashboardText("p.spec_other_title", fallback: "其余 4 项关键指标"),
+                title: dashboardText("p.spec_other_title"),
                 color: AppTheme.accentPurple,
                 help: { DashboardHelp.specOverview(snapshot) },
                 selection: $selectedHelp
             )
 
-            Text(dashboardText("p.spec_other_sub", fallback: "当前值、合理范围、历史极限与高低影响放在一起，不让 benchmark 和实际读数分家。"))
+            Text(dashboardText("p.spec_other_sub"))
                 .font(.system(size: 11))
                 .foregroundStyle(AppTheme.textTertiary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -94,7 +94,7 @@ struct MetricReferenceSection: View {
                 VStack(spacing: 10) { referenceCards }
             }
 
-            Text(dashboardText("p.spec_source_note", fallback: "范围来源会分开标注：Apple 规格、你自己的历史、通用锂电资料，或仅观察趋势。"))
+            Text(dashboardText("p.spec_source_note"))
                 .font(.system(size: 9))
                 .foregroundStyle(AppTheme.textTertiary)
                 .padding(10)
@@ -109,13 +109,13 @@ struct MetricReferenceSection: View {
         VStack(spacing: 0) {
             ReferenceTableRow(
                 values: [
-                    dashboardText("p.spec_metric", fallback: "指标"),
-                    dashboardText("p.spec_current", fallback: "当前值"),
-                    dashboardText("p.good_range", fallback: "合理范围"),
-                    dashboardText("p.history_extreme", fallback: "历史极限"),
-                    dashboardText("p.low_effect", fallback: "低时影响"),
-                    dashboardText("p.high_effect", fallback: "高时影响"),
-                    dashboardText("p.spec_source", fallback: "范围依据"),
+                    dashboardText("p.spec_metric"),
+                    dashboardText("p.spec_current"),
+                    dashboardText("p.good_range"),
+                    dashboardText("p.history_extreme"),
+                    dashboardText("p.low_effect"),
+                    dashboardText("p.high_effect"),
+                    dashboardText("p.spec_source"),
                 ],
                 weights: [1.25, 0.72, 0.8, 1.0, 1.75, 1.75, 0.9],
                 isHeader: true
@@ -262,19 +262,19 @@ private struct ReferenceMetricCard: View {
                 }
                 Spacer()
                 VStack(alignment: .trailing, spacing: 2) {
-                    Text(dashboardText("p.good_range", fallback: "合理范围"))
+                    Text(dashboardText("p.good_range"))
                     Text(metric.range).foregroundStyle(AppTheme.chargingCyan)
                 }
                 .font(.system(size: 8.5, design: .monospaced))
                 .foregroundStyle(AppTheme.textTertiary)
             }
 
-            labeledText(dashboardText("p.history_extreme", fallback: "历史极限"), metric.history)
+            labeledText(dashboardText("p.history_extreme"), metric.history)
             HStack(alignment: .top, spacing: 8) {
-                effectBox(title: dashboardText("p.low_effect", fallback: "低时"), text: metric.low, color: AppTheme.chargingBlue)
-                effectBox(title: dashboardText("p.high_effect", fallback: "高时"), text: metric.high, color: AppTheme.batteryYellow)
+                effectBox(title: dashboardText("p.low_effect"), text: metric.low, color: AppTheme.chargingBlue)
+                effectBox(title: dashboardText("p.high_effect"), text: metric.high, color: AppTheme.batteryYellow)
             }
-            labeledText(dashboardText("p.spec_source", fallback: "范围依据"), metric.source)
+            labeledText(dashboardText("p.spec_source"), metric.source)
         }
         .padding(14)
         .frame(maxWidth: .infinity, minHeight: 235, alignment: .topLeading)

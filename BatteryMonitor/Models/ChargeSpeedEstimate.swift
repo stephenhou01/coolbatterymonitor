@@ -174,7 +174,7 @@ struct ChargeSpeedEstimate: Equatable {
         return nil
     }
 
-    /// Cold-start fallback: charge current ÷ capacity.
+    /// Cold-start estimate: charge current ÷ capacity.
     ///
     /// Current over capacity rather than watts over watt-hours. The two are the
     /// same quantity at one pack voltage, but this form needs no entry in

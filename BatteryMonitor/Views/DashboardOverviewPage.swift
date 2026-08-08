@@ -67,7 +67,7 @@ struct DashboardOverviewPage: View {
 
                 VStack(alignment: .leading, spacing: 9) {
                     HStack(spacing: 7) {
-                        Text(dashboardText("shell.runtime_comparison", fallback: "续航时间对照"))
+                        Text(dashboardText("shell.runtime_comparison"))
                             .font(.system(size: 12.5, weight: .semibold))
                             .foregroundStyle(AppTheme.textSecondary)
                         MetricHelpButton(content: DashboardHelp.runtime(s),
@@ -99,14 +99,14 @@ struct DashboardOverviewPage: View {
                             )
                             VStack(alignment: .leading, spacing: 0) {
                                 secondaryRuntimeRow(
-                                    title: dashboardText("p.runtime_stable_label", fallback: "稳健估算"),
+                                    title: dashboardText("p.runtime_stable_label"),
                                     minutes: s.stableRuntimeMinutes,
                                     basis: stableRuntimeBasis(s),
                                     color: AppTheme.accentPurple
                                 )
                                 Divider().overlay(AppTheme.cardBorder)
                                 secondaryRuntimeRow(
-                                    title: dashboardText("p.runtime_current_label", fallback: "短时间估算"),
+                                    title: dashboardText("p.runtime_current_label"),
                                     minutes: s.currentLoadRuntimeMinutes,
                                     basis: currentRuntimeBasis(s),
                                     color: AppTheme.batteryYellow
@@ -143,7 +143,7 @@ struct DashboardOverviewPage: View {
                 Image(systemName: "apple.logo")
                     .font(.system(size: 9.5, weight: .semibold))
                     .foregroundStyle(color)
-                Text(dashboardText("p.runtime_system_label", fallback: "macOS 系统时间"))
+                Text(dashboardText("p.runtime_system_label"))
                     .font(.system(size: 11.5, weight: .semibold))
                     .foregroundStyle(AppTheme.textPrimary)
                     .lineLimit(1)
@@ -213,8 +213,7 @@ struct DashboardOverviewPage: View {
     }
 
     private var derivedUnavailableCard: some View {
-        Text(dashboardText("shell.derived_runtime_unavailable",
-                           fallback: "本机型号缺少额定电量数据，无法换算稳健估算与当前负载估算"))
+        Text(dashboardText("shell.derived_runtime_unavailable"))
             .font(.system(size: 10))
             .foregroundStyle(AppTheme.textTertiary)
             .fixedSize(horizontal: false, vertical: true)
@@ -231,17 +230,14 @@ struct DashboardOverviewPage: View {
         guard s.systemRuntimeMinutes != nil else {
             if !data.isOnAC {
                 return dashboardText(
-                    "shell.apple_runtime_waiting",
-                    fallback: "macOS 暂未提供有效剩余时间 · 继续使用电池后再查看"
+                    "shell.apple_runtime_waiting"
                 )
             }
             return dashboardText(
-                "shell.apple_runtime_unavailable",
-                fallback: "当前接电时 macOS 不提供放电剩余时间 · 拔电使用后生成"
+                "shell.apple_runtime_unavailable"
             )
         }
-        return dashboardText("shell.system_runtime_basis",
-                             fallback: "电量计芯片自身算法 · 约每分钟更新 · 与菜单栏同一个数字")
+        return dashboardText("shell.system_runtime_basis")
     }
 
     /// A missing duration is a product state, not a formatting glyph. Spell it
@@ -249,7 +245,7 @@ struct DashboardOverviewPage: View {
     /// still loading, or a rendering problem.
     private func runtimeValueText(_ minutes: Int?) -> String {
         guard let minutes, minutes > 0 else {
-            return dashboardText("p.runtime_unavailable", fallback: "不可用")
+            return dashboardText("p.runtime_unavailable")
         }
         return MenuBarPresentation.durationText(minutes)
     }
@@ -257,7 +253,6 @@ struct DashboardOverviewPage: View {
     private func stableRuntimeBasis(_ s: DashboardMetricSnapshot) -> String {
         guard s.stableRuntimeMinutes != nil else {
             return dashboardText("shell.stable_runtime_collecting",
-                                 fallback: "正在积累样本 {samples}/5",
                                  replacements: ["samples": "\(s.recentStablePowerSamples.count)"])
         }
         // Quote the span the samples actually cover. The window is capped at ten
@@ -267,22 +262,19 @@ struct DashboardOverviewPage: View {
         let span = s.stablePowerSpanSeconds ?? 0
         if span < 60 {
             return dashboardText("shell.stable_runtime_basis_seconds",
-                                 fallback: "近 {seconds} 秒典型功耗",
                                  replacements: ["seconds": "\(span)"])
         }
         return dashboardText("shell.stable_runtime_basis",
-                             fallback: "近 {minutes} 分钟典型功耗",
                              replacements: ["minutes": "\(span / 60)"])
     }
 
     private func currentRuntimeBasis(_ s: DashboardMetricSnapshot) -> String {
         guard s.currentLoadRuntimeMinutes != nil else {
-            return dashboardText("shell.instant_runtime_waiting", fallback: "等待有效的瞬时功率数据")
+            return dashboardText("shell.instant_runtime_waiting")
         }
         // Not "right now": this is one unsmoothed reading, and the gauge only
         // publishes about once a minute, so it can already be that old.
         return dashboardText("shell.current_runtime_basis",
-                             fallback: "最新读数 {power} W · 约每分钟更新",
                              replacements: ["power": LNum("%.1f", s.currentPowerWatts)])
     }
 
@@ -324,14 +316,14 @@ struct DashboardOverviewPage: View {
 
                 if state != .full {
                     statusDetailRow(
-                        label: dashboardText("shell.battery_current", fallback: "电流"),
+                        label: dashboardText("shell.battery_current"),
                         value: batteryCurrentText(s),
                         tint: stateTint(state)
                     )
                 }
                 if state == .charging {
                     statusDetailRow(
-                        label: dashboardText("shell.time_to_full", fallback: "充满还需"),
+                        label: dashboardText("shell.time_to_full"),
                         value: MenuBarPresentation.durationText(s.timeToFullMinutes),
                         tint: AppTheme.batteryGreen
                     )
@@ -383,12 +375,12 @@ struct DashboardOverviewPage: View {
 
     private func stateTitle(_ state: BatteryPowerState) -> String {
         switch state {
-        case .charging: return dashboardText("shell.charging", fallback: "正在充电")
-        case .full: return dashboardText("shell.state_full", fallback: "已充满 · 电源供电")
-        case .pluggedIdle: return dashboardText("shell.state_plugged_idle", fallback: "已接电源 · 未充电")
+        case .charging: return dashboardText("shell.charging")
+        case .full: return dashboardText("shell.state_full")
+        case .pluggedIdle: return dashboardText("shell.state_plugged_idle")
         case .pluggedDischarging:
-            return dashboardText("shell.state_plugged_discharging", fallback: "已接电源 · 电池放电中")
-        case .discharging: return dashboardText("shell.on_battery", fallback: "正在使用电池")
+            return dashboardText("shell.state_plugged_discharging")
+        case .discharging: return dashboardText("shell.on_battery")
         }
     }
 
@@ -425,20 +417,20 @@ struct DashboardOverviewPage: View {
         return LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 0), count: columnCount), spacing: 0) {
             overviewMetric(.power, MenuBarMetric.power.title,
                            LNum("%.1f W", s.currentPowerWatts), AppTheme.chargingBlue,
-                           dashboardText("shell.power_hint", fallback: "整机实时功率"),
+                           dashboardText("shell.power_hint"),
                            field: "BatteryData.SystemPower", cadence: .gauge, stamp: stamp,
                            series: recent.map(\.power),
                            help: { DashboardHelp.power(s) })
-            overviewMetric(.adapter, dashboardText("shell.adapter", fallback: "适配器功率"),
+            overviewMetric(.adapter, dashboardText("shell.adapter"),
                            "\(data.chargerWattage) W", AppTheme.textSecondary,
-                           data.isOnAC ? dashboardText("shell.adapter_connected", fallback: "当前额定功率") : dashboardText("shell.not_connected", fallback: "未连接"),
+                           data.isOnAC ? dashboardText("shell.adapter_connected") : dashboardText("shell.not_connected"),
                            // A rating negotiated once at plug-in, not a measurement.
                            field: "AdapterDetails.Watts", cadence: .onPlug, stamp: stamp,
                            help: { DashboardHelp.adapterPower(s) })
-            overviewMetric(.adapterOutput, dashboardText("shell.adapter_output_power", fallback: "适配器输出功率"),
+            overviewMetric(.adapterOutput, dashboardText("shell.adapter_output_power"),
                            s.adapterOutputPowerWatts.map { LNum("%.1f W", $0) } ?? "—",
                            AppTheme.chargingCyan,
-                           data.isOnAC ? dashboardText("shell.whole_mac_input", fallback: "整机实时输入") : dashboardText("shell.not_connected", fallback: "未连接"),
+                           data.isOnAC ? dashboardText("shell.whole_mac_input") : dashboardText("shell.not_connected"),
                            // Derived, and labelled as such: SystemPowerIn was
                            // measured reading 0 mW while plugged in and charging.
                            field: "SystemPower + Voltage × Amperage", cadence: .gauge, stamp: stamp,
@@ -447,20 +439,20 @@ struct DashboardOverviewPage: View {
                                return max(0, point.power) + max(0, point.amperage / 1000 * point.voltage)
                            },
                            help: { DashboardHelp.adapterOutputPower(s) })
-            overviewMetric(.charging, dashboardText("shell.charge_power", fallback: "充电功率"),
+            overviewMetric(.charging, dashboardText("shell.charge_power"),
                            chargingPowerText(s), AppTheme.batteryGreen,
-                           data.isCharging ? dashboardText("shell.charging", fallback: "正在充电") : dashboardText("shell.not_charging", fallback: "当前未充电"),
+                           data.isCharging ? dashboardText("shell.charging") : dashboardText("shell.not_charging"),
                            field: "Voltage × Amperage", cadence: .gauge, stamp: stamp,
                            series: recent.map { max(0, $0.amperage) / 1000 * $0.voltage },
                            help: { DashboardHelp.chargingPower(s) })
             overviewMetric(.temperature, MenuBarMetric.temperature.title,
                            LNum("%.1f ℃", data.temperatureCelsius), AppTheme.textSecondary,
-                           dashboardText("shell.temp_range", fallback: "建议 20–35℃"),
+                           dashboardText("shell.temp_range"),
                            field: "Temperature", cadence: .gauge, stamp: stamp,
                            series: recent.map(\.temperature),
                            help: { DashboardHelp.temperature(s) })
             overviewMetric(.cycles, MenuBarMetric.cycles.title, "\(data.cycleCount)", AppTheme.accentPurple,
-                           dashboardText("shell.cycle_reference", fallback: "参考额定 1000 次"),
+                           dashboardText("shell.cycle_reference"),
                            // Re-read on the gauge's beat like everything else; it
                            // just rarely moves. Saying "constant" here would be a lie.
                            field: "CycleCount", cadence: .gauge, stamp: stamp,
@@ -559,9 +551,9 @@ struct DashboardOverviewPage: View {
 
     private var healthLabel: String {
         let health = snapshot.healthPercent
-        if health >= 90 { return dashboardText("shell.health_good", fallback: "状态良好") }
-        if health >= 80 { return dashboardText("shell.health_fair", fallback: "正常使用") }
-        return dashboardText("shell.health_attention", fallback: "建议关注")
+        if health >= 90 { return dashboardText("shell.health_good") }
+        if health >= 80 { return dashboardText("shell.health_fair") }
+        return dashboardText("shell.health_attention")
     }
 
     private var statusBanner: some View {
@@ -578,8 +570,8 @@ struct DashboardOverviewPage: View {
             }
             VStack(alignment: .leading, spacing: 4) {
                 Text(attention
-                     ? dashboardText("shell.status_attention", fallback: "有一项指标需要关注")
-                     : dashboardText("shell.status_good", fallback: "状态良好 · 各项指标处于可接受范围"))
+                     ? dashboardText("shell.status_attention")
+                     : dashboardText("shell.status_good"))
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(AppTheme.textPrimary)
                 Text(statusSubtitle)
@@ -588,8 +580,8 @@ struct DashboardOverviewPage: View {
             }
             Spacer()
             Text(batteryService.isLiveRefreshEnabled
-                 ? dashboardText("p.live_10s", fallback: "每 10 秒更新")
-                 : dashboardText("p.live_paused", fallback: "已暂停"))
+                 ? dashboardText("p.live_10s")
+                 : dashboardText("p.live_paused"))
                 .font(.system(size: 9.5, weight: .medium))
                 .foregroundStyle(AppTheme.textTertiary)
         }
@@ -600,6 +592,6 @@ struct DashboardOverviewPage: View {
 
     private var needsAttention: Bool { snapshot.healthPercent < 80 || data.temperatureCelsius >= 45 }
     private var statusSubtitle: String {
-        dashboardText("shell.status_subtitle", fallback: "续航以系统读数为准；详细来源和公式可在技术参数中核验。")
+        dashboardText("shell.status_subtitle")
     }
 }

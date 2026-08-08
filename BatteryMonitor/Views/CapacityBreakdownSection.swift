@@ -21,7 +21,7 @@ struct CapacityBreakdownSection: View {
         VStack(alignment: .leading, spacing: 18) {
             DashboardSectionHeader(
                 icon: BatteryMetricIcon.designCapacity.symbol,
-                title: dashboardText("p.where_title", fallback: "你买的容量去哪了"),
+                title: dashboardText("p.where_title"),
                 color: AppTheme.batteryYellow,
                 help: { DashboardHelp.capacityOverview(snapshot) },
                 selection: $selectedHelp
@@ -30,7 +30,6 @@ struct CapacityBreakdownSection: View {
             Text(
                 dashboardText(
                     "p.where_head",
-                    fallback: "出厂设计 {design} mAh · 现在充满 {full} mAh · 此刻还剩 {current} mAh",
                     replacements: [
                         "a": formatted(design), "b": formatted(full), "c": formatted(current),
                         "design": formatted(design), "full": formatted(full), "current": formatted(current),
@@ -57,16 +56,16 @@ struct CapacityBreakdownSection: View {
 
             VStack(spacing: 10) {
                 CapacityEquation(
-                    title: dashboardText("p.eq_capacity_title", fallback: "这块电池现在最多能装多少"),
-                    subtitle: dashboardText("p.eq_capacity_sub", fallback: "出厂设计减去长期容量损失"),
+                    title: dashboardText("p.eq_capacity_title"),
+                    subtitle: dashboardText("p.eq_capacity_sub"),
                     terms: [
-                        .init(label: dashboardText("p.design_capacity", fallback: "设计容量"), value: design,
+                        .init(label: dashboardText("p.design_capacity"), value: design,
                               icon: .designCapacity, color: AppTheme.batteryYellow,
                               help: { DashboardHelp.designCapacity(snapshot) }),
-                        .init(label: dashboardText("p.capacity_gap", fallback: "长期容量总差额"), value: gap,
+                        .init(label: dashboardText("p.capacity_gap"), value: gap,
                               icon: .capacityGap, color: AppTheme.batteryRed,
                               help: { DashboardHelp.capacityGap(snapshot) }),
-                        .init(label: dashboardText("p.current_max", fallback: "目前最大容量"), value: full,
+                        .init(label: dashboardText("p.current_max"), value: full,
                               icon: .capacity, color: AppTheme.chargingCyan,
                               help: { DashboardHelp.currentMax(snapshot) }),
                     ],
@@ -75,16 +74,16 @@ struct CapacityBreakdownSection: View {
                 )
 
                 CapacityEquation(
-                    title: dashboardText("p.eq_usage_title", fallback: "充满后的电去了哪里"),
-                    subtitle: dashboardText("p.eq_usage_sub", fallback: "目前最大容量减去本次已用，就是此刻还剩"),
+                    title: dashboardText("p.eq_usage_title"),
+                    subtitle: dashboardText("p.eq_usage_sub"),
                     terms: [
-                        .init(label: dashboardText("p.current_max", fallback: "目前最大容量"), value: full,
+                        .init(label: dashboardText("p.current_max"), value: full,
                               icon: .capacity, color: AppTheme.chargingCyan,
                               help: { DashboardHelp.currentMax(snapshot) }),
-                        .init(label: dashboardText("p.used_since_full", fallback: "本次已经用掉"), value: used,
+                        .init(label: dashboardText("p.used_since_full"), value: used,
                               icon: .usedCapacity, color: AppTheme.chargingBlue,
                               help: { DashboardHelp.usedSinceFull(snapshot) }),
-                        .init(label: dashboardText("p.current_actual", fallback: "此刻还剩"), value: current,
+                        .init(label: dashboardText("p.current_actual"), value: current,
                               icon: .stateOfCharge, color: AppTheme.chargingCyan,
                               help: { DashboardHelp.currentActual(snapshot) }),
                     ],
@@ -96,25 +95,23 @@ struct CapacityBreakdownSection: View {
                     CapacityEquation(
                         title: dashboardText(
                             "p.loss_split_title",
-                            fallback: "总差额 {gap} mAh = 取不出来 + 已老化",
                             replacements: ["gap": formatted(gap)]
                         ),
                         subtitle: dashboardText(
                             "p.loss_split_body",
-                            fallback: "像一只水杯：有些水只是吸管够不到，真正让杯子变小的才是永久老化。",
                             replacements: [
                                 "un": formatted(inaccessible),
                                 "aged": formatted(permanent),
                             ]
                         ),
                         terms: [
-                            .init(label: dashboardText("p.capacity_gap", fallback: "长期容量总差额"), value: gap,
+                            .init(label: dashboardText("p.capacity_gap"), value: gap,
                                   icon: .capacityGap, color: AppTheme.batteryYellow,
                                   help: { DashboardHelp.capacityGap(snapshot) }),
-                            .init(label: dashboardText("p.seg_un", fallback: "暂时够不到"), value: inaccessible,
+                            .init(label: dashboardText("p.seg_un"), value: inaccessible,
                                   icon: .inaccessibleCapacity, color: AppTheme.batteryYellow,
                                   help: { DashboardHelp.inaccessibleCapacity(snapshot) }),
-                            .init(label: dashboardText("p.seg_age", fallback: "真正老化"), value: permanent,
+                            .init(label: dashboardText("p.seg_age"), value: permanent,
                                   icon: .permanentLoss, color: AppTheme.batteryRed,
                                   help: { DashboardHelp.permanentLoss(snapshot) }),
                         ],
@@ -143,25 +140,25 @@ struct CapacityBreakdownSection: View {
             HStack(spacing: 1) {
                 capacitySegment(width: width * CGFloat(current) / CGFloat(total),
                                 value: current,
-                                label: dashboardText("p.seg_now", fallback: "此刻还剩"),
+                                label: dashboardText("p.seg_now"),
                                 color: AppTheme.chargingCyan)
                 capacitySegment(width: width * CGFloat(used) / CGFloat(total),
                                 value: used,
-                                label: dashboardText("p.seg_used", fallback: "本次已用"),
+                                label: dashboardText("p.seg_used"),
                                 color: AppTheme.chargingBlue)
                 if let inaccessible, let permanent {
                     capacitySegment(width: width * CGFloat(inaccessible) / CGFloat(total),
                                     value: inaccessible,
-                                    label: dashboardText("p.seg_un", fallback: "暂时够不到"),
+                                    label: dashboardText("p.seg_un"),
                                     color: AppTheme.batteryYellow)
                     capacitySegment(width: width * CGFloat(permanent) / CGFloat(total),
                                     value: permanent,
-                                    label: dashboardText("p.seg_age", fallback: "真正老化"),
+                                    label: dashboardText("p.seg_age"),
                                     color: AppTheme.batteryRed)
                 } else {
                     capacitySegment(width: width * CGFloat(gap) / CGFloat(total),
                                     value: gap,
-                                    label: dashboardText("p.capacity_gap", fallback: "长期容量总差额"),
+                                    label: dashboardText("p.capacity_gap"),
                                     color: AppTheme.batteryRed)
                 }
             }
@@ -169,7 +166,7 @@ struct CapacityBreakdownSection: View {
             .overlay(RoundedRectangle(cornerRadius: 12).stroke(AppTheme.contrastOverlay(0.09)))
             .overlay(alignment: .topLeading) {
                 let boundary = min(max(width * CGFloat(full) / CGFloat(total), 0), width)
-                let boundaryLabel = dashboardText("p.current_max", fallback: "目前最大容量")
+                let boundaryLabel = dashboardText("p.current_max")
                 Rectangle()
                     .fill(AppTheme.contrastOverlay(0.62))
                     .frame(width: 1, height: 78)
@@ -214,10 +211,10 @@ struct CapacityBreakdownSection: View {
     private var capacityCards: some View {
         CapacityLegendCard(
             icon: .designCapacity,
-            title: dashboardText("p.design_capacity", fallback: "出厂设计容量"),
+            title: dashboardText("p.design_capacity"),
             value: design,
             percentage: 100,
-            description: dashboardText("p.capacity_sum", fallback: "这是这台机型出厂时的整只水箱：{design} mAh。",
+            description: dashboardText("p.capacity_sum",
                                        replacements: ["design": formatted(design)]),
             color: AppTheme.batteryYellow,
             help: { DashboardHelp.designCapacity(snapshot) },
@@ -225,31 +222,30 @@ struct CapacityBreakdownSection: View {
         )
         CapacityLegendCard(
             icon: .capacity,
-            title: dashboardText("p.current_max", fallback: "目前充满能装"),
+            title: dashboardText("p.current_max"),
             value: full,
             percentage: ratio(full),
-            description: dashboardText("p.current_max_desc", fallback: "像现在这只水箱真正能装满、也能放出来的总量。"),
+            description: dashboardText("p.current_max_desc"),
             color: AppTheme.chargingCyan,
             help: { DashboardHelp.currentMax(snapshot) },
             selection: $selectedHelp
         )
         CapacityLegendCard(
             icon: .stateOfCharge,
-            title: dashboardText("p.current_actual", fallback: "此刻还剩"),
+            title: dashboardText("p.current_actual"),
             value: current,
             percentage: ratio(current),
-            description: dashboardText("p.current_actual_desc", fallback: "像水箱里此刻剩下的水；使用会减少，充电会补回来。"),
+            description: dashboardText("p.current_actual_desc"),
             color: AppTheme.chargingCyan,
             help: { DashboardHelp.currentActual(snapshot) },
             selection: $selectedHelp
         )
         CapacityLegendCard(
             icon: .usedCapacity,
-            title: dashboardText("p.used_since_full", fallback: "本次已经用掉"),
+            title: dashboardText("p.used_since_full"),
             value: used,
             percentage: ratio(used),
-            description: dashboardText(used == 0 ? "p.used_zero_desc" : "p.used_since_full_desc",
-                                       fallback: used == 0 ? "刚充满，所以这次还没有用掉；它不是老化。" : "从本次充满到现在已经用掉的电，充电后会回来；它不是老化。"),
+            description: dashboardText(used == 0 ? "p.used_zero_desc" : "p.used_since_full_desc"),
             color: AppTheme.chargingBlue,
             help: { DashboardHelp.usedSinceFull(snapshot) },
             selection: $selectedHelp
@@ -257,20 +253,20 @@ struct CapacityBreakdownSection: View {
         if let inaccessible, let permanent {
             CapacityLegendCard(
                 icon: .inaccessibleCapacity,
-                title: dashboardText("p.seg_un", fallback: "暂时够不到"),
+                title: dashboardText("p.seg_un"),
                 value: inaccessible,
                 percentage: ratio(inaccessible),
-                description: dashboardText("p.seg_un_d", fallback: "像吸管够不到的杯底水：电量计认为它还在，但系统会在电压过低前停止放电。"),
+                description: dashboardText("p.seg_un_d"),
                 color: AppTheme.batteryYellow,
                 help: { DashboardHelp.inaccessibleCapacity(snapshot) },
                 selection: $selectedHelp
             )
             CapacityLegendCard(
                 icon: .permanentLoss,
-                title: dashboardText("p.seg_age", fallback: "真正老化"),
+                title: dashboardText("p.seg_age"),
                 value: permanent,
                 percentage: ratio(permanent),
-                description: dashboardText("p.seg_age_d", fallback: "像水箱本身缩小了；这是设计容量与学习到的化学容量之差。"),
+                description: dashboardText("p.seg_age_d"),
                 color: AppTheme.batteryRed,
                 help: { DashboardHelp.permanentLoss(snapshot) },
                 selection: $selectedHelp
@@ -278,10 +274,10 @@ struct CapacityBreakdownSection: View {
         } else {
             CapacityLegendCard(
                 icon: .capacityGap,
-                title: dashboardText("p.capacity_gap", fallback: "长期容量总差额"),
+                title: dashboardText("p.capacity_gap"),
                 value: gap,
                 percentage: ratio(gap),
-                description: dashboardText("p.capacity_gap_desc", fallback: "目前满充容量比出厂设计少的总差额；Qmax 数据不足时不武断拆成够不到与真正老化。"),
+                description: dashboardText("p.capacity_gap_desc"),
                 color: AppTheme.batteryRed,
                 help: { DashboardHelp.capacityGap(snapshot) },
                 selection: $selectedHelp
@@ -293,9 +289,6 @@ struct CapacityBreakdownSection: View {
         let key = hasDetailedSplit ? "p.derive_four" : "p.derive_gap"
         return dashboardText(
             key,
-            fallback: hasDetailedSplit
-                ? "校验链：设计 {d} = 此刻还剩 {c} + 本次已用 {used} + 暂时够不到 {un} + 真正老化 {aged}；目前最大容量 {f} = {c} + {used}。"
-                : "校验链：设计 {d} = 此刻还剩 {c} + 本次已用 {used} + 长期容量总差额 {loss}；目前最大容量 {f} = {c} + {used}。Qmax 不足，暂不拆分总差额。",
             replacements: [
                 "d": formatted(design), "q": formatted(snapshot.detail.qmax.min() ?? 0),
                 "f": formatted(full), "c": formatted(current), "used": formatted(used), "loss": formatted(gap),
@@ -308,7 +301,6 @@ struct CapacityBreakdownSection: View {
         if let inaccessible, let permanent {
             return dashboardText(
                 "p.capacity_accessibility_four",
-                fallback: "{current} mAh 此刻还剩，{used} mAh 本次已用，{unusable} mAh 暂时够不到，{aged} mAh 真正老化；FCC 边界 {full} mAh",
                 replacements: [
                     "current": formatted(current), "used": formatted(used),
                     "unusable": formatted(inaccessible), "aged": formatted(permanent),
@@ -318,7 +310,6 @@ struct CapacityBreakdownSection: View {
         }
         return dashboardText(
             "p.capacity_accessibility_gap",
-            fallback: "{current} mAh 此刻还剩，{used} mAh 本次已用，{gap} mAh 长期容量差额；FCC 边界 {full} mAh",
             replacements: [
                 "current": formatted(current), "used": formatted(used),
                 "gap": formatted(gap), "full": formatted(full),

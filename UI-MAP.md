@@ -12,7 +12,7 @@
 | 一句文案 / 一个 key | `grep "p.runtime_stable_label" UI-MAP.md` → 拿到它在哪个页面哪个区域被渲染 |
 | 一个变量名 | `grep "stableRuntimeMinutes" UI-MAP.md` → 拿到它被哪些界面显示（改算法前先看会影响谁） |
 
-**路径省略前缀** `BatteryMonitor/`（例：`Views/DashboardOverviewPage.swift:59`）。行号采自 2026-08-06 的工作区状态，**界面结构变动后必须回来更新**。
+**路径省略前缀** `BatteryMonitor/`（例：`Views/DashboardOverviewPage.swift`）。表内行号对应当前工作区状态，**界面结构变动后必须回来更新**。
 
 查询 key 的页面归属、权威源文件和字面引用：
 
@@ -27,7 +27,7 @@ python3 Localization/build-language-packs.py find KEY
 | 区域 | 文案 key | 动态变量 | 渲染位置 | 数据来源 |
 |---|---|---|---|---|
 | 页头（标题/副标题 + 语言选择器 + 外观选择器） | `app.title` `app.subtitle` `p.menu_language` `lang.system` | `modelIdentifier` `localization.languages/currentName/isFollowingSystem/effectiveCode` | `Views/DashboardOverviewPage.swift:22-29` | `Models/BatteryData.swift:69` `Services/Localization.swift`（`L10n.shared`） |
-| 电量大字 | —（纯格式化） | `percentText` `percent` | `Views/DashboardOverviewPage.swift:59-63` | `Views/MenuBarPresentation.swift:25` `Models/BatteryData.swift:47` |
+| 电量大字 | —（纯格式化） | `percentText` `percent` | `Views/DashboardOverviewPage.swift:62-66` | `Views/MenuBarPresentation.swift:25-27` `Models/BatteryData.swift:47` |
 | 续航时间对照（系统主卡 + 稳健/短时两行 + 缺额定电量提示） | `shell.runtime_comparison` `p.runtime_system_label` `p.runtime_stable_label` `p.runtime_current_label` `p.runtime_unavailable` `shell.derived_runtime_unavailable` `shell.system_runtime_basis` `shell.apple_runtime_unavailable` `shell.apple_runtime_waiting` `shell.stable_runtime_collecting` `shell.stable_runtime_basis` `shell.stable_runtime_basis_seconds` `shell.instant_runtime_waiting` `shell.current_runtime_basis` | `systemRuntimeMinutes` `stableRuntimeMinutes` `currentLoadRuntimeMinutes` `designEnergyWh` `stablePowerSpanSeconds` `recentStablePowerSamples` `currentPowerWatts` `timeRemainingMinutes` | `Views/DashboardOverviewPage.swift:65-271` | `Models/DashboardMetricSnapshot.swift:288,255,283,195,249,224,24` `Models/BatteryData.swift:52` |
 | 能量流向图（三节点 + 三条边 + 图下说明） | `shell.flow_battery` `shell.flow_adapter` `shell.flow_mac` `shell.not_connected` `shell.flow_derived` `shell.flow_idle` `shell.flow_forecast_measured` `shell.flow_forecast_derived` | `batteryToMac` `adapterToBattery` `adapterToMac` `macConsumption` `adapterRatedWatts` `origin` `isIdle` `batteryPercent` `chargeSpeed` | `Views/PowerFlowDiagram.swift:46-201` | `Models/PowerFlow.swift:45,48,52,54,56,57,125` |
 | 流向图无障碍摘要 | `shell.flow_a11y_battery_to_mac` `shell.flow_a11y_adapter_to_battery` `shell.flow_a11y_adapter_to_mac` `shell.flow_idle` | `batteryToMac` `adapterToBattery` `adapterToMac` `chargeGainText` | `Views/PowerFlowDiagram.swift:228-253` | `Models/PowerFlow.swift:45-52` |
@@ -147,13 +147,13 @@ python3 Localization/build-language-packs.py find KEY
 
 | 区域 | 文案 key | 动态变量 | 渲染位置 | 数据来源 |
 |---|---|---|---|---|
-| 状态项 label `MenuBarStatusLabel` | —（纯格式化，文案来自 `metric.title` / `timeTitle`） | `percentText` `secondaryMetric` `statusValue` `chargeSpeed` | `Views/MenuBarStatusItem.swift:3-15` | `Views/MenuBarPresentation.swift:100-136` |
+| 状态项 label `MenuBarStatusLabel` | —（纯格式化，文案来自 `metric.title` / `timeTitle`） | `percentText` `secondaryMetric` `statusValue` `chargeSpeed` | `Views/MenuBarStatusItem.swift:3-15` | `Views/MenuBarPresentation.swift:99-129` |
 | 状态项时间标题 / 来源说明（`timeTitle` `sourceText`） | `p.menu_unplug` `p.menu_time` `p.menu_direct` `p.menu_forecast` `p.menu_waiting` `p.menu_unplug_short` | `isForecast` `runtimeMinutes` `isOnAC` `unplugEstimateMinutes` `timeRemainingMinutes` | `Views/MenuBarDashboardView.swift:158` | `Views/MenuBarPresentation.swift:33-46` |
 | 顶部状态栏配置卡 `MenuBarTopStatusConfigurationView` | `menu.config.second_metric` `menu.config.status_hint` `menu.config.metric_choice` | `secondaryMetric` `choicePreviewText` `compact` | `Views/MenuBarStatusItem.swift:19-141` | `Services/MenuBarSettings.swift:104-132` |
 | 面板头部 + 电量条 + 底部入口 | `app.title` `p.menu_close` `p.menu_quit` `p.system_charge` `p.menu_open` `p.menu_settings` `p.refresh_now` `p.pause_refresh` | `percentText` `chargeFraction` `sourceText` `isLiveRefreshEnabled` | `Views/MenuBarDashboardView.swift:128-252,683-741` | `Views/MenuBarPresentation.swift:25-54` |
 | 弹出面板指标行 `metricValueRow` | `menu.config.title` `menu.config.empty` `menu.metric.runtime` `menu.metric.power` `menu.metric.temperature` `menu.metric.cycles` `menu.metric.health` `menu.metric.current` `menu.metric.charge_power` `menu.metric.charge_speed` | `visibleMetrics` `metric.icon` `presentation.title(for:)` `presentation.value(for:)` | `Views/MenuBarDashboardView.swift:254-368` | `Views/MenuBarPresentation.swift:83-98` |
-| 趋势区 `trendSection` / `trendRow` / `MenuSparkline` | `shell.dynamic_trends` `shell.last_minutes` `menu.config.restore_defaults` `shell.instant_power` `p.menu_time` `shell.current` `menu.config.drag_to_reorder` | `visibleTrendMetrics` `trendValues` `trendValue` `trendColor` `realtimeData` `runtimeSamples` | `Views/MenuBarDashboardView.swift:456-566,818-845` | `Views/MenuBarDashboardView.swift:603-623` + `Services/BatteryService.swift:10,15` |
-| 进程区 `processSection` | `shell.top_processes` `shell.cpu_context` `menu.process.none` `p.process_collecting` | `topProcesses` `hasSampled` `displayName` `cpuPercent` `energyImpact` | `Views/MenuBarDashboardView.swift:633-681,776-815` | `Views/MenuBarDashboardView.swift:663-673`（直连 `ProcessMonitorService`） |
+| 趋势区 `trendSection` / `trendRow` / `MenuSparkline` | `shell.dynamic_trends` `shell.last_minutes` `menu.config.restore_defaults` `shell.instant_power` `p.menu_time` `shell.current` `menu.config.drag_to_reorder` | `visibleTrendMetrics` `trendValues` `trendValue` `trendColor` `realtimeData` `runtimeSamples` | `Views/MenuBarDashboardView.swift:456-601,818-850` | `Views/MenuBarDashboardView.swift:608-626` + `Services/BatteryService.swift:10,15` |
+| 进程区 `processSection` | `shell.top_processes` `shell.cpu_context` `menu.process.none` `p.process_collecting` | `topProcesses` `hasSampled` `displayName` `cpuPercent` `energyImpact` | `Views/MenuBarDashboardView.swift:638-686,781-820` | `Views/MenuBarDashboardView.swift:668-676`（直连 `ProcessMonitorService`） |
 | 指标编辑（自定义 / 隐藏 / 添加更多） | `menu.config.customize` `menu.config.hide` `menu.config.add_more` `menu.config.manage_in_dashboard` `menu.config.empty` | `isCustomizing` `setVisible` `setTrendVisible` `showMetricSettings` | `Views/MenuBarDashboardView.swift:261-299,318-334,414-441` | `Services/MenuBarSettings.swift:134-176,201-207` |
 | 拖拽排序（指标行 + 趋势行手势） | `menu.config.drag_to_reorder` | `draggedMetric` `dragOriginIndex` `draggedTrendMetric` `trendDragOriginIndex` `customizableMetricRowHeight`(44) | `Views/MenuBarDashboardView.swift:335-350,374-412,532-547,568-601` | `Services/MenuBarSettings.swift:145-165,178-190` |
 
@@ -240,16 +240,15 @@ python3 Localization/build-language-packs.py find KEY
 
 | 问题 | 位置 | 说明 |
 |---|---|---|
-| `MenuBarPresentation` **不只服务菜单栏** | `Views/DashboardOverviewPage.swift:59` | 总览页的电量大字用的是 `presentation.percentText`。按"这是菜单栏专用"的理解去改它会改坏总览页 |
-| `.current` 格式化有两份实现 | `Views/MenuBarDashboardView.swift:621` vs `Views/MenuBarPresentation.swift:94` | 同一个公式 `LNum("%.2f A", amperage/1000)` 写了两遍，**改一处忘另一处会让菜单栏两处显示不一致** |
-| 趋势序列不经过 presentation | `Views/MenuBarDashboardView.swift:603-612` | presentation 只提供标量出口，sparkline 直接读 `batteryService.realtimeData` / `runtimeSamples`，属结构性绕过 |
-| 进程数据不经过 presentation | `Views/MenuBarDashboardView.swift:671` | `LNum("%.1f%% CPU", process.cpuPercent)` 直接取 `ProcessMonitorService` |
+| `MenuBarPresentation` **不只服务菜单栏** | `Views/DashboardOverviewPage.swift:62` | 总览页电量大字复用 `presentation.percentText`，充电功率复用 `DashboardMetricSnapshot` 的共享格式器；其余七卡按总览语境直接格式化。改 presentation 不等于全看板都会同步变化 |
+| 趋势序列不经过 presentation | `Views/MenuBarDashboardView.swift:608-616` | presentation 只提供菜单栏标量出口，sparkline 直接读 `batteryService.realtimeData` / `runtimeSamples`，属结构性绕过 |
+| 进程数据不经过 presentation | `Views/MenuBarDashboardView.swift:676` | `LNum("%.1f%% CPU", process.cpuPercent)` 直接取 `ProcessMonitorService` |
 | 界面可见标题 ≠ 项目内部说法 | 技术参数页九个 section | 文件地图记的是"顶部剩余时间主卡""容量拆解"，界面上写的是"还能用多久""你买的容量去哪了"。**按界面文字搜项目内部说法可能搜不到**，用本文件 |
 | `runtime` 有两个同名成员 | `Views/DashboardHelp.swift:169` vs `Views/DashboardHelp+Runtime.swift:5` | 一个是面板 `runtime(_ s:)`，一个是格式化工具 `runtime(minutes:)` |
 | 四层核验台的搜索**按当前界面语言匹配**，不再搜中文原值 | `Views/SystemDataWorkbenchView.swift:55-69` | 搜索域 = `path`/`value`/`source`（英文标识符，任何语言下都能搜）+ 当前语言的 `localizedGroup`/`localizedMeaning`/`localizedNote`/`localizedUnit`/`localizedReliability`。**界面切到 `ko` 后用中文词搜不到任何东西**（本地化前搜的是 catalog 的中文原值）。原值仍留在 JSON 里，但只供 `isMeaningfulByDefault` 与 `SystemFieldValueConversion` 做令牌比对，不参与搜索 |
 | catalog 的中文原值**不是死数据，不许删** | `BatteryMonitor/Resources/SystemFieldCatalog.json` | `group`/`unit`/`meaning` 等中文原值同时是 zh-Hans 文案与上述两处令牌比对的输入。删掉原值只留 `*Key`，界面照常显示，但「默认有用」筛选和单位换算会静默失效。`Scripts/verify-release.sh` 有两条耦合守卫专防这件事 |
 
-准确表述：**`MenuBarPresentation` 是「电池标量取值与格式化」的唯一出口**（`percentText` `runtimeText` `healthText` `powerText` `temperatureText` `chargingPowerText` `chargeSpeedText` + `value(for:)` / `statusValue(for:)`），趋势序列与进程数据不经过它。
+准确表述：**`MenuBarPresentation` 是菜单栏电池标量取值与格式化的唯一出口**（`percentText` `runtimeText` `healthText` `powerText` `temperatureText` `chargingPowerText` `chargeSpeedText` + `value(for:)` / `statusValue(for:)`）。总览页仅复用 `percentText` 和共享的充电功率格式器；趋势序列、进程数据和总览其余指标不经过它。
 
 ---
 

@@ -1077,6 +1077,14 @@
     "shell.apple_runtime_waiting": "macOS non ha ancora fornito un tempo residuo valido · continua a usare la batteria e ricontrolla",
     "proc.cpu_scale_note": "Sopra: intero sistema = 100%% · Righe: un core logico = 100%%",
     "proc.cpu_per_core_note": "CPU per riga: 100%% equivale a un core logico completamente occupato; le app multithread possono superare 100%%.",
-    "proc.memory_rss_note": "Totale memoria residente (RSS). Le pagine condivise possono essere conteggiate più volte tra i processi raggruppati."
+    "proc.memory_rss_note": "Totale memoria residente (RSS). Le pagine condivise possono essere conteggiate più volte tra i processi raggruppati.",
+    "hw.n.cell_disconnect": "0 è un valore normale e valido; verifica qualsiasi valore diverso da zero come possibile problema hardware.",
+    "hw.n.pf_status": "0 indica che non è segnalato alcun guasto permanente; un valore diverso da zero è un indicatore critico di assistenza.",
+    "hw.n.smoothed_amperage": "I valori negativi indicano scarica e quelli positivi carica; questo valore smussato è più adatto alla visualizzazione rispetto alla lettura istantanea.",
+    "hw.n.instant_amperage": "Questa lettura varia molto; usala per il grafico in tempo reale, non da sola per trarre conclusioni.",
+    "hw.n.system_load": "Lettura alternativa usata quando BatteryData.SystemPower non è disponibile.",
+    "hw.n.battery_power": "Un valore negativo indica che la batteria sta alimentando il sistema.",
+    "hw.n.serial": "Questo valore cambia quando la batteria viene sostituita e può aiutare a identificare la sostituzione.",
+    "hw.n.gauge_chip": "Il modello del misuratore aiuta a comprendere il sistema di calcolo dietro TimeRemaining."
   }
 }

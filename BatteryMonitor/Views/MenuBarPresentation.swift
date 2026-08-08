@@ -31,18 +31,17 @@ struct MenuBarPresentation {
     }
 
     var timeTitle: String {
-        dashboardText(isForecast ? "p.menu_unplug" : "p.menu_time",
-                      fallback: isForecast ? "拔电后预计" : "还能用多久")
+        dashboardText(isForecast ? "p.menu_unplug" : "p.menu_time")
     }
 
     var sourceText: String {
         if !data.isOnAC, runtimeMinutes != nil {
-            return dashboardText("p.menu_direct", fallback: "macOS 系统直接值")
+            return dashboardText("p.menu_direct")
         }
         if isForecast {
-            return dashboardText("p.menu_forecast", fallback: "当前电脑状态下的拔电预计 · 不是系统历史")
+            return dashboardText("p.menu_forecast")
         }
-        return dashboardText("p.menu_waiting", fallback: "等待 macOS 给出剩余时间")
+        return dashboardText("p.menu_waiting")
     }
 
     var chargeFraction: Double {
@@ -102,7 +101,7 @@ struct MenuBarPresentation {
         case .runtime:
             guard runtimeMinutes != nil else { return nil }
             if isForecast {
-                return "\(dashboardText("p.menu_unplug_short", fallback: "拔电约")) \(runtimeText)"
+                return "\(dashboardText("p.menu_unplug_short")) \(runtimeText)"
             }
             return runtimeText
         case .power:

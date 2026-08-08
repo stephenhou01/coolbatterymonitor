@@ -33,11 +33,11 @@ struct CompleteHardwareMetric: Identifiable {
         let starText = valueStars > 0 ? String(repeating: "★", count: valueStars) : "—"
         let origin: String
         if field == "ModelDesignEnergy" {
-            origin = hardwareText("p.help_origin_model", "按 hw.model 匹配 Apple 机型公开规格")
+            origin = hardwareText("p.help_origin_model")
         } else if reliability == .derived || field.hasPrefix("→") {
-            origin = hardwareText("p.help_origin_derived", "由上方列出的原始字段推导")
+            origin = hardwareText("p.help_origin_derived")
         } else {
-            origin = hardwareText("p.help_origin_iokit", "AppleSmartBattery IOKit 实时快照")
+            origin = hardwareText("p.help_origin_iokit")
         }
         return MetricHelpContent(
             id: "hardware.\(id)",
@@ -47,7 +47,7 @@ struct CompleteHardwareMetric: Identifiable {
             rawFields: rawFields,
             formula: formula,
             substitution: substitution,
-            source: "\(origin) · \(L(reliability.labelKey)) · \(usage) · \(hardwareText("hw.column.product_value", "产品价值")) \(starText) · \(referenceRange)",
+            source: "\(origin) · \(L(reliability.labelKey)) · \(usage) · \(hardwareText("hw.column.product_value")) \(starText) · \(referenceRange)",
             readAt: readAt
         )
     }
@@ -148,10 +148,10 @@ struct CompleteHardwareDetailView: View {
                 .frame(width: 34, height: 34)
 
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(hardwareText("p.geek", "完整硬件参数与逐项解释"))
+                    Text(hardwareText("p.geek"))
                         .font(.system(size: 16, weight: .bold))
                         .foregroundStyle(AppTheme.textPrimary)
-                    Text(hardwareText("p.hw_intro_title", "所有底层证据都在这里"))
+                    Text(hardwareText("p.hw_intro_title"))
                         .font(.system(size: 10.5))
                         .foregroundStyle(AppTheme.textTertiary)
                 }
@@ -184,9 +184,7 @@ struct CompleteHardwareDetailView: View {
     }
 
     private var intro: some View {
-        Text(hardwareText(
-            "p.hw_intro_body",
-            "附件清单中的全部原始指标都保留，并补充机型公开规格与必要推导。0 是有效读数；只有系统没有返回字段时才显示 —。"
+        Text(hardwareText("p.hw_intro_body"
         ).hardwarePlainText)
         .font(.system(size: 11.5))
         .foregroundStyle(AppTheme.textSecondary)
@@ -203,7 +201,7 @@ struct CompleteHardwareDetailView: View {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 11, weight: .medium))
                 .foregroundStyle(AppTheme.textTertiary)
-            TextField(hardwareText("p.hw_search", "搜索字段、数值、含义或注意事项"), text: $searchText)
+            TextField(hardwareText("p.hw_search"), text: $searchText)
                 .textFieldStyle(.plain)
                 .font(.system(size: 11.5))
                 .foregroundStyle(AppTheme.textPrimary)
@@ -231,9 +229,9 @@ struct CompleteHardwareDetailView: View {
             headerCell(L("hw.value"), width: 145)
             headerCell(L("hw.unit"), width: 86)
             headerCell(L("hw.meaning"), width: nil)
-            headerCell(hardwareText("p.range", "参考范围"), width: 170)
-            headerCell(hardwareText("hw.column.usage", "当前用途"), width: 82)
-            headerCell(hardwareText("hw.column.value", "价值"), width: 46)
+            headerCell(hardwareText("p.range"), width: 170)
+            headerCell(hardwareText("hw.column.usage"), width: 82)
+            headerCell(hardwareText("hw.column.value"), width: 46)
             headerCell(L("hw.rel"), width: 32)
             Color.clear.frame(width: 22, height: 1)
         }
@@ -399,7 +397,7 @@ struct CompleteHardwareDetailView: View {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 20))
                 .foregroundStyle(AppTheme.textTertiary)
-            Text(hardwareText("p.hw_no_results", "没有匹配的硬件指标"))
+            Text(hardwareText("p.hw_no_results"))
                 .font(.system(size: 11.5))
                 .foregroundStyle(AppTheme.textSecondary)
         }
@@ -408,10 +406,7 @@ struct CompleteHardwareDetailView: View {
     }
 }
 
-func hardwareText(_ key: String, _ fallback: String) -> String {
-    let value = L(key)
-    return value == key ? fallback : value
-}
+func hardwareText(_ key: String) -> String { L(key) }
 
 private extension String {
     var hardwarePlainText: String {

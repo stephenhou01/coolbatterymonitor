@@ -14,7 +14,7 @@ struct DashboardTechnicalPage: View {
             LazyVStack(spacing: 20) {
                 DashboardPageHeader(
                     title: DashboardDestination.technical.title,
-                    subtitle: dashboardText("shell.technical_subtitle", fallback: "完整保留所有指标、公式、来源和系统原始字段")
+                    subtitle: dashboardText("shell.technical_subtitle")
                 )
                 FinalDashboardView(
                     batteryData: batteryService.batteryData,

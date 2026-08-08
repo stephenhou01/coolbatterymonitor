@@ -20,8 +20,8 @@ extension DashboardHelp {
 
         return content(
             id: "power.current",
-            title: dashboardText("p.priority_power", fallback: "当前电脑的使用功率"),
-            summary: dashboardText("p.help_summary_power", fallback: "优先读取 BatteryData.SystemPower；不可用时才依次退回 SystemLoad 或电压×电流。长期基线来自电量计累计遥测。"),
+            title: dashboardText("p.priority_power"),
+            summary: dashboardText("p.help_summary_power"),
             result: LNum("%.2f W", s.currentPowerWatts),
             fields: [
                 field("BatteryData.SystemPower", f(s.detail.systemPowerWatts), "W"),
@@ -39,8 +39,7 @@ extension DashboardHelp {
                 title: trendTitle(),
                 latestText: LNum("%.2f W", s.currentPowerWatts),
                 note: dashboardText(
-                    "p.trend_note_power",
-                    fallback: "整机功率按上方显示的时间间隔分桶汇总。把鼠标移到线上可以查看该桶的读数。"
+                    "p.trend_note_power"
                 ),
                 unit: "W",
                 tint: AppTheme.chargingCyan,
@@ -71,29 +70,29 @@ extension DashboardHelp {
         let stateTitle: String
         let stateDetail: String
         if !connected {
-            stateTitle = dashboardText("p.adapter_status_disconnected", fallback: "未连接充电器")
-            stateDetail = dashboardText("p.adapter_status_disconnected_note", fallback: "插入电源后会读取协商电压、电流和额定功率")
+            stateTitle = dashboardText("p.adapter_status_disconnected")
+            stateDetail = dashboardText("p.adapter_status_disconnected_note")
         } else if negotiated {
-            stateTitle = dashboardText("p.adapter_status_negotiated", fallback: "已连接 · 协商成功")
+            stateTitle = dashboardText("p.adapter_status_negotiated")
             stateDetail = "\(adapterType) · \(LNum("%.1f V", voltage ?? 0)) / \(LNum("%.2f A", current ?? 0))"
         } else {
-            stateTitle = dashboardText("p.adapter_status_waiting", fallback: "已连接 · 等待协商字段")
+            stateTitle = dashboardText("p.adapter_status_waiting")
             stateDetail = adapterType
         }
 
         let equation = if let voltage, let current, let calculatedWatts {
             "\(LNum("%.1f V", voltage)) × \(LNum("%.2f A", current)) = \(LNum("%.1f W", calculatedWatts))"
         } else {
-            dashboardText("p.adapter_equation_waiting", fallback: "等待电压和电流字段")
+            dashboardText("p.adapter_equation_waiting")
         }
         let equationNote: String
         if let calculatedWatts, watts > 0 {
             let tolerance = max(1.0, Double(watts) * 0.03)
             equationNote = abs(calculatedWatts - Double(watts)) <= tolerance
-                ? dashboardText("p.adapter_contract_match", fallback: "三个字段相互吻合；这是充电器能力上限，不是实时耗电。")
-                : dashboardText("p.adapter_contract_diff", fallback: "系统报告的额定功率与电压×电流略有差异；分别保留原始值，避免强行改写。")
+                ? dashboardText("p.adapter_contract_match")
+                : dashboardText("p.adapter_contract_diff")
         } else {
-            equationNote = dashboardText("p.adapter_contract_partial", fallback: "字段不完整时不反推缺失值。")
+            equationNote = dashboardText("p.adapter_contract_partial")
         }
 
         // Derived from Mac load + charge into the battery, not from
@@ -106,10 +105,9 @@ extension DashboardHelp {
             : nil
         return content(
             id: "power.adapter",
-            title: dashboardText("p.adapter_status_title", fallback: "充电器状态"),
+            title: dashboardText("p.adapter_status_title"),
             summary: dashboardText(
-                "p.help_summary_adapter_power",
-                fallback: "这是充电器与电脑协商出的额定功率，不是电脑此刻一定正在消耗这么多。拔掉电源后，这组字段通常会消失。"
+                "p.help_summary_adapter_power"
             ),
             result: displayedWatts,
             // The adapter identity block appears and disappears with the cable,
@@ -133,8 +131,7 @@ extension DashboardHelp {
             formula: "voltageV = AdapterVoltage ÷ 1000\ncurrentA = Current ÷ 1000\nnegotiatedPowerW = voltageV × currentA\nactualOutputW = macLoadW + max(batteryPowerW, 0)",
             substitution: "\(optional(rawVoltage)) ÷ 1000 = \(f(voltage)) V\n\(optional(rawCurrent)) ÷ 1000 = \(f(current)) A\n\(f(voltage)) × \(f(current)) = \(f(calculatedWatts)) W\n\(f(s.currentPowerWatts)) + \(f(max(0, s.batteryPowerWatts ?? 0))) = \(f(currentInput)) W\nSystemPowerIn (reference only): \(optional(rawSystemPowerIn)) mW",
             source: dashboardText(
-                "p.help_source_adapter_power",
-                fallback: "IOKit AppleSmartBattery.AdapterDetails。它表示当前电源协商档位；实际输入功率请看 SystemPowerIn。"
+                "p.help_source_adapter_power"
             ),
             readAt: s.rawFieldReadAt,
             powerContract: MetricPowerContract(
@@ -142,17 +139,17 @@ extension DashboardHelp {
                 stateDetail: stateDetail,
                 isConnected: connected,
                 isNegotiated: negotiated,
-                voltageLabel: dashboardText("p.adapter_voltage", fallback: "协商电压"),
+                voltageLabel: dashboardText("p.adapter_voltage"),
                 voltageText: voltage.map { LNum("%.1f V", $0) } ?? "—",
-                currentLabel: dashboardText("p.adapter_current", fallback: "协商电流"),
+                currentLabel: dashboardText("p.adapter_current"),
                 currentText: current.map { LNum("%.2f A", $0) } ?? "—",
-                powerLabel: dashboardText("p.adapter_rated_power", fallback: "额定功率"),
+                powerLabel: dashboardText("p.adapter_rated_power"),
                 powerText: displayedWatts,
                 equationText: equation,
                 equationNote: equationNote,
-                trendTitle: dashboardText("p.adapter_input_trend", fallback: "整机实际输入功率"),
+                trendTitle: dashboardText("p.adapter_input_trend"),
                 trendValue: currentInput.map { LNum("%.1f W", $0) } ?? "—",
-                trendNote: dashboardText("p.adapter_input_trend_note", fallback: "青线是推导值：电脑当前功率 + 充入电池的功率，和上方流向图的两条出边同源。黄色虚线是协商上限，两者不同很正常。鼠标移到线上可看该分钟读数。"),
+                trendNote: dashboardText("p.adapter_input_trend_note"),
                 trendPoints: inputTrendPoints,
                 ceilingWatts: watts > 0 ? Double(watts) : calculatedWatts
             )
@@ -175,10 +172,9 @@ extension DashboardHelp {
         }
         return content(
             id: "power.charging",
-            title: dashboardText("shell.charge_power", fallback: "充电功率"),
+            title: dashboardText("shell.charge_power"),
             summary: dashboardText(
-                "p.help_summary_charging_power",
-                fallback: "这是实际流进电池的功率：电池电压 × 正向充电电流。电脑插着电但电池没有充电时，这里就是 0 W。"
+                "p.help_summary_charging_power"
             ),
             result: displayedWatts,
             fields: [
@@ -192,16 +188,14 @@ extension DashboardHelp {
             formula: "batteryVoltageV = batteryVoltageMillivolts ÷ 1000\nbatteryChargingCurrentA = IsCharging ? max(batteryCurrentMilliamps, 0) ÷ 1000 : 0\nbatteryChargingPowerW = batteryVoltageV × batteryChargingCurrentA",
             substitution: "\(optional(rawVoltage)) ÷ 1000 = \(LNum("%.3f V", voltage))\nIsCharging = \(s.data.isCharging) → \(optional(currentMilliamps)) ÷ 1000 = \(f(currentAmps)) A\n\(LNum("%.3f", voltage)) × \(f(currentAmps)) = \(displayedWatts)",
             source: dashboardText(
-                "p.help_source_charging_power",
-                fallback: "由 AppleSmartBattery 的电池组电压与带符号电池电流推导；放电方向的负电流不会被算作充电。"
+                "p.help_source_charging_power"
             ),
             readAt: s.rawFieldReadAt,
             trend: MetricHelpTrend(
                 title: trendTitle(),
                 latestText: displayedWatts,
                 note: dashboardText(
-                    "p.trend_note_charge",
-                    fallback: "每个点是当时的电池电压 × 正向电流。放电时记为 0，所以充电停止会看到线落到底，而不是断开。"
+                    "p.trend_note_charge"
                 ),
                 unit: "W",
                 tint: AppTheme.batteryGreen,
@@ -217,10 +211,9 @@ extension DashboardHelp {
         let displayedWatts = watts.map { LNum("%.1f W", $0) } ?? "—"
         return content(
             id: "power.adapter-output",
-            title: dashboardText("shell.adapter_output_power", fallback: "适配器输出功率"),
+            title: dashboardText("shell.adapter_output_power"),
             summary: dashboardText(
-                "p.help_summary_adapter_output_power",
-                fallback: "这是适配器送进整台电脑的实时功率，既包含电脑当前使用的部分，也可能包含给电池充电的部分；它不是电池充电功率。"
+                "p.help_summary_adapter_output_power"
             ),
             result: displayedWatts,
             fields: [
@@ -228,40 +221,38 @@ extension DashboardHelp {
                     "PowerTelemetryData.SystemPowerIn",
                     detail.presentRawFields.contains("PowerTelemetryData.SystemPowerIn") ? detail.systemPowerIn : nil,
                     "mW",
-                    dashboardText("p.raw_power_in_explain", fallback: "充电器实际送入 Mac 的功率")
+                    dashboardText("p.raw_power_in_explain")
                 ),
                 field(
                     "PowerTelemetryData.VoltageIn",
                     detail.presentRawFields.contains("PowerTelemetryData.VoltageIn") ? detail.systemVoltageIn : nil,
                     "mV",
-                    dashboardText("p.raw_voltage_in_explain", fallback: "进入 Mac 的实时电压")
+                    dashboardText("p.raw_voltage_in_explain")
                 ),
                 field(
                     "PowerTelemetryData.CurrentIn",
                     detail.presentRawFields.contains("PowerTelemetryData.CurrentIn") ? detail.systemCurrentIn : nil,
                     "mA",
-                    dashboardText("p.raw_current_in_explain", fallback: "进入 Mac 的实时电流")
+                    dashboardText("p.raw_current_in_explain")
                 ),
                 field(
                     "PowerTelemetryData.AdapterEfficiencyLoss",
                     detail.presentRawFields.contains("PowerTelemetryData.AdapterEfficiencyLoss") ? detail.adapterEfficiencyLoss : nil,
                     "mW",
-                    dashboardText("p.raw_adapter_loss_explain", fallback: "适配器效率损耗原始值")
+                    dashboardText("p.raw_adapter_loss_explain")
                 ),
             ],
             formula: "adapterOutputPowerW = macLoadW + max(batteryPowerW, 0)",
             substitution: "\(f(s.currentPowerWatts)) + \(f(max(0, s.batteryPowerWatts ?? 0))) = \(displayedWatts)\nSystemPowerIn (reference only): \(optional(detail.presentRawFields.contains("PowerTelemetryData.SystemPowerIn") ? detail.systemPowerIn : nil)) mW",
             source: dashboardText(
-                "p.help_source_adapter_output_power",
-                fallback: "推导值：电脑当前功率 + 充入电池的功率，和概览流向图的两条适配器出边同源。原先直读 PowerTelemetryData.SystemPowerIn，但实测这台 Mac 插着电充着电时该字段会归零，所以只把它保留在下方原始字段里作参考。"
+                "p.help_source_adapter_output_power"
             ),
             readAt: s.rawFieldReadAt,
             trend: MetricHelpTrend(
                 title: trendTitle(),
                 latestText: displayedWatts,
                 note: dashboardText(
-                    "p.trend_note_adapter_output",
-                    fallback: "拔掉电源的时间段不画线——那时适配器没有输出，画一条 0 和画一段空白意思不同。鼠标移到线上可看该分钟读数。"
+                    "p.trend_note_adapter_output"
                 ),
                 unit: "W",
                 tint: AppTheme.chargingCyan,

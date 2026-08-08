@@ -339,7 +339,7 @@ struct DashboardMetricSnapshot {
 
     var temperatureHistoryText: String {
         guard detail.minimumTemperature != 0 || detail.maximumTemperature != 0 else {
-            return dashboardText("p.history_learning", fallback: "历史范围正在积累")
+            return dashboardText("p.history_learning")
         }
         return "\(detail.minimumTemperature)–\(detail.maximumTemperature)°C"
     }
@@ -351,7 +351,7 @@ struct DashboardMetricSnapshot {
 
     var voltageHistoryText: String {
         guard detail.minimumPackVoltage > 0, detail.maximumPackVoltage > 0 else {
-            return dashboardText("p.history_learning", fallback: "历史范围正在积累")
+            return dashboardText("p.history_learning")
         }
         return LNum("%.2f–%.2f V", Double(detail.minimumPackVoltage) / 1000,
                     Double(detail.maximumPackVoltage) / 1000)
